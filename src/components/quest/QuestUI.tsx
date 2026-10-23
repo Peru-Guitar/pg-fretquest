@@ -4,15 +4,15 @@ import { courses } from '@/data/questMock';
 import { cn } from '@/lib/cn';
 
 const artTones: Record<string, { bg: string; fg: string }> = {
-    riff: { bg: 'from-[#643a95] via-[#222448] via-62% to-[#142034]', fg: 'text-[#bb9bff]' },
+    riff: { bg: 'from-[#8a4a2a] via-[#2a201b] via-62% to-[#161311]', fg: 'text-[#f1c7a1]' },
     chord: { bg: 'from-[#a45b38] via-[#452a2a] via-65% to-[#211c28]', fg: 'text-[#efc49b]' },
     rhythm: { bg: 'from-[#285890] via-[#1c2a4c] via-65% to-[#111e31]', fg: 'text-[#a8c9f4]' },
-    solo: { bg: 'from-[#6640a0] via-[#302049] via-65% to-[#191c30]', fg: 'text-[#d3b2f1]' },
+    solo: { bg: 'from-[#7a3f24] via-[#2b1f1a] via-65% to-[#151210]', fg: 'text-[#f1c7a1]' },
 };
 
 /** Ilustración decorativa. `card` = cabecera de tarjeta, `hero` = fondo del bloque principal, `cover` = portada de módulo. */
 export function GuitarArt({ variant = 'riff', layout = 'card' }: { variant?: string; layout?: 'card' | 'hero' | 'cover' }) {
-    const tone = artTones[variant] ?? artTones.riff;
+    const tone = layout === 'hero' ? { bg: '', fg: 'text-accent' } : artTones[variant] ?? artTones.riff;
     const hero = layout === 'hero';
     const center = 'absolute top-1/2 -translate-1/2';
     return <div aria-hidden="true" className={cn(
@@ -22,30 +22,36 @@ export function GuitarArt({ variant = 'riff', layout = 'card' }: { variant?: str
         hero && 'absolute inset-y-0 right-0 left-1/5 opacity-30 mask-[linear-gradient(90deg,transparent,#000_23%)] xs:left-[36%] xs:opacity-100',
         !hero && tone.bg,
     )}>
-        <div className={cn(center, 'rounded-full border border-[#ac86ff30]', hero ? 'left-4/5 size-82 md:left-2/3' : 'left-1/2 size-70')}/>
-        <div className={cn(center, 'rounded-full border border-[#ac86ff30]', hero ? 'left-4/5 size-115 md:left-2/3' : 'left-1/2 size-90')}/>
-        <div className="absolute -top-[35%] -left-[10%] h-[140%] w-[180%] -rotate-35 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_47px,#9b7dff0b_48px,#9b7dff0b_49px)]"/>
+        <div className={cn(center, 'rounded-full border border-[#f1c7a125]', hero ? 'left-4/5 size-82 md:left-2/3' : 'left-1/2 size-70')}/>
+        <div className={cn(center, 'rounded-full border border-[#f1c7a125]', hero ? 'left-4/5 size-115 md:left-2/3' : 'left-1/2 size-90')}/>
+        <div className="absolute -top-[35%] -left-[10%] h-[140%] w-[180%] -rotate-35 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_47px,#f1c7a10b_48px,#f1c7a10b_49px)]"/>
         <Guitar strokeWidth={0.9} className={cn(
-            center, 'drop-shadow-[0_0_20px_#8251eb55]', tone.fg,
+            center, 'drop-shadow-[0_0_20px_#e0662f22]', tone.fg,
             hero ? 'left-9/10 size-72 rotate-[-26deg] xs:left-3/4 md:left-[76%] lg:left-2/3 xl:left-[76%] lg:size-80 xl:size-72 2xl:left-2/3 2xl:size-82' : 'left-1/2 size-57 -rotate-24',
         )}/>
         <span className={cn('absolute top-1/5 left-1/5 text-2xl', tone.fg)}>✦</span>
         <span className={cn('absolute right-1/6 bottom-1/5 text-base', tone.fg)}>+</span>
-        <span className={cn('absolute bottom-3 text-4xs tracking-[0.25em] text-[#bba9e299]', hero ? 'right-6 hidden md:block' : 'left-4.5')}>FQ / PLAY YOUR WAY</span>
+        <span className={cn('absolute bottom-3 text-4xs tracking-[0.25em] text-[#d7c2ae99]', hero ? 'right-6 hidden md:block' : 'left-4.5')}>FQ / PLAY YOUR WAY</span>
     </div>;
 }
 
 export function CourseCard({ course }: { course: typeof courses[number] }) {
-    return <Link to={`/modules/${course.id}`} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-[#8369d6] hover:shadow-[0_6px_25px_#5d38bf16]">
-        <img src={course.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-44 w-full bg-[#101827] object-cover"/>
+    const content = <>
+        <div className="relative">
+            <img src={course.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-44 w-full bg-sunken object-cover"/>
+            {!course.available && <span className="absolute top-3 right-3 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-xs font-bold text-white">Próximamente</span>}
+        </div>
         <div className="p-4 xl:p-5">
-            <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-[#b693fb]">{course.category}</p>
+            <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{course.category}</p>
             <h3 className="mt-2 mb-2 text-base md:text-[1.0625rem] xl:text-lg">{course.title}</h3>
             <p className="text-xs leading-relaxed text-muted xs:min-h-9.5">{course.description}</p>
-            <div className="mt-4.5 mb-3.5 flex justify-between gap-2 text-3xs text-[#a3b5d2] lg:max-xl:flex-wrap"><span>{course.lessonCount} lecciones · {course.duration}</span><span className="text-[#aebcf1]">{course.level}</span></div>
-            <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-accent"><span>Ver lecciones</span><ArrowRight size={16}/></div>
+            <div className="mt-4.5 mb-3.5 text-3xs text-muted">{course.lessonCount} lecciones · {course.duration}</div>
+            {course.available && <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-accent"><span>Ver lecciones</span><ArrowRight size={16}/></div>}
         </div>
-    </Link>;
+    </>;
+    return course.available
+        ? <Link to={`/modules/${course.id}`} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_6px_25px_#e0662f16]">{content}</Link>
+        : <article aria-label={`${course.title}: próximamente`} className="overflow-hidden rounded-lg border border-line bg-card opacity-60">{content}</article>;
 }
 
 export function CourseGrid({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -53,10 +59,10 @@ export function CourseGrid({ children, className }: { children: React.ReactNode;
 }
 
 const achievements = [
-    { symbol: '✦', title: 'Primera sesión', text: 'Primer entrenamiento', medal: 'from-[#a276ff] to-[#453091] text-[#f0e5ff]' },
+    { symbol: '✦', title: 'Primera sesión', text: 'Primer entrenamiento', medal: 'from-[#f0894f] to-[#7a3a1c] text-[#fff0e5]' },
     { symbol: '♜', title: 'Constancia de acero', text: '7 días seguidos', medal: 'from-[#ffc16b] to-[#9e562b] text-[#fff0d4]' },
     { symbol: 'ϟ', title: 'Sin perder el ritmo', text: '95% de precisión', medal: 'from-[#35dca9] to-[#16664f] text-[#ccffed]' },
-    { symbol: '◇', title: 'Constancia de leyenda', text: 'Alcanza el nivel 25', medal: 'from-[#a276ff] to-[#453091] text-[#f0e5ff]', locked: true },
+    { symbol: '◇', title: 'Constancia de leyenda', text: 'Alcanza el nivel 25', medal: 'from-[#f0894f] to-[#7a3a1c] text-[#fff0e5]', locked: true },
 ];
 
 export function Achievements() {

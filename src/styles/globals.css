@@ -9,7 +9,7 @@
 */
 
 @theme {
-  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
   /* Breakpoints mobile-first: móvil < md < lg < xl < 2xl. */
@@ -38,27 +38,29 @@
   --text-base--line-height: 1.5;
 
   /* Superficies (de más oscura a más clara). */
-  --color-canvas: #080f19;
-  --color-sunken: #0b1422;
-  --color-surface: #111c2a;
-  --color-raised: #142033;
-  --color-field: #0d1726;
+  --color-canvas: #111111;
+  --color-sunken: #151515;
+  --color-surface: #1c1c1c;
+  --color-raised: #242321;
+  --color-field: #171717;
 
   /* Bordes y texto. */
-  --color-line: #293951;
-  --color-line-soft: #213047;
-  --color-line-strong: #3a4b68;
-  --color-fg: #f3f5ff;
-  --color-fg-soft: #c6cde6;
-  --color-muted: #a7b6ce;
-  --color-subtle: #7f91ac;
+  --color-line: #35312e;
+  --color-line-soft: #2a2826;
+  --color-line-strong: #51483f;
+  --color-fg: #f5f5f5;
+  --color-fg-soft: #d7d0c9;
+  --color-muted: #b0aaa4;
+  --color-subtle: #938b83;
 
-  /* Marca y estados. */
-  --color-accent: #9b91ff;
-  --color-accent-strong: #af9bff;
-  --color-violet: #8b73ff;
+  /* PeruGuitar: acciones cálidas. `violet` queda como alias del naranja de marca (el morado era del diseño anterior). */
+  --color-brand: #e0662f;
+  --color-brand-strong: #c4521f;
+  --color-accent: #f1c7a1;
+  --color-accent-strong: #f1c7a1;
+  --color-violet: #e0662f;
   --color-blue: #448fff;
-  --color-link: #86aaff;
+  --color-link: #f1c7a1;
   --color-success: #28dfa1;
   --color-warn: #ffb359;
   --color-gold: #ffc156;
@@ -83,18 +85,18 @@
     to { opacity: 0; transform: scale(1); }
   }
   @keyframes beat {
-    0%, 20% { background: var(--color-violet); color: #fff; box-shadow: 0 0 20px #8c6cff55; }
+    0%, 20% { background: var(--color-violet); color: #fff; box-shadow: 0 0 20px #e0662f55; }
     25%, 100% { background: transparent; color: #ac9cce; box-shadow: none; }
   }
 }
 
-/* Deslizador con el tramo recorrido en violeta: define --fill (0–100%) en línea. */
+/* Deslizador con el tramo recorrido en naranja: define --fill (0–100%) en línea. */
 @utility range-brand {
   appearance: none;
   height: 0.5rem;
   min-height: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #5860ff, var(--color-violet)) 0 / var(--fill, 0%) 100% no-repeat, var(--color-line);
+  background: linear-gradient(90deg, var(--color-brand-strong), var(--color-violet)) 0 / var(--fill, 0%) 100% no-repeat, var(--color-line);
   cursor: pointer;
   &::-webkit-slider-thumb {
     appearance: none;
@@ -116,16 +118,16 @@
 
 /* Degradados de marca: se reutilizan en botones, barras y estados activos. */
 @utility bg-brand {
-  background-image: linear-gradient(110deg, #369dff, #5860ff 55%, #7336ef);
+  background-image: linear-gradient(110deg, var(--color-brand), var(--color-brand-strong));
 }
 @utility bg-brand-soft {
-  background-image: linear-gradient(100deg, #483cb15c, #27397940);
+  background-image: linear-gradient(100deg, #e0662f24, #e0662f0c);
 }
 @utility bg-card {
-  background-image: linear-gradient(135deg, var(--color-raised), #101a28);
+  background-image: linear-gradient(135deg, var(--color-raised), var(--color-surface));
 }
 @utility text-brand {
-  background-image: linear-gradient(105deg, #53a6ff, #8b55ff 80%);
+  background-image: linear-gradient(105deg, #f1c7a1, #e0662f 80%);
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -138,7 +140,7 @@
   }
   body {
     min-height: 100dvh;
-    background: radial-gradient(ellipse at 65% 0, #15243b55, transparent 52%), var(--color-canvas);
+    background: radial-gradient(ellipse at 65% 0, #e0662f0a, transparent 52%), var(--color-canvas);
     color: var(--color-fg);
     font-size: var(--text-base);
     -webkit-tap-highlight-color: transparent;
@@ -168,10 +170,10 @@
   input:not([type="range"]), select, textarea {
     max-width: 100%;
     border: 1px solid var(--color-line-strong);
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     background: var(--color-field);
     padding: 0.6875rem 0.75rem;
-    color: #d5def3;
+    color: #f5f5f5;
   }
   select {
     min-height: 2.6875rem;

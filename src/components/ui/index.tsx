@@ -42,13 +42,13 @@ export function Tags({ items, className }: { items: ReactNode[]; className?: str
 /* ── Superficies ─────────────────────────────────────────── */
 
 export function Card({ as: Tag = "section", className, children }: { as?: "section" | "div" | "aside" | "form"; className?: string; children: ReactNode }) {
-  return <Tag className={cn("rounded-xl border border-line bg-card p-5.5 xl:p-6.5", className)}>{children}</Tag>;
+  return <Tag className={cn("rounded-2xl border border-line bg-card p-5.5 xl:p-6.5", className)}>{children}</Tag>;
 }
 
 export function TipCard({ symbol = "✦", title, children }: { symbol?: string; title: string; children: ReactNode }) {
-  return <div className="rounded-lg border border-violet/30 bg-linear-145 from-[#30234733] to-[#111e2e] p-6">
+  return <div className="rounded-lg border border-brand/25 bg-linear-145 from-[#e0662f18] to-surface p-6">
     <span className="text-3xl text-accent-strong">{symbol}</span>
-    <h3 className="my-2 text-[#d1c5eb]">{title}</h3>
+    <h3 className="my-2 text-accent">{title}</h3>
     <p className="text-sm leading-loose text-fg-soft">{children}</p>
   </div>;
 }
@@ -58,7 +58,7 @@ export function IconTile({ children, className }: { children: ReactNode; classNa
 }
 
 export function Avatar({ children, size = "md", className }: { children: ReactNode; size?: "sm" | "md"; className?: string }) {
-  return <span className={cn("grid shrink-0 place-items-center rounded-[10px] border border-[#678bda80] bg-linear-135 from-[#254b7b] to-[#4c2c77] font-black text-[#e3e8ff]", size === "sm" ? "size-8 text-sm" : "size-9.5", className)}>{children}</span>;
+  return <span className={cn("grid shrink-0 place-items-center rounded-[10px] border border-brand/30 bg-brand-soft font-black text-accent", size === "sm" ? "size-8 text-sm" : "size-9.5", className)}>{children}</span>;
 }
 
 export function EmptyState({ icon, title, children, action }: { icon: ReactNode; title: string; children: ReactNode; action?: ReactNode }) {
@@ -75,7 +75,7 @@ export function EmptyState({ icon, title, children, action }: { icon: ReactNode;
 /** Barra de progreso. `value` va de 0 a 100. */
 export function Meter({ value, label, tone = "brand", size = "sm", className }: { value: number; label: string; tone?: "brand" | "success" | "blue"; size?: "sm" | "md" | "lg"; className?: string }) {
   const pct = Math.max(0, Math.min(100, value));
-  return <div className={cn("w-full overflow-hidden rounded-full bg-[#27314a]", { sm: "h-1.5", md: "h-2.5", lg: "h-3" }[size], className)} role="progressbar" aria-label={label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+  return <div className={cn("w-full overflow-hidden rounded-full bg-line", { sm: "h-1.5", md: "h-2.5", lg: "h-3" }[size], className)} role="progressbar" aria-label={label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
     <div className={cn("h-full rounded-full transition-[width] duration-500 ease-out", { brand: "bg-linear-90 from-blue to-[#8350ff]", success: "bg-success", blue: "bg-blue" }[tone])} style={{ width: `${pct}%` }} />
   </div>;
 }
@@ -92,7 +92,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
       const selected = itemValue === value;
       return <button key={itemValue} type="button" aria-pressed={selected} onClick={() => onChange(itemValue)} className={cn(
         "inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-bold transition xs:px-4 xs:text-sm",
-        selected ? "border-violet/40 bg-linear-110 from-[#4565ed22] to-[#8855fa22] text-[#cab9ff]" : "border-transparent text-[#abbcd9] hover:bg-white/5",
+        selected ? "border-brand/40 bg-brand-soft text-accent" : "border-transparent text-muted hover:bg-white/5",
       )}>{itemLabel ?? itemValue}</button>;
     })}
   </div>;
@@ -156,11 +156,11 @@ const statTones = {
 };
 
 export function Stat({ icon, value, label, detail, tone = "orange", stacked }: { icon: ReactNode; value: string; label: string; detail?: string; tone?: keyof typeof statTones; stacked?: boolean }) {
-  return <div className={cn("flex items-start gap-2 rounded-lg border border-line bg-radial-[at_top_left] to-[#121c2a] to-70% px-3 py-4 text-left xs:gap-3 xs:px-4 xl:gap-3.5 xl:py-5", statTones[tone], stacked && "max-lg:block")}>
+  return <div className={cn("flex items-start gap-2 rounded-lg border border-line bg-radial-[at_top_left] to-surface to-70% px-3 py-4 text-left xs:gap-3 xs:px-4 xl:gap-3.5 xl:py-5", statTones[tone], stacked && "max-lg:block")}>
     <span className={cn("flex pt-0.5 drop-shadow-[0_0_8px_currentColor] [&_svg]:size-4.5 xs:[&_svg]:size-5", stacked && "max-lg:mb-3")}>{icon}</span>
     <div>
       <strong className="text-lg leading-tight font-black tracking-tight xs:text-xl xl:text-[1.375rem]">{value}</strong>
-      <p className="my-1.5 text-2xs text-[#b5c4df] md:text-xs xl:text-2xs">{label}</p>
+      <p className="my-1.5 text-2xs text-muted md:text-xs xl:text-2xs">{label}</p>
       {detail && <small className="text-4xs text-success xs:text-3xs">{detail}</small>}
     </div>
   </div>;
