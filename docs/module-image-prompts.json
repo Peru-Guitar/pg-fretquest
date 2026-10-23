@@ -1,0 +1,46 @@
+{
+  "tool": "image_gen (built-in)",
+  "direction": "Cinematic photographic illustration; landscape 1536x1024; navy background; violet rim light and cyan highlights; centered subject safe for wide card crop; realistic electric guitar; no text, logo, watermark, border or collage.",
+  "images": [
+    {
+      "file": "public/images/modules/recommendations.webp",
+      "subject": "An electric guitar resting on a dark practice desk beside a guitar pick, a compact metronome and an open blank practice notebook. Still life, no hands."
+    },
+    {
+      "file": "public/images/modules/fingering.webp",
+      "subject": "Close-up of a guitarist playing an electric guitar, left hand with four anatomically correct fingers poised across neighboring frets and right hand picking visible in background, coordination."
+    },
+    {
+      "file": "public/images/modules/alternate-picking.webp",
+      "subject": "Macro close-up of a right hand holding a small guitar pick correctly between thumb and index, attacking one electric guitar string above the pickup. Two subtle short light trails suggest down and up strokes."
+    },
+    {
+      "file": "public/images/modules/scales.webp",
+      "subject": "Perspective along an electric guitar fretboard, six straight strings and polished frets, small violet and cyan light points arranged in a tasteful ascending scale pattern over several frets. No hands."
+    },
+    {
+      "file": "public/images/modules/economy-picking.webp",
+      "subject": "Close-up of a right hand holding a guitar pick above adjacent electric guitar strings. A short continuous cyan light arc flows across three neighboring strings to suggest efficient picking."
+    },
+    {
+      "file": "public/images/modules/bending-vibrato.webp",
+      "subject": "Macro close-up of a guitarist left hand performing a string bend on an electric guitar upper fretboard, ring finger pushes a string sideways with supporting fingers, subtle violet wave of light."
+    },
+    {
+      "file": "public/images/modules/legato.webp",
+      "subject": "Close-up of left hand playing electric guitar fretboard with index finger pressing one fret and ring finger poised for hammer-on on same string, subtle flowing violet light trail connecting the two fret positions."
+    },
+    {
+      "file": "public/images/modules/sweep-picking.webp",
+      "subject": "Close-up of a right hand holding a guitar pick sweeping across electric guitar strings, a single diagonal cyan light ribbon crosses the strings, fretboard and arpeggio finger shape softly visible behind."
+    },
+    {
+      "file": "public/images/modules/tapping.webp",
+      "subject": "Close-up of two hands on electric guitar fretboard, right hand index finger taps an upper fret while left hand frets lower notes. Natural anatomically correct hands, unmistakable two-hand tapping technique."
+    },
+    {
+      "file": "public/images/modules/licks-phrasing.webp",
+      "subject": "Cinematic close-up of guitarist torso and both hands performing an expressive electric guitar solo, dark unbranded electric guitar, elegant violet and cyan flowing light phrase follows the neck. No face."
+    }
+  ]
+}
