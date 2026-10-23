@@ -1,3 +1,4 @@
+import { practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -1456,9 +1457,9 @@ const moduleFixtures: TechniqueModule[] = [
   },
   {
     "id": "licks-phrasing",
-    "title": "Licks y fraseo",
-    "category": "FRASEO",
-    "description": "Aplica todas las técnicas en licks musicales y construye un fraseo propio.",
+    "title": "Estudios",
+    "category": "ESTUDIOS",
+    "description": "Combina digitación, picking, ligados, arpegios y saltos de cuerda en estudios musicales de distintos estilos.",
     "art": "riff",
     "level": "Avanzado",
     "icon": "09",
@@ -1468,148 +1469,7 @@ const moduleFixtures: TechniqueModule[] = [
       "Fraseo",
       "Musicalidad"
     ],
-    "lessons": [
-      {
-        "id": "licks-phrasing-01",
-        "title": "Licks pentatónicos",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "base",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-02",
-        "title": "Licks con modos",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-03",
-        "title": "Licks con alternate y economy picking",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-04",
-        "title": "Licks con legato",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-05",
-        "title": "Licks con sweep picking",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-06",
-        "title": "Licks con tapping",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "licks-phrasing-07",
-        "title": "Combinaciones técnicas y fraseo musical",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      }
-    ]
+    "lessons": []
   }
 ];
 const DIFFICULTY_ORDER: Difficulty[] = ['base', 'intermedio', 'avanzado'];
@@ -1621,18 +1481,38 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
  const [low, high] = [present[0], present[present.length - 1]];
  return low === high ? DIFFICULTY_LABEL[low] : `${DIFFICULTY_LABEL[low]} – ${DIFFICULTY_LABEL[high]}`;
 }
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
+ id: 'licks-phrasing-yngwie-01', title: 'Lick 1 · Yngwie Malmsteen',
+ type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 80,
+ description: '', goal: '', variants: [], tempo: { min: 40, max: 160 }, rounds: 1,
+});
+// Sustituye las fichas provisionales del módulo por sus estudios completos.
+for (const module of moduleFixtures) {
+ if (module.id === 'fingering') module.completedLessons = 0;
+ for (const lesson of module.lessons) {
+  const study = practiceStudies[lesson.id];
+  if (lesson.type !== 'practice' || !study) continue;
+  lesson.description = study.description;
+  lesson.goal = study.goal;
+  lesson.variants = study.variants.map(variant => variant.title);
+  lesson.tempo = { min: 40, max: lesson.difficulty === 'base' ? 100 : lesson.difficulty === 'intermedio' ? 120 : 160 };
+  delete lesson.record;
+ }
+}
 export const courses = moduleFixtures.map(module => ({
  ...module,
+ available: ['recommendations', 'fingering', 'licks-phrasing'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,
  lessonCount: module.lessons.length,
  duration: `${module.lessons.reduce((total, lesson) => total + lesson.minutes, 0)} min`,
  progress: Math.round(module.completedLessons / module.lessons.length * 100),
-}));
+// Orden estable: disponibles primero; cada grupo conserva el orden del temario.
+})).sort((a, b) => Number(b.available) - Number(a.available));
 export const routines = [
  { id: 'warmup', title: 'Calentar', duration: '5–10 min', description: 'Patrones sencillos, movimientos cómodos y pausas breves.', moduleId: 'fingering' },
- { id: 'maintenance', title: 'Mantenerme en forma', duration: '15–20 min', description: 'Combina coordinación, púa, ritmo y limpieza.', moduleId: 'economy-picking' },
+ { id: 'maintenance', title: 'Mantenerme en forma', duration: '15–20 min', description: 'Trabaja digitación, coordinación y limpieza.', moduleId: 'fingering' },
  { id: 'focus', title: 'Mejorar una técnica', duration: 'A tu medida', description: 'Elige una habilidad y concentra tu sesión.', moduleId: 'legato' },
 ];
 

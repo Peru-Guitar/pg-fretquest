@@ -7,7 +7,7 @@ export function ReadToggle({ done, onToggle, size = 'sm' }: { done: boolean; onT
     return <button type="button" role="checkbox" aria-checked={done} onClick={onToggle} className={cn(
         'inline-flex shrink-0 items-center gap-2 rounded-md border font-bold transition',
         size === 'sm' ? 'min-h-9 px-2.5 text-2xs' : 'min-h-11 px-4 text-sm',
-        done ? 'border-success/40 bg-success/10 text-success' : 'border-line-strong text-muted hover:border-violet/60 hover:text-fg',
+        done ? 'border-success/40 bg-success/10 text-success' : 'border-line-strong text-muted hover:border-accent/60 hover:text-fg',
     )}>
         <span className={cn('grid size-4 place-items-center rounded border', done ? 'border-success bg-success text-canvas' : 'border-current')}>{done && <Check size={12} strokeWidth={3}/>}</span>
         <span className={cn(size === 'sm' && 'sr-only md:not-sr-only')}>{done ? 'Leída' : 'Marcar como leída'}</span>

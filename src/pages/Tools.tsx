@@ -15,22 +15,22 @@ import { GUITAR_STRINGS, centsBetween, nearestString } from '@/lib/audio/pitch';
  * `image`: cabecera de la tarjeta en public/images/tools/, con el mismo alto que CourseCard (h-44).
  */
 const tools: { to: string; icon: ReactNode; title: string; text: string; category: string; image?: string }[] = [
-    { to: '/tools/tuner', icon: <Music2/>, title: 'Afinador', category: 'AFINACIÓN', text: 'Afinación estándar E A D G B e a 440 Hz. Afina antes de cada sesión.', image: '/images/tools/tuner.png' },
-    { to: '/tools/metronome', icon: <Gauge/>, title: 'Metrónomo', category: 'RITMO', text: 'Un pulso constante de 30 a 300 BPM para entrenar con control.', image: '/images/tools/metronome.png' },
+    { to: '/tools/tuner', icon: <Music2/>, title: 'Afinador', category: 'AFINACIÓN', text: 'Afinación estándar E A D G B e a 440 Hz. Afina antes de cada sesión.', image: '/images/tools/tuner.webp' },
+    { to: '/tools/metronome', icon: <Gauge/>, title: 'Metrónomo', category: 'RITMO', text: 'Un pulso constante de 30 a 300 BPM para entrenar con control.', image: '/images/tools/metronome.webp' },
 ];
 
 export default function ToolsPage() {
     return <>
         <PageTitle eyebrow="PREPARA TU SONIDO" title="Herramientas" text="Utilidades para preparar y acompañar cada práctica."/>
         <div className="grid gap-4 xs:grid-cols-2 lg:grid-cols-3 xl:gap-5">
-            {tools.map(tool => <Link key={tool.to} to={tool.to} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-[#8369d6] hover:shadow-[0_6px_25px_#5d38bf16]">
-                <div className="relative h-44 overflow-hidden bg-[#101827]">
+            {tools.map(tool => <Link key={tool.to} to={tool.to} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_6px_25px_#e0662f16]">
+                <div className="relative h-44 overflow-hidden bg-sunken">
                     {tool.image
-                        ? <img src={tool.image} alt="" width={2172} height={724} loading="lazy" decoding="async" className="h-44 w-full object-cover"/>
-                        : <span aria-hidden="true" className="absolute inset-0 grid place-items-center text-[#bb9bff] opacity-60 [&_svg]:size-10 [&_svg]:stroke-1">{tool.icon}</span>}
+                        ? <img src={tool.image} alt="" width={1440} height={480} loading="lazy" decoding="async" className="h-44 w-full object-cover"/>
+                        : <span aria-hidden="true" className="absolute inset-0 grid place-items-center text-[#f1c7a1] opacity-60 [&_svg]:size-10 [&_svg]:stroke-1">{tool.icon}</span>}
                 </div>
                 <div className="p-4 xl:p-5">
-                    <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-[#b693fb]">{tool.category}</p>
+                    <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{tool.category}</p>
                     <h2 className="mt-2 mb-2 text-base md:text-[1.0625rem] xl:text-lg">{tool.title}</h2>
                     <p className="text-xs leading-relaxed text-muted xs:min-h-9.5">{tool.text}</p>
                     <div className="mt-4.5 flex items-center justify-between border-t border-line pt-3 text-xs text-accent"><span>Abrir herramienta</span><ArrowRight size={16}/></div>
@@ -48,7 +48,7 @@ function ToolLayout({ title, text, tip, children, badge = 'DEMOSTRACIÓN VISUAL 
             {badge && <Badge>{badge}</Badge>}
             {children}
         </Card>
-        <div className="mx-auto my-6 flex max-w-162 items-center gap-4 text-sm leading-relaxed text-[#aab6d0]">
+        <div className="mx-auto my-6 flex max-w-162 items-center gap-4 text-sm leading-relaxed text-muted">
             <span className="text-2xl text-accent">✦</span><p>{tip}</p>
         </div>
     </>;
@@ -56,7 +56,7 @@ function ToolLayout({ title, text, tip, children, badge = 'DEMOSTRACIÓN VISUAL 
 
 /** Botón tipo chip compartido por el compás del metrónomo y las cuerdas del afinador. */
 const chip = (active: boolean) => cn('min-h-12 min-w-14 rounded-full border px-4 font-bold transition md:min-w-18',
-    active ? 'border-violet/70 bg-brand text-white shadow-[0_4px_20px_#6254ff55]' : 'border-line-strong text-fg-soft hover:border-violet/60');
+    active ? 'border-brand bg-brand text-white' : 'border-line-strong text-fg-soft hover:border-accent/60');
 
 const IN_TUNE_CENTS = 5;
 const MIC_ERRORS: Partial<Record<string, string>> = {
@@ -65,7 +65,7 @@ const MIC_ERRORS: Partial<Record<string, string>> = {
     error: 'No se encontró ningún micrófono disponible.',
 };
 
-/** Escala de ±50 cents: rayas cada 2,5 cents, mayores cada 10; graves en violeta, agudos en turquesa. */
+/** Escala de ±50 cents: rayas cada 2,5 cents, mayores cada 10; graves en naranja, agudos en turquesa. */
 function CentsScale({ cents, inTune }: { cents: number | null; inTune: boolean }) {
     const ticks = Array.from({ length: 41 }, (_, i) => -50 + i * 2.5);
     return <div className="flex items-center gap-3 md:gap-5">
@@ -73,7 +73,7 @@ function CentsScale({ cents, inTune }: { cents: number | null; inTune: boolean }
         <div className="relative h-16 flex-1">
             <div className="absolute inset-0 mask-[linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
                 {ticks.map(c => c !== 0 && <i key={c} style={{ left: `${50 + c}%` }} className={cn('absolute top-1/2 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
-                    c % 10 === 0 ? 'h-10' : 'h-4', c < 0 ? 'bg-[#8b5cff]' : 'bg-[#2fd6d0]', c % 10 === 0 ? 'opacity-90' : 'opacity-50')}/>)}
+                    c % 10 === 0 ? 'h-10' : 'h-4', c < 0 ? 'bg-[#e0662f]' : 'bg-[#2fd6d0]', c % 10 === 0 ? 'opacity-90' : 'opacity-50')}/>)}
             </div>
             <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-sm font-bold text-success">0</span>
             <span aria-hidden="true" style={{ left: `${50 + Math.max(-50, Math.min(50, cents ?? 0))}%` }}
@@ -99,14 +99,14 @@ export function TunerPage() {
         <h2 className="text-[1.375rem] md:text-3xl">Encuentra tu punto de equilibrio.</h2>
         <div className="relative mx-auto mt-16 max-w-4xl"><CentsScale cents={cents} inTune={inTune}/></div>
 
-        <p className="mt-12 bg-linear-to-b from-[#a68bff] to-[#6d3cff] bg-clip-text text-[7rem] leading-none font-black text-transparent md:text-[9rem]">{note}</p>
+        <p className="mt-12 bg-linear-to-b from-[#f0894f] to-[#c4521f] bg-clip-text text-[7rem] leading-none font-black text-transparent md:text-[9rem]">{note}</p>
         <p aria-live="polite" className={cn('mt-2 min-h-6 font-bold tabular-nums', inTune ? 'text-success' : cents === null ? 'text-muted' : 'text-gold')}>
             {cents === null ? status : inTune ? '✓ En tono' : `${cents > 0 ? '+' : ''}${cents} cents · ${status.toLowerCase()}`}
         </p>
 
         <div className="mt-12 flex flex-wrap justify-center gap-2 md:gap-3">{GUITAR_STRINGS.map((string, index) =>
             <button key={index} aria-label={`Cuerda ${6 - index}, nota ${string.name}`} aria-pressed={locked === index} onClick={() => setLocked(locked === index ? null : index)}
-                className={cn(chip(target === index), 'text-xl', locked === index && 'ring-2 ring-[#aa91ff]/70 ring-offset-2 ring-offset-surface')}>
+                className={cn(chip(target === index), 'text-xl', locked === index && 'ring-2 ring-[#f0894f]/70 ring-offset-2 ring-offset-surface')}>
                 {string.name}
             </button>)}
         </div>
@@ -141,15 +141,15 @@ function TempoRing({ tempo, pulse, accent }: { tempo: number; pulse: number; acc
     const angle = fraction * 2 * Math.PI - Math.PI / 2;
     return <div className="relative grid size-52 shrink-0 place-items-center md:size-64">
         <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
-            <defs><linearGradient id="tempo-arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#5860ff"/><stop offset="1" stopColor="#aa91ff"/></linearGradient></defs>
+            <defs><linearGradient id="tempo-arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c4521f"/><stop offset="1" stopColor="#f0894f"/></linearGradient></defs>
             <circle cx="100" cy="100" r={r} fill="#0d1424" stroke="var(--color-line)" strokeWidth="5"/>
             <circle cx="100" cy="100" r={r - 12} fill="none" stroke="#ffffff08" strokeWidth="1"/>
             <circle cx="100" cy="100" r={r} fill="none" stroke="url(#tempo-arc)" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={`${fraction * length} ${length}`} transform="rotate(-90 100 100)" className="drop-shadow-[0_0_6px_#8b73ff80]"/>
-            <circle cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)} r="6" fill="#8b73ff" stroke="#c9bcff" strokeWidth="1.5"/>
+                strokeDasharray={`${fraction * length} ${length}`} transform="rotate(-90 100 100)" className="drop-shadow-[0_0_6px_#e0662f80]"/>
+            <circle cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)} r="6" fill="#e0662f" stroke="#f6c9a8" strokeWidth="1.5"/>
         </svg>
-        {pulse > 0 && <span key={pulse} aria-hidden="true" className={cn('absolute inset-0 animate-tick rounded-full border-2', accent ? 'border-[#aa91ff] shadow-[0_0_40px_#8b73ff90]' : 'border-[#7b6baf] shadow-[0_0_24px_#8b73ff50]')}/>}
-        <strong className="relative text-center text-[4.5rem] leading-none font-black text-[#e6e2ff] md:text-[5.5rem]">{tempo}<small className="mt-3 block text-sm font-semibold tracking-[0.3em] text-fg-soft">BPM</small></strong>
+        {pulse > 0 && <span key={pulse} aria-hidden="true" className={cn('absolute inset-0 animate-tick rounded-full border-2', accent ? 'border-[#f0894f] shadow-[0_0_40px_#e0662f90]' : 'border-[#a9775a] shadow-[0_0_24px_#e0662f50]')}/>}
+        <strong className="relative text-center text-[4.5rem] leading-none font-black text-fg md:text-[5.5rem]">{tempo}<small className="mt-3 block text-sm font-semibold tracking-[0.3em] text-fg-soft">BPM</small></strong>
     </div>;
 }
 
@@ -186,7 +186,7 @@ export function MetronomePage() {
         setPlaying(true);
     };
     const changeTempo = (value: number) => setTempo(Math.max(MIN_BPM, Math.min(MAX_BPM, value)));
-    const stepButton = 'grid size-14 shrink-0 place-items-center rounded-xl border border-line-strong bg-raised/60 text-fg shadow-[0_6px_20px_#0006] transition hover:border-violet/60 md:size-18 [&_svg]:size-7';
+    const stepButton = 'grid size-14 shrink-0 place-items-center rounded-xl border border-line-strong bg-raised/60 text-fg shadow-[0_6px_20px_#0006] transition hover:border-accent/60 md:size-18 [&_svg]:size-7';
 
     return <ToolLayout badge={null} title="Metrónomo" text="Un ritmo constante. Una nota a la vez." tip="Empieza más lento de lo que crees necesario. La precisión construye velocidad.">
         <h2 className="text-[1.375rem] md:text-3xl">Encuentra tu pulso.</h2>

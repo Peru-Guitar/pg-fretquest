@@ -25,20 +25,20 @@ export function prepare(): Promise<void> {
   loading ??= (async () => {
     tone = await import("tone");
     await tone.start();
-    const reverb = new tone.Reverb({ decay: 1.4, wet: 0.15 }).toDestination();
     sampler = new tone.Sampler({
       urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n}.mp3`])),
       baseUrl: SAMPLE_BASE,
-      release: 1,
+      // Sin reverb y con release corto: cada nota se apaga antes de la siguiente, sin eco.
+      release: 0.25,
       volume: -4,
-    }).connect(reverb);
+    }).toDestination();
     // Clic corto del metrónomo: «tick» agudo en el tiempo, «tac» más grave en el contratiempo.
     clicker = new tone.Synth({
       oscillator: { type: "square" },
       envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 },
       volume: -16,
     }).toDestination();
-    await Promise.all([reverb.ready, tone.loaded()]);
+    await tone.loaded();
   })().catch((error) => {
     loading = null; // permite reintentar
     throw error;
@@ -60,7 +60,7 @@ export function playAt(string: number, fret: number, durationSec: number, time: 
   if (!sampler) return;
   const open = OPEN_STRINGS[string - 1];
   if (open === undefined) return;
-  sampler.triggerAttackRelease(tone.Frequency(open + fret, "midi").toFrequency(), Math.max(0.15, durationSec), time, 0.85);
+  sampler.triggerAttackRelease(tone.Frequency(open + fret, "midi").toFrequency(), Math.max(0.05, durationSec), time, 0.85);
 }
 
 /** Clic del metrónomo: `accent` = tick (tiempo), si no tac (contratiempo). */
