@@ -459,7 +459,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     'licks-phrasing-becker-01': {
         description: 'Un estudio de Jason Becker: arpegios en sweep sobre tres cuerdas, con pull-off en la primera cuerda, que suben por el mástil y bajan al final hasta la sexta cuerda.',
         notation: 'Semicorcheas: un compás por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
-        goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición.',
+        goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición. Es un reto: lo difícil es mantener la precisión y que todas las notas suenen parejas, sobre todo en los cambios de posición. Ve practicándolo a tu ritmo, empieza con un BPM bajo y súbelo solo cuando cada compás salga limpio.',
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada figura empieza en la primera cuerda con un pull-off (p) y barre la segunda y la tercera: la púa cae hacia abajo al bajar a las cuerdas graves y hacia arriba al volver.',
