@@ -1,14 +1,14 @@
 'use client';
 
-import { lessonIdFromSlug, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
+import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useParams, useSearchParams } from '@/lib/router';
+import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, routines, tempos, type PracticeLesson } from '@/data/questMock';
-import { ArrowRight, BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
-import { BackLink, Badge, Button, Caption, Card, Eyebrow, PageTitle, Tags } from '@/components/ui';
+import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
+import { BackLink, Badge, Button, Caption, Card, Eyebrow, LinkButton, PageTitle, Tags } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { buttonClass } from '@/components/ui/buttonClass';
 import { prepare } from '@/lib/audio/guitar';
@@ -45,7 +45,7 @@ const PATTERN: PatternNote[] = [
     ...[6, 5, 4, 3, 2, 1].flatMap(string => [5, 6, 7, 8].map(fret => ({ string, fret }))),
     ...[1, 2, 3, 4, 5, 6].flatMap(string => [8, 7, 6, 5].map(fret => ({ string, fret }))),
 ];
-type Mode = 'goal' | 'practice';
+export type Mode = 'goal' | 'practice';
 type Phase = 'idle' | 'loading' | 'countdown' | 'playing';
 
 const modeInfo = {
@@ -73,13 +73,13 @@ function Remaining({ until }: { until: number }) {
     return <span className="flex items-baseline gap-1.5 font-mono text-lg font-bold text-accent tabular-nums" aria-label="Tiempo restante de la sesión">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}<small className="font-sans text-2xs font-normal text-muted">restantes</small></span>;
 }
 
-export default function PracticePage() {
+export default function PracticePage({ mode }: { mode: Mode }) {
     // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
     const { modulo, leccion } = useParams();
     const exerciseId = moduleIdFromSlug(modulo);
     const course = courses.find(item => item.id === exerciseId);
     if (course && !course.available) return <ComingSoon title={course.title}/>;
-    return <PracticeView key={`${modulo}:${leccion}`} />;
+    return <PracticeView key={`${modulo}:${leccion}`} mode={mode}/>;
 }
 
 /** Botón de inicio con una línea que explica qué pasará al pulsarlo. */
@@ -93,7 +93,7 @@ function StartChoice({ primary, onClick, icon, label, description }: { primary: 
     </button>;
 }
 
-function PracticeView() {
+function PracticeView({ mode }: { mode: Mode }) {
     const { modulo, leccion } = useParams();
     const exerciseId = moduleIdFromSlug(modulo);
     const [searchParams] = useSearchParams();
@@ -101,6 +101,8 @@ function PracticeView() {
     const hasPractice = (course: typeof courses[number]) => course.lessons.some(lesson => lesson.type === 'practice');
     const activeModule = courses.find(course => course.id === exerciseId && hasPractice(course)) ?? courses.find(course => course.id === 'fingering')!;
     const routine = routines.find(item => item.id === searchParams.get("rutina"));
+    // La rutina o la sesión del plan siguen al pasar entre Objetivo y Ejercicio.
+    const search = searchParams.toString();
     const practiceLessons = activeModule.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice');
     const activeExercise = practiceLessons.find(lesson => lesson.id === lessonIdFromSlug(activeModule.id, leccion)) ?? practiceLessons[0];
     const study = practiceStudies[activeExercise.id];
@@ -131,7 +133,6 @@ function PracticeView() {
         offset += section.pattern.length;
     }
     const tabColumns = { gridTemplateColumns: `25px repeat(${perRow}, 1fr)` };
-    const [mode, setMode] = useState<Mode>(() => searchParams.has('sesion') ? 'practice' : 'goal');
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
     const [round, setRound] = useState(1);
@@ -222,14 +223,13 @@ function PracticeView() {
         runRound(1, listen);
     };
     const stop = () => { cancelRef.current?.(); cancelRef.current = null; setStep(-1); setRound(1); setPhase('idle'); };
-    const changeMode = (value: Mode) => { stop(); setMode(value); };
     // Detener a mano corta la sesión: ese día no cuenta (no pasa nada). Salir de la página, en cambio, no la borra.
     const userStop = () => { if (sessionRef.current) setPlanSession(null); stop(); };
     const goNext = () => {
         if (!nextInPlan || !sessionRef.current) return;
         stop();
         setPlanSession({ ...sessionRef.current, autostart: true });
-        navigate(practiceUrl(nextInPlan.moduleId, nextInPlan.lesson.id, 'sesion'));
+        navigate(exerciseUrl(nextInPlan.moduleId, nextInPlan.lesson.id, 'sesion'));
     };
 
     const stopRef = useRef(stop);
@@ -328,10 +328,10 @@ function PracticeView() {
             {(['goal', 'practice'] as const).map(value => {
                 const { label, icon: Icon } = modeInfo[value];
                 const selected = mode === value;
-                return <button key={value} type="button" role="tab" aria-selected={selected} disabled={active} onClick={() => changeMode(value)} className={cn(
-                    '-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition disabled:opacity-50',
+                return <Link key={value} to={value === 'goal' ? lessonUrl(activeModule.id, activeExercise.id) : exerciseUrl(activeModule.id, activeExercise.id, search)} role="tab" aria-selected={selected} aria-disabled={active} className={cn(
+                    '-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     selected ? 'border-violet text-accent-strong' : 'border-transparent text-muted hover:text-fg',
-                )}><Icon size={16}/>{label}</button>;
+                )}><Icon size={16}/>{label}</Link>;
             })}
         </div>
         <Caption className="mt-3 mb-6">{modeInfo[mode].text}</Caption>
@@ -357,7 +357,7 @@ function PracticeView() {
                     <p className="mt-2 text-xs leading-relaxed text-muted xs:mt-0">{text}</p>
                 </div>)}
             </div>
-            <Button className="mt-8" onClick={() => setMode('practice')}>Ir al ejercicio <ArrowRight size={16}/></Button>
+            <LinkButton className="mt-8" to={exerciseUrl(activeModule.id, activeExercise.id, search)}>Ir al ejercicio</LinkButton>
         </Card>}
 
         {mode !== 'goal' && <div className="flex flex-col gap-6">
@@ -395,7 +395,7 @@ function PracticeView() {
                     </div>
                 </div>, document.body)}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
-                <p className="border-t border-line px-5 py-3 text-xs text-muted"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Afinación estándar E A D G B e · Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
+                <p className="border-t border-line px-5 py-3 text-xs text-muted"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
                 <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
                     <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${FIGURES[figure].label}.`}>
                         {bars.map((bar, barIndex) => <div key={barIndex} ref={element => { rowRefs.current[barIndex] = element; }}>

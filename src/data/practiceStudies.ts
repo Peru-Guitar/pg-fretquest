@@ -63,7 +63,7 @@ const ARPEGGIOS = {
     bm7b5: tab(`5:2-5\n4:3\n3:2-4\n2:3\n1:1-5-1\n2:3\n3:4-2\n4:3\n5:5-2-5`),
     bm7b5d: tab(`5:5-8\n4:7\n3:4-7\n2:6\n1:5-7-5\n2:6\n3:7-4\n4:7\n5:8-5-8`),
 };
-const ARPEGGIO_TEXT = 'Afinación estándar E A D G B e · Escala mayor de Do · Corcheas: dos compases de 4/4 por acorde · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
+const ARPEGGIO_TEXT = 'Escala mayor de Do · Corcheas: dos compases de 4/4 por acorde · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
 
 const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
@@ -207,7 +207,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'licks-phrasing-yngwie-01': {
         description: 'Un lick neoclásico de Yngwie Malmsteen en Si menor: pequeños grupos de notas que recorren varios acordes y terminan con un arpegio en sweep.',
-        notation: 'Afinación estándar E A D G B e · Metrónomo en negras · Púa alternada continua',
+        notation: 'Metrónomo en negras · Púa alternada continua',
         goal: 'Que todas las notas suenen parejas y sin acentos raros mientras la mano cambia de cuerda y de posición.',
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
