@@ -6,8 +6,8 @@
  * Así las vistas no cambian al pasar a Next.
  */
 import NextLink from 'next/link';
-import { useParams as useNextParams, usePathname, useRouter, useSearchParams as useNextSearchParams } from 'next/navigation';
-import { useEffect, useSyncExternalStore, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { useParams as useNextParams, usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useSyncExternalStore, type AnchorHTMLAttributes, type ReactNode } from 'react';
 
 type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { to: string; children?: ReactNode };
 
@@ -45,10 +45,20 @@ export function useParams<T extends Record<string, string | undefined> = Record<
     return (useNextParams() ?? {}) as T;
 }
 
-/** Igual que en React Router: devuelve una tupla; aquí solo de lectura. */
+/**
+ * Parámetros de la URL (?sesion, ?rutina, ?repetir), como en React Router: tupla y solo de lectura.
+ * Se leen de `window.location` y no con el `useSearchParams` de Next, que en la exportación estática dejaría
+ * la página vacía en el HTML (sin contenido para Google ni para la vista previa). En el HTML valen vacíos.
+ */
 export function useSearchParams() {
-    return [useNextSearchParams()] as const;
+    usePathname(); // vuelve a leer la URL en cada navegación
+    const search = useSyncExternalStore(subscribeToHistory, () => window.location.search, () => '');
+    return [useMemo(() => new URLSearchParams(search), [search])] as const;
 }
+const subscribeToHistory = (listener: () => void) => {
+    window.addEventListener('popstate', listener);
+    return () => window.removeEventListener('popstate', listener);
+};
 
 export function useNavigate() {
     const router = useRouter();

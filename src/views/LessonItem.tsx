@@ -1,16 +1,14 @@
 'use client';
 
-import { ROUTES, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
+import { ROUTES, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, Navigate, useParams } from '@/lib/router';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAccount } from '@/lib/account';
 import { setReadingDone, useProgress } from '@/lib/progressDb';
 import { timeAgo } from '@/lib/timeAgo';
-import { BackLink, Button, Card, LinkButton, PageTitle } from '@/components/ui';
-import { DifficultySignal } from '@/components/quest/DifficultySignal';
-import { ArtistCredit } from '@/components/quest/ArtistCredit';
-import { practiceStudies } from '@/data/practiceStudies';
+import { BackLink, Button, Card, PageTitle } from '@/components/ui';
+import PracticePage from '@/views/Practice';
 import { courses, } from '@/data/questMock';
 
 /** Ruta única de lección: las de lectura se muestran aquí; las de práctica abren la sala de práctica. */
@@ -25,28 +23,8 @@ export default function LessonItemPage() {
     if (!course || index < 0) return <Navigate to={ROUTES.exercises} replace/>;
     if (!course.available) return <ComingSoon title={course.title}/>;
     const lesson = course.lessons[index];
-    // Ejercicio: su contenido en la página (SEO y vista previa al compartir) y el botón para practicarlo.
-    if (lesson.type === 'practice') {
-        const study = practiceStudies[lesson.id];
-        return <>
-            <BackLink to={moduleUrl(course.id)}>{course.title}</BackLink>
-            <PageTitle eyebrow={`${course.category} · EJERCICIO`} title={lesson.title} text={lesson.description}>
-                <DifficultySignal difficulty={lesson.difficulty} className="h-5"/>
-            </PageTitle>
-            {lesson.artist && <ArtistCredit id={lesson.artist}/>}
-            <Card as="section" className="md:px-10 md:py-9 xl:px-12">
-                <h2 className="mb-2 text-lg md:text-xl">Objetivo</h2>
-                <p className="text-base leading-[1.8] text-fg-soft">{lesson.goal}</p>
-                {study && <>
-                    <h2 className="mt-8 mb-3 text-lg md:text-xl">Cómo tocarlo</h2>
-                    <ol className="list-decimal space-y-2 pl-5 text-base leading-relaxed text-fg-soft">{study.steps.map(step => <li key={step}>{step}</li>)}</ol>
-                    <h2 className="mt-8 mb-3 text-lg md:text-xl">Errores comunes</h2>
-                    <ul className="list-disc space-y-2 pl-5 text-base leading-relaxed text-fg-soft">{study.mistakes.map(mistake => <li key={mistake}>{mistake}</li>)}</ul>
-                </>}
-                <LinkButton to={practiceUrl(course.id, lesson.id)} className="mt-9">Empezar a practicar</LinkButton>
-            </Card>
-        </>;
-    }
+    // Ejercicio: la página es directamente su sala de práctica (objetivo, tablatura, metrónomo).
+    if (lesson.type === 'practice') return <PracticePage/>;
     const readAt = progress.readings[lesson.id]?.readAt?.toMillis();
     const prev = course.lessons[index - 1];
     const next = course.lessons[index + 1];

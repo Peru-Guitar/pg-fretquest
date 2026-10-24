@@ -56,7 +56,7 @@ for (const course of courses) {
 export const moduleSlug = (moduleId: string) => MODULE_SLUGS[moduleId] ?? moduleId;
 export const lessonSlug = (lessonId: string) => lessonSlugs.get(lessonId) ?? lessonId;
 
-/** Del slug de la URL al id interno (acepta también el id, por los enlaces antiguos). */
+/** Del slug de la URL al id interno. */
 export const moduleIdFromSlug = (slug: string | undefined) => {
   if (!slug) return undefined;
   const decoded = decodeURIComponent(slug);
@@ -71,25 +71,11 @@ export const lessonIdFromSlug = (moduleId: string | undefined, slug: string | un
 export const moduleUrl = (moduleId: string) => `${ROUTES.exercises}/${moduleSlug(moduleId)}`;
 /** Página de una lección: lectura o ficha del ejercicio. */
 export const lessonUrl = (moduleId: string, lessonId: string) => `${moduleUrl(moduleId)}/${lessonSlug(lessonId)}`;
-/** Sala de práctica de un ejercicio (o del módulo, si no se indica). `query`: «sesion», «rutina=warmup»… */
-export const practiceUrl = (moduleId: string, lessonId?: string, query?: string) =>
-  `/practicar/${moduleSlug(moduleId)}${lessonId ? `/${lessonSlug(lessonId)}` : ""}${query ? `?${query}` : ""}`;
-
-/** Ruta antigua (inglés, con ?exercise=) → ruta nueva. Para los enlaces ya compartidos. */
-export function legacyRoute(pathname: string, search: URLSearchParams): string | null {
-  const parts = pathname.split("/").filter(Boolean);
-  const simple: Record<string, string> = {
-    train: ROUTES.exercises, exercises: ROUTES.exercises, learn: ROUTES.exercises, plan: ROUTES.plan, account: ROUTES.account,
-    community: ROUTES.community, login: ROUTES.login, guide: ROUTES.guide, about: ROUTES.about, tools: ROUTES.tools,
-  };
-  if (parts[0] === "tools" && parts[1] === "tuner") return ROUTES.tuner;
-  if (parts[0] === "tools" && parts[1] === "metronome") return ROUTES.metronome;
-  if (parts.length === 1 && simple[parts[0]]) return simple[parts[0]];
-  if (parts[0] === "modules" && parts[1]) return parts[2] ? lessonUrl(parts[1], parts[2]) : moduleUrl(parts[1]);
-  if (parts[0] === "practice" && parts[1]) {
-    const exercise = search.get("exercise") ?? search.get("lesson") ?? undefined;
-    const query = [search.has("session") ? "sesion" : "", search.get("routine") ? `rutina=${search.get("routine")}` : ""].filter(Boolean).join("&");
-    return practiceUrl(parts[1], exercise, query || undefined);
-  }
-  return null;
-}
+/**
+ * La página de un ejercicio ES su sala de práctica (misma URL que `lessonUrl`). Sin ejercicio, el primero del módulo.
+ * `query`: «sesion», «rutina=warmup»…
+ */
+export const practiceUrl = (moduleId: string, lessonId?: string, query?: string) => {
+  const lesson = lessonId ?? courses.find(course => course.id === moduleId)?.lessons.find(item => item.type === "practice")?.id;
+  return `${lesson ? lessonUrl(moduleId, lesson) : moduleUrl(moduleId)}${query ? `?${query}` : ""}`;
+};
