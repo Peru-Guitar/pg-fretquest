@@ -107,7 +107,7 @@ function PracticeView() {
     })();
     useEffect(() => { setLastExercise({ moduleId: activeModule.id, exerciseId: activeExercise.id }); }, [activeModule.id, activeExercise.id]);
     const pattern = study?.pattern ?? PATTERN;
-    const picks = pickingOf(pattern, study?.picking);
+    const picks = pickingOf(pattern, study?.picking, study?.legatoFrom);
     const figure = study?.figure ?? 'negras';
     const perRow = study?.perRow ?? 16;
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
