@@ -458,7 +458,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'licks-phrasing-becker-01': {
         description: 'Un estudio de Jason Becker: arpegios en sweep sobre tres cuerdas, con pull-off en la primera cuerda, que suben por el mástil y bajan al final hasta la sexta cuerda.',
-        notation: 'Corcheas: una figura por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
+        notation: 'Semicorcheas: un compás por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
         goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición.',
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
@@ -471,10 +471,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         criterion: 'Toca todo el estudio sin pausas y con las notas al mismo volumen. Sube el BPM solo cuando el sweep no suene a acorde.',
         // Algunos compases traen 17 o 18 notas: con 18 por fila cada compás entra entero en una fila.
         perRow: 18,
-        figure: 'corcheas',
+        figure: 'semicorcheas',
         picking: 'legato',
         artist: 'jason-becker',
-        bpm: 50,
+        bpm: 80,
         ...withSections(beckerBars.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-vinnie-01': {
