@@ -122,7 +122,8 @@ function PracticeView({ mode }: { mode: Mode }) {
             bars.push({ notes: section.pattern.slice(at, at + perRow), start: offset + at, part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
         offset += section.pattern.length;
     }
-    const tabColumns = { gridTemplateColumns: `25px repeat(${perRow}, 1fr)` };
+    // Cada fila reparte sus notas en todo el ancho: una fila corta (fin de parte) no deja hueco a la derecha.
+    const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
     const [round, setRound] = useState(1);
@@ -390,8 +391,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                                 <span aria-hidden className="h-px flex-1 bg-line-strong"/>
                             </h3>}
                             {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off (según el estudio, `pickingOf`). */}
-                            <div style={tabColumns} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} title={stroke.title} className={cn(stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}</span>; })}</div>
-                            {strings.map((name, row) => <div key={name} style={tabColumns} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
+                            <div style={tabColumns(bar.notes.length)} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} title={stroke.title} className={cn(stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}</span>; })}</div>
+                            {strings.map((name, row) => <div key={name} style={tabColumns(bar.notes.length)} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
                                 <b className="text-sm text-muted">{name}</b>
                                 {bar.notes.map((note, index) => {
                                     const noteIndex = bar.start + index;
