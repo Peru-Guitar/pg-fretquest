@@ -5,8 +5,8 @@ type LessonBase = { id: string; title: string; minutes: number; xp: number };
 export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; points: { title: string; text: string }[]; note?: string };
 /** Lección de práctica: patrón para tocar en la sala de práctica. */
 /** Dificultad propia de cada ejercicio (factor de puntos). */
-export type Difficulty = 'base' | 'intermedio' | 'avanzado';
-export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; description: string; goal: string; variants: string[]; tempo: { min: number; max: number }; rounds: number; record?: number };
+export type Difficulty = 'base' | 'intermedio' | 'avanzado' | 'experto';
+export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
 export type Lesson = ReadingLesson | PracticeLesson;
 export type TechniqueModule = { id: string; title: string; category: string; description: string; art: string; level: string; icon: string; completedLessons: number; skills: string[]; lessons: Lesson[] };
 // Visual fixtures for guitarists with basic playing experience. No teaching, evaluation or persistence.
@@ -220,18 +220,13 @@ const moduleFixtures: TechniqueModule[] = [
     "lessons": [
       {
         "id": "fingering-01",
-        "title": "Independencia de dedos",
+        "title": "Soltura de dedos",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -241,18 +236,13 @@ const moduleFixtures: TechniqueModule[] = [
       },
       {
         "id": "fingering-02",
-        "title": "Ejercicios cromáticos",
+        "title": "Fuerza en postura inversa",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -262,18 +252,13 @@ const moduleFixtures: TechniqueModule[] = [
       },
       {
         "id": "fingering-03",
-        "title": "Patrones de cuatro dedos",
+        "title": "Independencia de dedos",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -282,18 +267,13 @@ const moduleFixtures: TechniqueModule[] = [
       },
       {
         "id": "fingering-04",
-        "title": "Coordinación de ambas manos",
+        "title": "Independencia en postura inversa",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -302,38 +282,13 @@ const moduleFixtures: TechniqueModule[] = [
       },
       {
         "id": "fingering-05",
-        "title": "Sincronización y cambios de cuerda",
+        "title": "Apertura de la mano",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
         "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
-        "tempo": {
-          "min": 40,
-          "max": 160
-        },
-        "rounds": 1
-      },
-      {
-        "id": "fingering-06",
-        "title": "Ejercicios de velocidad y precisión",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
+        "description": "",
+        "goal": "",
         "tempo": {
           "min": 40,
           "max": 160
@@ -366,11 +321,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -387,11 +337,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -407,11 +352,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -427,11 +367,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -447,12 +382,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Una cuerda",
-          "Dos cuerdas",
-          "Tres cuerdas",
-          "Conexión entre posiciones"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -468,11 +397,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -505,11 +429,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -525,11 +444,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -545,11 +459,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -565,11 +474,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -585,11 +489,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -605,11 +504,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -625,11 +519,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -662,15 +551,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -686,15 +566,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -710,15 +581,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -734,15 +596,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -758,15 +611,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -782,15 +626,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -806,15 +641,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5",
-          "Posición 6",
-          "Posición 7"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -830,13 +656,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -852,13 +671,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Posición 1",
-          "Posición 2",
-          "Posición 3",
-          "Posición 4",
-          "Posición 5"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -891,11 +703,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -911,11 +718,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -931,11 +733,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -951,11 +748,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -971,11 +763,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -991,11 +778,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -1011,11 +793,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 80
@@ -1048,11 +825,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1068,11 +840,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1088,11 +855,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1108,11 +870,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1128,11 +885,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1148,11 +900,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1185,11 +932,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1205,11 +947,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1225,11 +962,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1245,11 +977,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1265,11 +992,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1285,11 +1007,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1305,11 +1022,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 120
@@ -1342,11 +1054,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1362,11 +1069,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "base",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1382,11 +1084,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1402,11 +1099,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "intermedio",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1422,11 +1114,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1442,11 +1129,6 @@ const moduleFixtures: TechniqueModule[] = [
         "difficulty": "avanzado",
         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
         "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "variants": [
-          "Patrón base",
-          "Variante 2",
-          "Variante 3"
-        ],
         "tempo": {
           "min": 40,
           "max": 160
@@ -1472,8 +1154,8 @@ const moduleFixtures: TechniqueModule[] = [
     "lessons": []
   }
 ];
-const DIFFICULTY_ORDER: Difficulty[] = ['base', 'intermedio', 'avanzado'];
-const DIFFICULTY_LABEL: Record<Difficulty, string> = { base: 'Base', intermedio: 'Intermedio', avanzado: 'Avanzado' };
+const DIFFICULTY_ORDER: Difficulty[] = ['base', 'intermedio', 'avanzado', 'experto'];
+const DIFFICULTY_LABEL: Record<Difficulty, string> = { base: 'Básico', intermedio: 'Intermedio', avanzado: 'Avanzado', experto: 'Experto' };
 /** Rango de dificultad del módulo según sus ejercicios (p. ej. «Base – Avanzado»); las lecturas no tienen dificultad. */
 function difficultyRange(lessons: Lesson[], fallback: string) {
  const present = DIFFICULTY_ORDER.filter(level => lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level));
@@ -1482,9 +1164,9 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
  return low === high ? DIFFICULTY_LABEL[low] : `${DIFFICULTY_LABEL[low]} – ${DIFFICULTY_LABEL[high]}`;
 }
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
- id: 'licks-phrasing-yngwie-01', title: 'Lick 1 · Yngwie Malmsteen',
+ id: 'licks-phrasing-yngwie-01', title: 'Sextillos neoclásicos en Si menor',
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 80,
- description: '', goal: '', variants: [], tempo: { min: 40, max: 160 }, rounds: 1,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
 // Sustituye las fichas provisionales del módulo por sus estudios completos.
 for (const module of moduleFixtures) {
@@ -1494,7 +1176,7 @@ for (const module of moduleFixtures) {
   if (lesson.type !== 'practice' || !study) continue;
   lesson.description = study.description;
   lesson.goal = study.goal;
-  lesson.variants = study.variants.map(variant => variant.title);
+  lesson.artist = study.artist;
   lesson.tempo = { min: 40, max: lesson.difficulty === 'base' ? 100 : lesson.difficulty === 'intermedio' ? 120 : 160 };
   delete lesson.record;
  }
@@ -1506,7 +1188,6 @@ export const courses = moduleFixtures.map(module => ({
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,
  lessonCount: module.lessons.length,
- duration: `${module.lessons.reduce((total, lesson) => total + lesson.minutes, 0)} min`,
  progress: Math.round(module.completedLessons / module.lessons.length * 100),
 // Orden estable: disponibles primero; cada grupo conserva el orden del temario.
 })).sort((a, b) => Number(b.available) - Number(a.available));

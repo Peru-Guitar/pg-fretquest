@@ -12,7 +12,7 @@ export default function LearnPage() {
         return searchable.includes(normalizedQuery);
     });
     return <>
-        <PageTitle eyebrow="ELIGE QUÉ ENTRENAR" title="¿Qué quieres mejorar?" text="Digitación y coordinación y Estudios están disponibles para revisión. Los demás módulos de práctica estarán disponibles próximamente."/>
+        <PageTitle eyebrow="EJERCICIOS" title="¿Qué quieres mejorar?" text="Digitación y coordinación y Estudios están disponibles para revisión. Los demás módulos de práctica estarán disponibles próximamente."/>
         <div className="mb-7 flex justify-end">
             <label className="flex w-full items-center gap-2 rounded-md border border-line-strong bg-[#121d2f] px-3 text-[#9da7ae] lg:w-auto">
                 <Search size={17}/>

@@ -12,6 +12,11 @@ import PracticePage from "@/pages/Practice";
 import LearnPage from "@/pages/Learn";
 import ToolsPage, { MetronomePage, TunerPage } from "@/pages/Tools";
 import AboutPage from "@/pages/About";
+import LoginPage from "@/pages/Login";
+import PlanPage from "@/pages/Plan";
+import CommunityPage from "@/pages/Community";
+import AccountPage from "@/pages/Account";
+import GuidePage from "@/pages/Guide";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -31,6 +36,11 @@ createRoot(document.getElementById("root")!).render(
           <Route path="tools/tuner" element={<TunerPage />} />
           <Route path="tools/metronome" element={<MetronomePage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="plan" element={<PlanPage />} />
+          <Route path="community" element={<CommunityPage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="guide" element={<GuidePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

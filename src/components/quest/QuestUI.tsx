@@ -45,7 +45,7 @@ export function CourseCard({ course }: { course: typeof courses[number] }) {
             <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{course.category}</p>
             <h3 className="mt-2 mb-2 text-base md:text-[1.0625rem] xl:text-lg">{course.title}</h3>
             <p className="text-xs leading-relaxed text-muted xs:min-h-9.5">{course.description}</p>
-            <div className="mt-4.5 mb-3.5 text-3xs text-muted">{course.lessonCount} lecciones · {course.duration}</div>
+            <div className="mt-4.5 mb-3.5 text-3xs text-muted">{course.lessonCount} lecciones</div>
             {course.available && <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-accent"><span>Ver lecciones</span><ArrowRight size={16}/></div>}
         </div>
     </>;

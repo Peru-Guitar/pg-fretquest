@@ -12,9 +12,10 @@ export const POINTS_PER_ROUND = 5;
 export const DAILY_PLAN_BONUS = 25;
 
 export const DIFFICULTY: Record<Difficulty, { label: string; factor: number }> = {
-  base: { label: "Base", factor: 1 },
+  base: { label: "Básico", factor: 1 },
   intermedio: { label: "Intermedio", factor: 1.25 },
   avanzado: { label: "Avanzado", factor: 1.5 },
+  experto: { label: "Experto", factor: 1.75 },
 };
 
 /** Factor por velocidad (BPM de las velocidades fijas). */
