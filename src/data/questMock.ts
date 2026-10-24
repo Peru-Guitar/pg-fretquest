@@ -1086,6 +1086,11 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
+ id: 'licks-phrasing-gilbert-01', title: 'Arpegios en string skipping',
+ type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 60,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
 // Escalas y patrones: los siete modos de C mayor, agrupados en «Escala mayor» y «Escala menor» (ver SCALE_MODES).
 Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
  description: 'Los modos de la escala mayor de C, agrupados en mayores (C jónico, F lidio, G mixolidio) y menores (A eólico, D dórico, E frigio, B locrio). Conoce sus posiciones en el mástil y mejora el picking.',
@@ -1099,6 +1104,7 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
  'licks-phrasing-yngwie-02': '2026-10-24',
+ 'licks-phrasing-gilbert-01': '2026-10-24',
  'licks-phrasing-vinnie-01': '2026-10-24',
  'licks-phrasing-becker-01': '2026-10-24',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-0${position}`, '2026-10-23'])),

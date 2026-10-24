@@ -290,6 +290,18 @@ const BECKER_BARS = [
     '15/1 12/1 14/2 15/3 12/3 14/4 16/5 13/5 10/5 12/6 9/6 12/6 10/5 13/5 11/4 9/3 12/3 11/2',
 ];
 const beckerBars = BECKER_BARS.map(bar => bar.split(' ').map(note => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
+// Lick de Paul Gilbert en string skipping: cada figura sube un arpegio en la tercera cuerda, salta a la primera
+// y vuelve, ligando las notas de cada cuerda, y baja de posición en cada figura (traste 10 → 2). La última termina en 5/1 sostenida con una negra.
+const GILBERT_FIGURES = [
+    '10/3 12/3 14/3 10/1 14/3 12/3 10/3 12/3 14/3 10/1 12/1 13/1 12/1 13/1 12/1 10/1 14/3 10/3',
+    '9/3 10/3 12/3 8/1 12/3 10/3 9/3 10/3 12/3 8/1 10/1 12/1 10/1 12/1 10/1 8/1 12/3 9/3',
+    '7/3 9/3 10/3 7/1 10/3 9/3 7/3 9/3 10/3 7/1 8/1 10/1 8/1 10/1 8/1 7/1 10/3 7/3',
+    '5/3 7/3 9/3 5/1 9/3 7/3 5/3 7/3 9/3 5/1 7/1 8/1 7/1 8/1 7/1 5/1 9/3 5/3',
+    '4/3 5/3 7/3 4/1 7/3 5/3 4/3 5/3 7/3 4/1 5/1 7/1 5/1 7/1 5/1 4/1 7/3 4/3',
+    '2/3 4/3 5/3 1/1 5/3 4/3 2/3 4/3 5/3 1/1 3/1 5/1',
+];
+const gilbertFigures = GILBERT_FIGURES.map(figure => figure.split(' ').map((note): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
+gilbertFigures[gilbertFigures.length - 1].at(-1)!.beats = 1;
 
 export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(SCALE_MODES.map(mode => [mode.id, modeStudy(mode)])),
@@ -476,6 +488,26 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         artist: 'jason-becker',
         bpm: 80,
         ...withSections(beckerBars.map(pattern => ({ title: '', pattern }))),
+    },
+    'licks-phrasing-gilbert-01': {
+        description: 'Un lick de Paul Gilbert en string skipping: arpegios en la tercera cuerda que saltan a la primera, en seis figuras que bajan de posición desde el traste 10 hasta el 1, con hammer-ons y pull-offs en cada cuerda.',
+        notation: 'Sextillos: una figura por fila · String skipping: púa al cambiar de cuerda, ligado en la misma cuerda',
+        goal: 'Saltar de la tercera a la primera cuerda sin que suene la segunda y sin perder el pulso. Es un reto: lo difícil es mantener la precisión en cada salto y que todas las notas suenen parejas. Ve practicándolo a tu ritmo, empieza con un BPM bajo y súbelo solo cuando cada figura salga limpia.',
+        steps: [
+            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
+            'Cada figura sube tres notas en la tercera cuerda, salta a la primera y vuelve: la púa pasa por encima de la segunda cuerda sin tocarla.',
+            'Púa solo al cambiar de cuerda; en la misma cuerda las notas van ligadas: hammer-on (h) al subir de traste y pull-off (p) al bajar.',
+            'Practica cada figura por separado y luego únelas: en cada una la mano baja a la posición siguiente.',
+            'La última figura resuelve en 5/1 con una negra: déjala sonar.',
+        ],
+        mistakes: ['Que suene la segunda cuerda al saltar: apágala con la palma o con los dedos libres.', 'Atacar con púa las notas ligadas: los hammer-ons y pull-offs deben sonar igual de fuerte.', 'Mover todo el brazo en cada salto en vez de solo la muñeca.', 'Acelerar en la primera cuerda y frenar al volver a la tercera.'],
+        criterion: 'Toca las seis figuras sin pausas y sin que suene la segunda cuerda. Sube el BPM cuando los saltos suenen igual que las notas en la misma cuerda.',
+        perRow: 18,
+        figure: 'sextillos',
+        picking: 'legato',
+        artist: 'paul-gilbert',
+        bpm: 60,
+        ...withSections(gilbertFigures.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-vinnie-01': {
         description: 'Un lick de Vinnie Moore en Am: la escala baja con tres notas por cuerda, cambia de posición a mitad de camino y resuelve en A.',
