@@ -1163,6 +1163,21 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
  const [low, high] = [present[0], present[present.length - 1]];
  return low === high ? DIFFICULTY_LABEL[low] : `${DIFFICULTY_LABEL[low]} – ${DIFFICULTY_LABEL[high]}`;
 }
+// Módulo de arpegios (guía «No más arpegios aburridos»): va justo después de Digitación.
+const arpeggioLesson = (id: string, title: string, difficulty: Difficulty = 'intermedio'): Lesson => ({ id, title, type: 'practice', difficulty, minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 });
+moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingering') + 1, 0, {
+ id: 'arpeggios', title: 'Arpegios', category: 'ARPEGIOS',
+ description: 'Arpegios de séptima sobre la escala mayor de Do: el color de cada grado, de Maj7 a semidisminuido.',
+ art: 'sweep', level: 'Intermedio', icon: '10', completedLessons: 0,
+ skills: ['Armonía', 'Cruce de cuerdas', 'Fórmulas'],
+ lessons: [
+  arpeggioLesson('arpeggios-maj7', 'Arpegios Maj7'),
+  arpeggioLesson('arpeggios-m7', 'Arpegios m7'),
+  arpeggioLesson('arpeggios-dominant', 'Arpegio de dominante'),
+  arpeggioLesson('arpeggios-half-diminished', 'Arpegio semidisminuido'),
+  arpeggioLesson('arpeggios-harmonized', 'La escala armonizada', 'avanzado'),
+ ],
+});
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  id: 'licks-phrasing-yngwie-01', title: 'Sextillos neoclásicos en Si menor',
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 80,
@@ -1183,7 +1198,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'fingering', 'licks-phrasing'].includes(module.id),
+ available: ['recommendations', 'fingering', 'arpeggios', 'licks-phrasing'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,
