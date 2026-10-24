@@ -909,128 +909,6 @@ const moduleFixtures: TechniqueModule[] = [
     ]
   },
   {
-    "id": "sweep-picking",
-    "title": "Sweep picking y arpegios",
-    "category": "ARPEGIOS",
-    "description": "Barre las cuerdas en un solo movimiento para tocar arpegios limpios en tres y cinco cuerdas.",
-    "art": "chord",
-    "level": "Avanzado",
-    "icon": "07",
-    "completedLessons": 0,
-    "skills": [
-      "Barrido",
-      "Arpegios",
-      "Muting"
-    ],
-    "lessons": [
-      {
-        "id": "sweep-picking-01",
-        "title": "Introducción al sweep picking",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "base",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-02",
-        "title": "Arpegios de tres cuerdas",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "base",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-03",
-        "title": "Arpegios de cinco cuerdas",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-04",
-        "title": "Arpegios mayores y menores",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "intermedio",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-05",
-        "title": "Arpegios de séptima",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-06",
-        "title": "Inversiones",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      },
-      {
-        "id": "sweep-picking-07",
-        "title": "Combinaciones de sweep picking y legato",
-        "minutes": 5,
-        "xp": 50,
-        "type": "practice",
-        "difficulty": "avanzado",
-        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-        "goal": "Lorem ipsum dolor sit amet: ejecuta el patrón con limpieza, regularidad y movimientos pequeños.",
-        "tempo": {
-          "min": 40,
-          "max": 120
-        },
-        "rounds": 1
-      }
-    ]
-  },
-  {
     "id": "tapping",
     "title": "Tapping",
     "category": "TAPPING",
@@ -1166,7 +1044,7 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
 // Módulo de arpegios (guía «No más arpegios aburridos»): va justo después de Digitación.
 const arpeggioLesson = (id: string, title: string, difficulty: Difficulty = 'intermedio', category = 'Arpegios de séptima'): Lesson => ({ id, title, category, type: 'practice', difficulty, minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 });
 moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingering') + 1, 0, {
- id: 'arpeggios', title: 'Arpegios', category: 'ARPEGIOS',
+ id: 'arpeggios', title: 'Sweep picking y arpegios', category: 'ARPEGIOS',
  description: 'Arpegios de séptima y modales sobre la escala mayor de C: el color de cada grado y la tensión que define cada modo.',
  art: 'sweep', level: 'Intermedio', icon: '10', completedLessons: 0,
  skills: ['Armonía', 'Cruce de cuerdas', 'Fórmulas'],
