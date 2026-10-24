@@ -2,7 +2,7 @@
 
 import { lessonIdFromSlug, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
-import { FIGURES, pickingOf, practiceStudies } from '@/data/practiceStudies';
+import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from '@/lib/router';
@@ -21,6 +21,8 @@ import { DifficultySignal } from '@/components/quest/DifficultySignal';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
+/** Marca de ataque sobre cada nota de la tablatura. */
+const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Púa hacia abajo' }, up: { mark: 'V', title: 'Púa hacia arriba' }, hammer: { mark: 'h', title: 'Hammer-on (sin púa)', legato: true }, pull: { mark: 'p', title: 'Pull-off (sin púa)', legato: true } };
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
@@ -387,8 +389,8 @@ function PracticeView() {
                                 <span className="font-serif text-lg font-normal text-fg italic">{bar.part.title}</span>
                                 <span aria-hidden className="h-px flex-1 bg-line-strong"/>
                             </h3>}
-                            {/* Dirección de púa: ⊓ abajo · V arriba; alternada o económica según el estudio (`pickingOf`). */}
-                            <div style={tabColumns} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const down = picks[bar.start + index]; return <span key={index} title={down ? 'Púa hacia abajo' : 'Púa hacia arriba'}>{down ? '⊓' : 'V'}</span>; })}</div>
+                            {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off (según el estudio, `pickingOf`). */}
+                            <div style={tabColumns} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} title={stroke.title} className={cn(stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}</span>; })}</div>
                             {strings.map((name, row) => <div key={name} style={tabColumns} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
                                 <b className="text-sm text-muted">{name}</b>
                                 {bar.notes.map((note, index) => {

@@ -23,10 +23,11 @@ export type PracticeStudy = {
     /** Figura rítmica de la tablatura: cuántas notas suenan por pulso. */
     figure: Figure;
     /**
-     * Técnica de púa que marca la tablatura: `alternate` (por defecto) alterna ⊓ V nota a nota;
-     * `economy` (arpegios) baja ⊓ al pasar a una cuerda más aguda, sube V al pasar a una más grave y alterna en la misma cuerda.
+     * Cómo se atacan las notas: `alternate` (por defecto) alterna ⊓ V nota a nota;
+     * `legato` (arpegios) usa púa solo al cambiar de cuerda (⊓ hacia la aguda, V hacia la grave)
+     * y liga en la misma cuerda: hammer-on al subir de traste, pull-off al bajar.
      */
-    picking?: 'alternate' | 'economy';
+    picking?: 'alternate' | 'legato';
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
     artist?: string;
     /** Velocidad inicial del metrónomo (100 BPM por defecto). */
@@ -60,7 +61,7 @@ const ARPEGGIOS = {
     bm7b5: tab(`5:2-5\n4:3\n3:2-4\n2:3\n1:1-5-1\n2:3\n3:4-2\n4:3\n5:5-2-5`),
     bm7b5d: tab(`5:5-8\n4:7\n3:4-7\n2:6\n1:5-7-5\n2:6\n3:7-4\n4:7\n5:8-5-8`),
 };
-const ARPEGGIO_TEXT = 'Afinación estándar E A D G B e · Escala mayor de Do · Corcheas: dos compases de 4/4 por acorde · Púa económica: ⊓ al subir de cuerda, V al bajar';
+const ARPEGGIO_TEXT = 'Afinación estándar E A D G B e · Escala mayor de Do · Corcheas: dos compases de 4/4 por acorde · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
 
 const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
@@ -136,7 +137,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 80,
         perRow: 16,
-        picking: 'economy',
+        picking: 'legato',
         ...withSections([{ title: 'CMaj7 · grado I', pattern: ARPEGGIOS.cmaj7 }, { title: 'FMaj7 · grado IV', pattern: ARPEGGIOS.fmaj7 }]),
     },
     'arpeggios-m7': {
@@ -149,7 +150,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 80,
         perRow: 16,
-        picking: 'economy',
+        picking: 'legato',
         ...withSections([{ title: 'Dm7 · grado II', pattern: ARPEGGIOS.dm7 }, { title: 'Em7 · grado III', pattern: ARPEGGIOS.em7 }, { title: 'Am7 · grado VI', pattern: ARPEGGIOS.am7 }]),
     },
     'arpeggios-dominant': {
@@ -162,7 +163,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 80,
         perRow: 16,
-        picking: 'economy',
+        picking: 'legato',
         ...withSections([{ title: 'G7 · grado V', pattern: ARPEGGIOS.g7 }, { title: 'G7 · variación', pattern: ARPEGGIOS.g7ii }]),
     },
     'arpeggios-half-diminished': {
@@ -175,7 +176,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 80,
         perRow: 16,
-        picking: 'economy',
+        picking: 'legato',
         ...withSections([{ title: 'Bm7b5 · grado VII', pattern: ARPEGGIOS.bm7b5 }, { title: 'Bm7b5/D · primera inversión', pattern: ARPEGGIOS.bm7b5d }]),
     },
     'arpeggios-harmonized': {
@@ -188,7 +189,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 70,
         perRow: 16,
-        picking: 'economy',
+        picking: 'legato',
         ...withSections([
             { title: 'CMaj7 · I', pattern: ARPEGGIOS.cmaj7 },
             { title: 'Dm7 · II', pattern: ARPEGGIOS.dm7 },
@@ -222,18 +223,19 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
 };
 
-/** Dirección de púa de cada nota del patrón: true = ⊓ (abajo), false = V (arriba). */
-export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate'): boolean[] {
-    if (picking === 'alternate') return pattern.map((_, index) => index % 2 === 0);
-    // Púa económica: al cambiar de cuerda la púa sigue la dirección del movimiento (barrido);
-    // en la misma cuerda, alterna. Cuerda 1 = la más aguda.
-    const down: boolean[] = [];
-    pattern.forEach((note, index) => {
+/** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h) o pull-off (p). */
+export type Stroke = 'down' | 'up' | 'hammer' | 'pull';
+
+/** Ataque de cada nota del patrón según la técnica del estudio. */
+export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate'): Stroke[] {
+    if (picking === 'alternate') return pattern.map((_, index) => index % 2 === 0 ? 'down' : 'up');
+    // Arpegios: la púa solo ataca al cambiar de cuerda, siguiendo el movimiento (⊓ hacia la aguda, V hacia la grave);
+    // en la misma cuerda se liga: hammer-on si el traste sube, pull-off si baja. Cuerda 1 = la más aguda.
+    return pattern.map((note, index) => {
         const previous = pattern[index - 1];
-        if (!previous) down.push(true);
-        else if (note.string < previous.string) down.push(true);
-        else if (note.string > previous.string) down.push(false);
-        else down.push(!down[index - 1]);
+        if (!previous) return 'down';
+        if (note.string < previous.string) return 'down';
+        if (note.string > previous.string) return 'up';
+        return note.fret > previous.fret ? 'hammer' : 'pull';
     });
-    return down;
 }
