@@ -1104,11 +1104,6 @@ export const courses = moduleFixtures.map(module => ({
  progress: Math.round(module.completedLessons / module.lessons.length * 100),
 // Orden estable: disponibles primero; cada grupo conserva el orden del temario.
 })).sort((a, b) => Number(b.available) - Number(a.available));
-export const routines = [
- { id: 'warmup', title: 'Calentar', duration: '5–10 min', description: 'Patrones sencillos, movimientos cómodos y pausas breves.', moduleId: 'fingering' },
- { id: 'maintenance', title: 'Mantenerme en forma', duration: '15–20 min', description: 'Trabaja digitación, coordinación y limpieza.', moduleId: 'fingering' },
- { id: 'focus', title: 'Mejorar una técnica', duration: 'A tu medida', description: 'Elige una habilidad y concentra tu sesión.', moduleId: 'legato' },
-];
 
 
 /** Velocidades fijas (BPM con notas en corcheas). Los nombres describen la exigencia del ejercicio, no el nivel de quien toca. Cada lección acota su rango con `tempo.min` / `tempo.max`. */

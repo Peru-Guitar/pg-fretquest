@@ -76,7 +76,7 @@ export const moduleUrl = (moduleId: string) => `${ROUTES.exercises}/${moduleSlug
 export const lessonUrl = (moduleId: string, lessonId: string) => `${moduleUrl(moduleId)}/${lessonSlug(lessonId)}`;
 /**
  * La página de un ejercicio ES su sala de práctica (misma URL que `lessonUrl`). Sin ejercicio, el primero del módulo.
- * `query`: «sesion», «rutina=warmup»…
+ * `query`: «sesion»…
  */
 export const practiceUrl = (moduleId: string, lessonId?: string, query?: string) => {
   const lesson = lessonId ?? courses.find(course => course.id === moduleId)?.lessons.find(item => item.type === "practice")?.id;

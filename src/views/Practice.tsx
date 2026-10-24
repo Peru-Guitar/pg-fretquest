@@ -6,9 +6,9 @@ import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practic
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
-import { courses, routines, tempos, type PracticeLesson } from '@/data/questMock';
+import { courses, tempos, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
-import { BackLink, Badge, Button, Caption, Card, Eyebrow, LinkButton, PageTitle, Tags } from '@/components/ui';
+import { BackLink, Button, Caption, Card, Eyebrow, LinkButton, PageTitle } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
@@ -89,8 +89,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     const navigate = useNavigate();
     const hasPractice = (course: typeof courses[number]) => course.lessons.some(lesson => lesson.type === 'practice');
     const activeModule = courses.find(course => course.id === exerciseId && hasPractice(course)) ?? courses.find(course => course.id === 'fingering')!;
-    const routine = routines.find(item => item.id === searchParams.get("rutina"));
-    // La rutina o la sesión del plan siguen al pasar entre Objetivo y Ejercicio.
+    // La sesión del plan sigue al pasar entre Objetivo y Ejercicio.
     const search = searchParams.toString();
     const practiceLessons = activeModule.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice');
     const activeExercise = practiceLessons.find(lesson => lesson.id === lessonIdFromSlug(activeModule.id, leccion)) ?? practiceLessons[0];
@@ -309,9 +308,7 @@ function PracticeView({ mode }: { mode: Mode }) {
 
     return <>
         <BackLink to={moduleUrl(activeModule.id)}>{activeModule.title}</BackLink>
-        <PageTitle eyebrow={activeModule.category} title={activeExercise.title} text={activeExercise.description}>
-            {routine && <Badge>RUTINA · {routine.title.toUpperCase()}</Badge>}
-        </PageTitle>
+        <PageTitle eyebrow={activeModule.category} title={activeExercise.title} text={activeExercise.description}/>
         {activeExercise.artist && <ArtistCredit id={activeExercise.artist}/>}
 
 
@@ -329,11 +326,6 @@ function PracticeView({ mode }: { mode: Mode }) {
 
 
         {mode === 'goal' && <Card>
-            {routine && <>
-                <h2 className="mb-3">Rutina de ejemplo · {routine.duration}</h2>
-                <Tags items={routine.id === "warmup" ? ["2 min · Cromático lento", "2 min · Pares de dedos", "2 min · Ataques suaves"] : ["4 min · Sincronización", "4 min · Púa alternada", "4 min · Ritmo", "4 min · Muting"]}/>
-                <Caption className="mt-3 mb-6">Secuencia visual; sin temporizador ni cambio automático de ejercicio.</Caption>
-            </>}
             <h2 className="mb-3">Objetivo técnico</h2>
             <p className="text-sm leading-relaxed text-muted">{activeExercise.goal}</p>
             {study ? <div className="mt-6 space-y-5 text-sm leading-relaxed text-muted">
