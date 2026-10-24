@@ -37,13 +37,19 @@ export function scheduleRound(bpm: number, pattern: PatternNote[], options: Roun
   transport.stop();
   transport.cancel();
   transport.position = 0;
+  // Los tiempos se programan en segundos al BPM actual y Tone los guarda en ticks:
+  // cambiar después el BPM del transporte (setRoundBpm) reescala la ronda en curso sin reiniciarla.
+  transport.bpm.value = bpm;
 
+  // Draw puede entregar avisos ya en cola después de cancelar la ronda; se ignoran para no «revivirla».
+  let cancelled = false;
+  const ui = (callback: () => void) => () => { if (!cancelled) callback(); };
   const countIn = options.countIn === false ? 0 : COUNT_IN;
   for (let i = 0; i < countIn; i++) {
     transport.schedule((time: number) => {
       clickAt(time, i % 2 === 0);
       const remaining = COUNT_IN - 1 - i;
-      draw.schedule(() => options.onCount(remaining < COUNT_DOWN ? remaining : -1), time);
+      draw.schedule(ui(() => options.onCount(remaining < COUNT_DOWN ? remaining : -1)), time);
     }, i * click);
   }
 
@@ -56,15 +62,28 @@ export function scheduleRound(bpm: number, pattern: PatternNote[], options: Roun
     transport.schedule((time: number) => {
       if (index % clickEvery === 0) clickAt(time, clicksPerBeat > 1 ? index % perBeat === 0 : (index / perBeat) % 2 === 0);
       if (options.guide) playAt(note.string, note.fret, step * 0.95, time);
-      draw.schedule(() => options.onStep(index), time);
+      draw.schedule(ui(() => options.onStep(index)), time);
     }, start + index * step);
   });
-  transport.schedule((time: number) => draw.schedule(options.onEnd, time), start + pattern.length * step);
+  // El fin no va por `Draw`: Draw descarta los eventos atrasados (pestaña en segundo plano, scroll pesado)
+  // y la ronda se quedaría «reproduciendo» para siempre. Un temporizador siempre llega.
+  let ended: ReturnType<typeof setTimeout> | undefined;
+  transport.schedule((time: number) => {
+    ended = setTimeout(ui(options.onEnd), Math.max(0, (time - tone.now()) * 1000));
+  }, start + pattern.length * step);
 
   transport.start("+0.05");
   return () => {
+    cancelled = true;
+    clearTimeout(ended);
+    draw.cancel();
     transport.stop();
     transport.cancel();
     silence();
   };
+}
+
+/** Cambia la velocidad de la ronda en curso. */
+export function setRoundBpm(bpm: number) {
+  getTone().getTransport().bpm.value = bpm;
 }

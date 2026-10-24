@@ -1,11 +1,20 @@
-import { Play, Target } from 'lucide-react';
+import { Check, LogIn, Play, Target } from 'lucide-react';
 import { Link } from 'react-router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, routines, type PracticeLesson } from '@/data/questMock';
+import { useLastExercise } from '@/lib/progress';
+import { suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
- const currentModule = courses.find(course => course.id === 'fingering')!;
- const lastLesson = currentModule.lessons[1] as PracticeLesson;
+ // Con sesión y nivel: la lección que sigue en su plan. Sin sesión: retoma el último ejercicio abierto.
+ const account = useAccount();
+ const plan = account ? suggestion(account) : null;
+ const opened = useLastExercise();
+ const last = plan ? { moduleId: plan.done && plan.lastLesson ? plan.lastLesson.moduleId : plan.next.moduleId, exerciseId: plan.done && plan.lastLesson ? plan.lastLesson.lesson.id : plan.next.lesson.id } : opened;
+ const isPractice = (lesson: { type: string }): lesson is PracticeLesson => lesson.type === 'practice';
+ const remembered = courses.find(course => course.id === last?.moduleId);
+ const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
+ const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
  return <>
   <div className="mb-6 flex items-start justify-between gap-4 md:mb-7 lg:items-center">
    <div>
@@ -16,24 +25,41 @@ export default function HomePage() {
    <Badge className="hidden sm:inline-flex">ENTRENAMIENTO TÉCNICO</Badge>
   </div>
 
+  {/* Sin sesión: invitación destacada a entrar (plan según tu nivel + progreso guardado). */}
+  {!account && <section className="relative mb-5 overflow-hidden rounded-xl border border-brand/50 bg-linear-120 from-brand/25 via-brand/8 to-transparent p-5 md:p-6">
+   <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-brand/30 blur-3xl"/>
+   <div className="relative flex flex-wrap items-center justify-between gap-5">
+    <div className="max-w-2xl">
+     <h2 className="text-xl md:text-2xl">Entra y entrena con un plan hecho para ti</h2>
+     <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-fg-soft">
+      {['Plan según tu nivel', 'Tu progreso guardado', 'Tu lugar en la comunidad'].map(item => <li key={item} className="flex items-center gap-1.5"><Check size={15} className="text-success"/>{item}</li>)}
+     </ul>
+    </div>
+    <Link to="/login" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_30px_#e0662f55] transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
+   </div>
+  </section>}
+
   <div>
-   <section className="relative min-h-97 overflow-hidden rounded-xl border border-line-strong bg-[radial-gradient(ellipse_at_85%_30%,#e0662f26,transparent_55%),linear-gradient(120deg,#24201c,#191817_55%,#111111)] 2xl:min-h-105">
+   <section className="relative flex min-h-97 items-center overflow-hidden rounded-xl border border-line-strong bg-[radial-gradient(ellipse_at_85%_30%,#e0662f26,transparent_55%),linear-gradient(120deg,#24201c,#191817_55%,#111111)] 2xl:min-h-105">
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f5_0%,#191817e6_38%,#19181780_65%,#19181720_100%)] max-xs:bg-[#191817cc]"/>
-    <div className="relative z-10 w-full max-w-122 p-6 xs:w-[64%] xs:p-7 lg:w-[65%] lg:p-8 xl:w-3/4 xl:p-6.5 2xl:w-[65%] 2xl:p-10">
-     <Badge>PRÁCTICA LIBRE</Badge>
-     <p className="mt-6.5 mb-2 text-3xs tracking-[0.2em] text-accent 2xl:mt-9">{currentModule.title.toUpperCase()}</p>
-     <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">Más control.<br/>Menos esfuerzo.</h2>
-     <p className="mt-3.5 max-w-57 text-sm leading-relaxed text-fg-soft md:max-w-68">Coordina ambas manos con patrones cortos y ataques uniformes.</p>
-     <div className="mt-6 mb-4.5 max-w-62 xs:max-w-71 2xl:mt-7.5">
-      <span className="text-sm text-muted">{lastLesson.title}</span>
-     </div>
-     <LinkButton to={`/practice/${currentModule.id}?exercise=${lastLesson.id}`}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>
+    <div className="relative z-10 w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
+     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{plan ? (plan.done ? 'HOY YA PRACTICASTE' : `TU PLAN · ${plan.position + 1 > plan.total ? 1 : plan.position + 1} DE ${plan.total}`) : currentModule.title.toUpperCase()}</p>
+     <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">{lastLesson.title}</h2>
+     <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{lastLesson.description}</p>
+     <div className="mt-6 mb-4.5"/>
+     {plan?.done
+      ? <div className="flex flex-wrap items-center gap-3">
+        <span className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/15 px-4 text-sm font-bold text-success"><Check size={17}/>Práctica de hoy hecha · mañana: {plan.next.lesson.title}</span>
+        <LinkButton to="/train" variant="secondary">Práctica libre</LinkButton>
+       </div>
+      : <LinkButton to={`/practice/${currentModule.id}?exercise=${lastLesson.id}`}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>}
+     {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to="/login" className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div>
    </section>
   </div>
 
-  <SectionTitle title="¿Qué necesitas entrenar hoy?" to="/train" label="Ver todo en Entrenar" className="mt-7 mb-4"/>
+  <SectionTitle title="¿Qué necesitas entrenar hoy?" to="/train" label="Ver todos los ejercicios" className="mt-7 mb-4"/>
   <div className="mb-7.5 grid gap-3 md:grid-cols-3 xl:gap-4.5">{routines.map((routine, index) =>
    <Link key={routine.id} to={routine.id === 'focus' ? '/train' : `/practice/${routine.moduleId}?routine=${routine.id}`} className="flex flex-col items-start rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
     <Eyebrow>{String(index + 1).padStart(2, '0')} · {routine.duration}</Eyebrow>

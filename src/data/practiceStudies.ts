@@ -1,5 +1,16 @@
 import type { PatternNote } from '@/lib/audio/practiceRound';
 
+export type Figure = 'negras' | 'corcheas' | 'tresillos' | 'semicorcheas' | 'sextillos';
+
+/** Notas por pulso y nombre visible de cada figura. */
+export const FIGURES: Record<Figure, { notesPerBeat: number; label: string; perBeat: string }> = {
+    negras: { notesPerBeat: 1, label: 'Negras · 1 nota por pulso', perBeat: 'Una nota por pulso' },
+    corcheas: { notesPerBeat: 2, label: 'Corcheas · 2 notas por pulso', perBeat: 'Dos notas por pulso' },
+    tresillos: { notesPerBeat: 3, label: 'Tresillos · 3 notas por pulso', perBeat: 'Tres notas por pulso' },
+    semicorcheas: { notesPerBeat: 4, label: 'Semicorcheas · 4 notas por pulso', perBeat: 'Cuatro notas por pulso' },
+    sextillos: { notesPerBeat: 6, label: 'Sextillos · 6 notas por pulso', perBeat: 'Seis notas por pulso' },
+};
+
 export type PracticeStudy = {
     description: string;
     notation?: string;
@@ -9,15 +20,25 @@ export type PracticeStudy = {
     criterion: string;
     /** Notas por fila de la tablatura (16 por defecto). */
     perRow?: number;
-    /** Notas por clic del metrónomo: 1 = negras (por defecto), 2 = corcheas, 6 = sextillos. */
-    notesPerBeat?: number;
-    /** Clics del metrónomo por pulso: 1 (por defecto) o 2 para marcar las corcheas. */
-    clicksPerBeat?: number;
-    variants: { title: string; pattern: PatternNote[] }[];
+    /** Figura rítmica de la tablatura: cuántas notas suenan por pulso. */
+    figure: Figure;
+    /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
+    artist?: string;
+    /** Velocidad inicial del metrónomo (100 BPM por defecto). */
+    bpm?: number;
+    pattern: PatternNote[];
+    /** Partes con título (se numeran solas); cada una empieza en una fila nueva de la tablatura. Sin partes, el patrón se reparte de corrido. */
+    sections?: { title: string; pattern: PatternNote[] }[];
 };
-const line = (string: number, fingers: number[]): PatternNote[] => fingers.map(finger => ({ string, fret: finger + 4 }));
-const across = (fingers: number[], strings = [6, 5, 4, 3, 2, 1]) => strings.flatMap(string => line(string, fingers));
-const variant = (title: string, pattern: PatternNote[]) => ({ title, pattern });
+// Cromático de sexta a primera cuerda y de vuelta, con el índice en el traste `position`.
+// `order` son los trastes relativos a la posición (1 = la posición) en el orden en que se tocan en cada cuerda: 1–2–3–4, 4–3–2–1, 1–3–5–3–5…
+const chromaticAt = (position: number, order = [1, 2, 3, 4]): PatternNote[] => {
+    const fingers = (string: number) => order.map(fret => ({ string, fret: position + fret - 1 }));
+    // La vuelta empieza en la segunda cuerda: la primera no se repite al dar la vuelta.
+    return [...[6, 5, 4, 3, 2, 1].flatMap(fingers), ...[2, 3, 4, 5, 6].flatMap(fingers)];
+};
+const chromaticPositions: [string, number][] = [['Desde el primer traste', 1], ['Desde el quinto traste', 5], ['Desde el séptimo traste', 7], ['Desde el traste 12', 12]];
+const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
 // Lick 1 de Yngwie Malmsteen: cada acorde es una célula de tres notas en una cuerda (aguda, grave, media, aguda, media, grave)
 // tocada dos veces en sextillos. Alterna segunda y primera cuerda por el ciclo de cuartas de Si menor armónica.
@@ -36,72 +57,67 @@ const yngwieBars: PatternNote[][] = [
 
 export const practiceStudies: Record<string, PracticeStudy> = {
     'fingering-01': {
-        description: 'Alterna pares de dedos en una sola cuerda para controlar especialmente el anular y el meñique, sin compensar con toda la mano.',
-        goal: 'Conseguir ataques iguales con los pares 1–2, 2–3 y 3–4, manteniendo los dedos libres cerca de las cuerdas.',
-        steps: ['Usa la tercera cuerda. Dedos 1, 2, 3 y 4 = índice, medio, anular y meñique; corresponden a los trastes 5, 6, 7 y 8.', 'Alterna la púa abajo–arriba: una nota por clic. Al bajar de traste, levanta el dedo más agudo justo antes del ataque.', 'Apoya cada dedo cerca del traste, con la presión mínima que dé una nota clara. Los otros dedos descansan; no los fuerces a quedar inmóviles.'],
-        mistakes: ['Apretar el pulgar para ayudar al meñique.', 'Levantar mucho los dedos o mover la muñeca en cada nota.'],
-        criterion: 'Completa tres rondas de cada par sin zumbidos, cortes ni tensión. Si hay molestias, detente; si pierdes claridad, baja la velocidad.',
-        variants: [variant('Índice y medio · 1–2', line(3, [1,2,1,2,1,2,1,2,2,1,2,1,2,1,2,1])), variant('Medio y anular · 2–3', line(3, [2,3,2,3,2,3,2,3,3,2,3,2,3,2,3,2])), variant('Anular y meñique · 3–4', line(3, [3,4,3,4,3,4,3,4,4,3,4,3,4,3,4,3]))],
+        description: 'Cromático clásico 1–2–3–4 en todas las cuerdas, de ida y de vuelta, en cuatro posiciones del mástil: trastes 1, 5, 7 y 12.',
+        goal: 'Soltar los dedos. Cada posición se siente distinta: abajo los trastes están más separados y arriba más juntos, así que la mano tiene que adaptarse a cada zona.',
+        steps: ['Dedos 1, 2, 3 y 4 = índice, medio, anular y meñique, un dedo por traste. En la primera posición van en los trastes 1, 2, 3 y 4.', 'Toca 1–2–3–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–2–3–4.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, una nota por clic. Elige una velocidad a la que puedas tocar todo limpio, no la más rápida.'],
+        mistakes: ['Apretar de más en la primera posición, donde los trastes están más separados.', 'Amontonar los dedos en el traste 12, donde el espacio es menor.', 'Levantar mucho los dedos o mover toda la mano en cada nota.'],
+        criterion: 'Recorre las cuatro posiciones sin pararte en los cambios y sin zumbidos. Sube la velocidad solo cuando todas suenen igual de limpias.',
+        figure: 'negras',
+        ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position) }))),
     },
     'fingering-02': {
-        description: 'Recorre las seis cuerdas con un cromático de cuatro notas por cuerda, primero ascendiendo y después descendiendo.',
-        goal: 'Conservar el mismo pulso y volumen durante todo el recorrido, incluida la vuelta.',
-        steps: ['Mantén una posición fija: índice en 5, medio en 6, anular en 7 y meñique en 8.', 'Toca 5–6–7–8 desde la sexta hasta la primera cuerda. En el descenso toca 8–7–6–5 desde la primera hasta la sexta.', 'Usa púa alternada continua y una nota por clic. El 8 de la primera cuerda se repite al iniciar la vuelta: son dos ataques distintos.', 'Silencia las cuerdas que abandonas con el contacto suave de ambas manos.'],
-        mistakes: ['Acelerar al llegar a la primera cuerda.', 'Arrastrar los dedos y dejar sonar dos cuerdas a la vez.'],
-        criterion: 'Haz tres recorridos completos sin detenerte en los cambios. Aumenta la velocidad solo si el regreso es tan limpio como la ida.',
-        variants: [variant('Ida y vuelta', [...across([1,2,3,4]), ...across([4,3,2,1], [1,2,3,4,5,6])]), variant('Solo ascenso', across([1,2,3,4])), variant('Solo descenso', across([4,3,2,1], [1,2,3,4,5,6]))],
+        description: 'El mismo recorrido del cromático 1–2–3–4, pero al revés: 4–3–2–1 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
+        goal: 'No es lo mismo tocar empezando por el meñique que por el índice. Desarrolla fuerza y control en ambas posturas, hasta que el 4–3–2–1 suene tan parejo como el 1–2–3–4.',
+        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4.', 'Toca 4–3–2–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–3–2–1.', 'Empezar por el meñique exige que el resto de dedos ya esté apoyado: al tocar el 4, los dedos 1, 2 y 3 esperan sobre sus trastes y se van soltando uno a uno.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, una nota por clic. Elige una velocidad a la que todo suene limpio.'],
+        mistakes: ['Que el meñique suene más débil o más corto que los demás dedos.', 'Levantar todos los dedos a la vez en lugar de soltarlos de uno en uno.', 'Tensar la mano para sostener la postura en la primera posición.'],
+        criterion: 'Recorre las cuatro posiciones sin pararte y con el mismo volumen en las cuatro notas. Compara con el 1–2–3–4: cuando suenen igual, sube la velocidad.',
+        figure: 'negras',
+        ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [4, 3, 2, 1]) }))),
     },
     'fingering-03': {
-        description: 'Cambia el orden de los cuatro dedos para salir del automatismo cromático sin desplazar la mano.',
-        goal: 'Ejecutar tres permutaciones con la digitación indicada, sin sustituir el anular o el meñique por dedos más cómodos.',
-        steps: ['Dedos 1–2–3–4 en trastes 5–6–7–8. Lee la variante antes de empezar: los números de su nombre son dedos.', 'Recorre de sexta a primera cuerda con el mismo orden en cada una. Ataca todas las notas con púa alternada, una por clic.', 'Prepara el siguiente dedo cerca de su traste. Al bajar a una nota más grave, retira los dedos que taparían esa nota.'],
-        mistakes: ['Convertir el patrón involuntariamente en 1–2–3–4.', 'Dejar un dedo apoyado por encima del traste que debe sonar.'],
-        criterion: 'Completa tres rondas por variante sin corregir la digitación a mitad del patrón. Practica cada variante a su propia velocidad cómoda.',
-        variants: [variant('Dedos 1–3–2–4', across([1,3,2,4])), variant('Dedos 1–4–2–3', across([1,4,2,3])), variant('Dedos 4–2–3–1', across([4,2,3,1]))],
+        description: 'Cromático con los dedos intercalados: 1–3–2–4 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
+        goal: 'Romper el automatismo de tocar los dedos siempre en orden. Cada dedo tiene que moverse por su cuenta, sin arrastrar al de al lado.',
+        steps: ['Un dedo por traste: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 1–3–2–4: los números son dedos.', 'Toca 1–3–2–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–2–4.', 'Al pasar del 3 al 2, deja el anular listo cerca de su traste; no lo levantes de más.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, una nota por clic. Elige una velocidad a la que no se te cambie el orden de los dedos.'],
+        mistakes: ['Convertir el patrón sin darte cuenta en 1–2–3–4.', 'Dejar un dedo apoyado por encima del traste que debe sonar.', 'Mover la mano entera para alcanzar el salto del 1 al 3.'],
+        criterion: 'Recorre las cuatro posiciones sin corregir la digitación a mitad del patrón. Sube la velocidad solo cuando el orden te salga sin pensarlo.',
+        figure: 'negras',
+        ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [1, 3, 2, 4]) }))),
     },
     'fingering-04': {
-        description: 'Compara dos ataques por nota con un ataque por nota para ajustar el instante en que coinciden la púa y el dedo.',
-        goal: 'Cambiar de traste sin escuchar un ataque apagado antes de la nota ni un ligado involuntario antes de la púa.',
-        steps: ['Trabaja en la segunda cuerda con los dedos 1–2–3–4 sobre los trastes 5–6–7–8.', 'En la primera variante toca dos veces cada traste. Conserva el dedo durante ambos ataques y cambia al empezar el siguiente par.', 'Pasa a una nota por traste sin aumentar la velocidad del clic. En la variante mixta, conserva la misma duración para cada ataque.', 'Alterna abajo–arriba durante toda la secuencia. Cada cifra de la tablatura representa un ataque de púa.'],
-        mistakes: ['Cambiar el dedo antes del segundo ataque de una pareja.', 'Hacer hammer-ons o pull-offs en lugar de atacar cada nota.'],
-        criterion: 'Escucha tres rondas limpias por variante. Si aparecen clics apagados al cambiar, vuelve a los ataques dobles y reduce el tempo.',
-        variants: [variant('Dos ataques por nota', line(2, [1,1,2,2,3,3,4,4,4,4,3,3,2,2,1,1])), variant('Un ataque por nota', line(2, [1,2,3,4,4,3,2,1,1,2,3,4,4,3,2,1])), variant('Dobles y simples', line(2, [1,1,2,2,3,3,4,4,1,2,3,4,4,3,2,1]))],
+        description: 'El intercalado al revés: 4–2–3–1 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
+        goal: 'Llevar la independencia de los dedos a la postura inversa. Empezar por el meñique y saltar entre dedos exige fuerza y control en toda la mano.',
+        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 4–2–3–1.', 'Toca 4–2–3–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–2–3–1.', 'Al tocar el 4, los demás dedos esperan apoyados. Suelta solo lo necesario para que suene cada nota.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, una nota por clic. Elige una velocidad a la que todo suene limpio.'],
+        mistakes: ['Que el meñique suene más débil que los demás dedos.', 'Levantar todos los dedos a la vez en lugar de soltarlos según el orden.', 'Cambiar el patrón sin querer a 4–3–2–1.'],
+        criterion: 'Recorre las cuatro posiciones con el mismo volumen en las cuatro notas. Compara con el 1–3–2–4: cuando suenen igual, sube la velocidad.',
+        figure: 'negras',
+        ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [4, 2, 3, 1]) }))),
     },
     'fingering-05': {
-        description: 'Cruza dos cuerdas vecinas con dos notas por cuerda, manteniendo la sincronización y apagando la cuerda anterior.',
-        goal: 'Hacer que la primera nota de cada nueva cuerda sea tan clara y puntual como las demás.',
-        steps: ['Dedos 1 y 3 en trastes 5 y 7; dedos 2 y 4 en 6 y 8. Mantén la mano en quinta posición.', 'Repite cada bloque de cuatro notas entre la pareja de cuerdas indicada. La tablatura se lee de izquierda a derecha.', 'Continúa abajo–arriba sin reiniciar la púa al cambiar de cuerda. Toca una nota por clic.', 'Apaga la cuerda que dejas sin cortar prematuramente su última nota. Evita mantener el dedo como una cejilla.'],
-        mistakes: ['Hacer un pequeño barrido al cambiar de cuerda.', 'Dejar sonar la cuerda anterior o acentuar cada cruce por tensión.'],
-        criterion: 'Completa tres rondas por pareja sin cuerdas superpuestas ni pausas. Revisa por separado los cruces hacia agudos y hacia graves.',
-        variants: [variant('Sexta y quinta · 1–3', Array.from({length: 4}, () => [...line(6,[1,3]), ...line(5,[1,3])]).flat()), variant('Cuarta y tercera · 2–4', Array.from({length: 4}, () => [...line(4,[2,4]), ...line(3,[2,4])]).flat()), variant('Primera y segunda · regreso', Array.from({length: 4}, () => [...line(1,[4,2]), ...line(2,[4,2])]).flat())],
-    },
-    'fingering-06': {
-        description: 'Consolida velocidad mediante bucles cortos y precisos; aumenta el tempo solo después de comprobar la limpieza de ambos sentidos.',
-        goal: 'Mantener regularidad, volumen y relajación al subir un nivel de tempo, sin esconder fallos con distorsión.',
-        steps: ['Usa los trastes 5–8 con un dedo por traste. Empieza a una velocidad que permita controlar cada ataque.', 'Toca cada bucle con púa alternada continua y una nota por clic. La dificultad crece al pasar de una cuerda a dos y luego a una secuencia con saltos de dedo.', 'Después de tres rondas limpias, prueba el siguiente tempo disponible. Si fallas en dos intentos, vuelve al anterior.', 'Descansa entre bloques. El límite de tempo es una opción de práctica, no una obligación ni una medida de tu nivel.'],
-        mistakes: ['Subir el tempo aunque el último grupo termine atropellado.', 'Endurecer el antebrazo o aumentar el recorrido de la púa para correr más.'],
-        criterion: 'Valora como limpia una ronda solo si no hubo notas omitidas, ruidos extra ni pérdida de pulso. Mantén esa calidad durante tres rondas antes de subir.',
-        variants: [variant('Bucle en una cuerda', line(1, [1,2,3,4,4,3,2,1,1,2,3,4,4,3,2,1])), variant('Bucle en dos cuerdas', [...line(2,[1,2,3,4]), ...line(1,[1,2,3,4]), ...line(1,[4,3,2,1]), ...line(2,[4,3,2,1])]), variant('Precisión · 1–3–2–4', [...across([1,3,2,4],[3,2,1]), ...across([4,2,3,1],[1,2,3])])],
+        description: 'Estiramiento de la mano izquierda: trastes 1–3–5–3–5 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
+        goal: 'Abrir la mano para cubrir cinco trastes sin moverla. En los primeros trastes la distancia es mayor, por eso cada posición exige un estiramiento distinto.',
+        steps: ['Índice en el primer traste, dedo medio o anular en el tercero y meñique en el quinto. La mano no se desplaza: se abre.', 'Toca 1–3–5–3–5 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–5–3–5.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–9), luego 7 (trastes 7–11) y finalmente 12 (trastes 12–16).', 'Púa alternada continua, una nota por clic. Ve despacio: el estiramiento se gana con constancia, no con fuerza.'],
+        mistakes: ['Mover toda la mano para llegar al quinto traste en lugar de abrir los dedos.', 'Subir el hombro o apretar el pulgar para alcanzar la distancia.', 'Seguir tocando con dolor: si molesta, detente y empieza por la posición 12, donde los trastes están más juntos.'],
+        criterion: 'Recorre las cuatro posiciones con las notas claras y sin tensión. Si la primera posición todavía no sale, practícala al final, cuando la mano ya esté caliente.',
+        figure: 'negras',
+        perRow: 15,
+        ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [1, 3, 5, 3, 5]) }))),
     },
     'licks-phrasing-yngwie-01': {
-        description: 'Lick de Yngwie Malmsteen en Si menor. Una célula de tres notas por cuerda recorre Bm–Em–A–D–G–C–F#, alternando segunda y primera cuerda, y cierra con un arpegio de Bm en sweep.',
-        notation: 'Afinación estándar E A D G B e · Sextillos: 6 notas por pulso · Metrónomo en corcheas · Púa alternada continua',
-        goal: 'Tocar los sextillos parejos y sin acentos raros mientras la mano cambia de cuerda y de posición cada dos grupos, y que se escuche la armonía: cada célula dibuja su acorde (Bm, Em, A, D, G, C, F#).',
+        description: 'Un lick neoclásico de Yngwie Malmsteen en Si menor: pequeños grupos de notas que recorren varios acordes y terminan con un arpegio en sweep.',
+        notation: 'Afinación estándar E A D G B e · Metrónomo en negras · Púa alternada continua',
+        goal: 'Que todas las notas suenen parejas y sin acentos raros mientras la mano cambia de cuerda y de posición.',
         steps: [
-            'Cada acorde es una célula de tres trastes tocada en el orden aguda–grave–media–aguda–media–grave, dos veces seguidas. Ejemplo en Bm (segunda cuerda): 15–12–14–15–14–12.',
-            'Orden de cuerdas: Bm en segunda, Em en primera, A en segunda, D en primera, G en segunda, C en primera y F# en segunda. Cada par de acordes baja dos trastes (15 → 14 → 12 → 11).',
-            'Digitación: índice en el traste grave, meñique en el agudo y anular en el medio (medio cuando la célula abarca solo tres trastes, como en 12–14–15).',
-            'Púa alternada continua, empezando hacia abajo. Como cada célula tiene seis notas, cada grupo empieza otra vez con púa abajo.',
-            'Después de F#: 12–11–12 en segunda cuerda, que resuelve en Si. Conecta con el arpegio bajando 11/3 – 12/4.',
-            'Cierre: arpegio de Bm en sweep desde el traste 14 de la quinta cuerda. Sube 14/5 – 12/4 – 11/3 – 12/2 – 10/1 – 14/1 y vuelve por el mismo camino hasta 14/5. La barra separa traste/cuerda.',
-            'En el arpegio la púa barre: hacia abajo al subir de quinta a primera cuerda y hacia arriba al volver. Las marcas ⊓ V de la tablatura no aplican en ese tramo. Apaga cada cuerda al dejarla para que el arpegio no suene como un acorde.',
-            'Ritmo en sextillos: seis notas por pulso. El metrónomo marca las corcheas (un clic cada tres notas, acentuado en el pulso) para que no te pierdas.',
+            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
+            'Sigue la tablatura: cada grupo de notas se repite dos veces antes de pasar al siguiente.',
+            'Usa púa alternada en todo el lick, menos en el arpegio final, donde la púa barre las cuerdas.',
+            'Mantén la mano relajada en los cambios de posición; deja que el brazo la lleve.',
         ],
-        mistakes: ['Acentuar cada grupo de tres notas en lugar de mantener todas iguales.', 'Llegar tarde al cambio de cuerda entre Bm y Em, o de posición entre Em y A.', 'Dejar sonar la cuerda anterior al pasar de segunda a primera.', 'Apretar la mano en las células de cuatro trastes (14–10–12) en lugar de abrir el meñique.'],
-        criterion: 'Si te cuesta, aprende primero cada acorde por separado y luego únelos. Sube la velocidad solo si los cambios de cuerda suenan igual de parejos que las notas dentro de la célula.',
+        mistakes: ['Acentuar algunas notas más que otras.', 'Llegar tarde a los cambios de cuerda o de posición.', 'Dejar sonar la cuerda anterior.', 'Tensar la mano en los estiramientos.'],
+        criterion: 'Si te cuesta, practica cada grupo por separado y luego únelos. Sube la velocidad cuando todo suene parejo.',
         perRow: 12,
-        notesPerBeat: 6,
-        clicksPerBeat: 2,
-        variants: [variant('Lick completo', yngwieBars.flat())],
+        figure: 'sextillos',
+        artist: 'yngwie-malmsteen',
+        bpm: 60,
+        pattern: yngwieBars.flat(),
     },
 };

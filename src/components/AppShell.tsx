@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { BookOpen, House, Menu, MessageCircle, Wrench, X } from 'lucide-react';
+import { BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
+import { useAccount } from '@/lib/account';
+import { AccountBar } from '@/components/AccountBar';
 import { cn } from '@/lib/cn';
 
-const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: '/train', label: 'Entrenar', icon: BookOpen }, { to: '/tools', label: 'Herramientas', icon: Wrench }];
+const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: '/plan', label: 'Mi plan', icon: ListChecks }, { to: '/train', label: 'Ejercicios', icon: BookOpen }, { to: '/community', label: 'Comunidad', icon: Users }, { to: '/tools', label: 'Herramientas', icon: Wrench }];
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
 const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-brand';
@@ -13,6 +15,9 @@ const bottomLink = { base: 'min-h-13 flex-col justify-center gap-1 text-3xs', ac
 export function AppShell() {
     const [menuOpen, setMenuOpen] = useState(false);
     const { pathname } = useLocation();
+    const account = useAccount();
+    // Sin sesión no hay plan: se practica igual, pero sin registrar progreso.
+    const links = account ? primaryLinks : primaryLinks.filter(link => link.to !== '/plan');
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
     const isActive = (to: string, active: boolean) => active || (to === '/train' && (pathname.startsWith('/lessons') || pathname.startsWith('/modules')));
     const navigation = (items: typeof primaryLinks, variant: typeof sidebarLink) => items.map(({ to, label, icon: Icon }) =>
@@ -35,12 +40,16 @@ export function AppShell() {
             </Link>
             <p className="mx-3.5 mt-3 mb-3 text-3xs tracking-[0.2em] text-subtle">TU ENTRENAMIENTO</p>
             <nav aria-label="Principal">
-                {navigation(primaryLinks, sidebarLink)}
+                {navigation(links, sidebarLink)}
+            </nav>
+            {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
+            <nav aria-label="Ayuda" className="mt-auto mb-3">
+                <NavLink to="/guide" onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
                 <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <MessageCircle size={19}/><span>PG Skool</span>
                 </a>
             </nav>
-            <div className="mt-auto flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
+            <div className="flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>
                 <p className="text-3xs text-muted">Un producto de <a href="https://peruguitar.com" className="text-accent hover:underline">PeruGuitar</a></p>
                 <span className="font-mono text-2xs">Versión {__APP_VERSION__}</span>
@@ -48,17 +57,20 @@ export function AppShell() {
         </aside>
 
         <div className="min-w-0 md:ml-50 xl:ml-56">
-            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-5 border-b border-line-soft bg-canvas/95 px-4.5 backdrop-blur-md md:hidden">
-                <button className="flex md:hidden" aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X/> : <Menu/>}</button>
-                <Link to="/" className="text-lg font-black tracking-tight">Fret <span className="text-brand">Quest</span></Link>
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas/95 px-4.5 backdrop-blur-md md:justify-end md:px-6 xl:px-9.5">
+                <div className="flex items-center gap-4 md:hidden">
+                    <button aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X/> : <Menu/>}</button>
+                    <Link to="/" className="text-lg font-black tracking-tight">Fret <span className="text-brand">Quest</span></Link>
+                </div>
+                <AccountBar/>
             </header>
             <main id="main-content" key={pathname} className="mx-auto max-w-365 min-w-0 animate-rise px-4.5 pt-6.5 pb-24 md:px-6 md:py-7.5 xl:px-9.5 xl:pt-9 xl:pb-11">
                 <Outlet/>
             </main>
         </div>
 
-        <nav aria-label="Accesos móviles" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line-soft bg-canvas/95 p-1.5 pb-[calc(5px+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
-            {navigation(primaryLinks, bottomLink)}
+        <nav aria-label="Accesos móviles" className="fixed inset-x-0 bottom-0 z-30 grid grid-flow-col auto-cols-fr border-t border-line-soft bg-canvas/95 p-1.5 pb-[calc(5px+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
+            {navigation(links, bottomLink)}
         </nav>
     </div>;
 }
