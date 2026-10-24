@@ -61,9 +61,8 @@ export default function LoginPage() {
     if (!hydrated) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (!account) return <div className="grid min-h-[calc(100dvh-12rem)] place-items-center">
         <Card className="relative w-full max-w-3xl overflow-hidden px-6 py-14 text-center md:px-16 md:py-20">
-            <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 size-80 -translate-x-1/2 rounded-full bg-brand/20 blur-3xl"/>
             <div className="relative">
-                <img src="/icons/quest-mark.svg" alt="" className="mx-auto h-16 w-16 drop-shadow-[0_0_20px_#e0662f55]"/>
+                <img src="/icons/quest-mark.svg" alt="" className="mx-auto h-16 w-16 drop-shadow-[0_0_20px_#3198dc55]"/>
                 <Eyebrow className="mt-6 justify-center">BIENVENIDO A FRET QUEST</Eyebrow>
                 <h1 className="mt-3 text-4xl md:text-5xl">Entra para tener tu plan</h1>
                 <p className="mx-auto mt-4 max-w-md text-base text-muted">El temario completo es libre. Con tu cuenta te sugerimos qué practicar según tu nivel y guardamos tu progreso.</p>
@@ -86,7 +85,7 @@ export default function LoginPage() {
     const steps = ['Cuestionario', 'Tu nivel', 'Tu ritmo'];
     const header = (eyebrow: string, title: string, text: string) => <>
         <ol className="mb-7 flex flex-wrap gap-2">{steps.map((label, index) => <li key={label} className={cn('flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold',
-            index + 1 === stepNumber ? 'border-brand bg-brand/15 text-fg' : index + 1 < stepNumber ? 'border-success/40 text-success' : 'border-line text-muted')}>
+            index + 1 === stepNumber ? 'border-blue bg-blue/15 text-fg' : index + 1 < stepNumber ? 'border-success/40 text-success' : 'border-line text-muted')}>
             <span className="font-mono">{index + 1}</span>{label}</li>)}</ol>
         <PageTitle eyebrow={eyebrow} title={title} text={text}/>
     </>;
@@ -106,16 +105,15 @@ export default function LoginPage() {
         {header(`HOLA, ${account.name.toUpperCase()}`, answered ? 'Este es tu nivel' : '¿Cuál es tu nivel?', 'Siete preguntas rápidas. Responde con honestidad: solo sirve para sugerirte ejercicios y puedes cambiarlo cuando quieras.')}
 
         {!answered && <Card className="relative overflow-hidden p-6 md:p-10">
-            <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-brand/15 blur-3xl"/>
             <div className="relative">
                 <div className="mb-8 flex items-center gap-4 text-sm text-muted">
                     <span className="font-mono text-base font-bold text-fg">{answers.length + 1}<span className="text-muted"> / {QUESTIONS.length}</span></span>
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-line"><span className="block h-full rounded-full bg-linear-90 from-brand to-gold transition-[width] duration-300" style={{ width: `${answers.length / QUESTIONS.length * 100}%` }}/></span>
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-line"><span className="block h-full rounded-full bg-blue transition-[width] duration-300" style={{ width: `${answers.length / QUESTIONS.length * 100}%` }}/></span>
                     {answers.length > 0 && <button type="button" onClick={() => setAnswers(answers.slice(0, -1))} className="font-bold text-fg-soft hover:text-fg">← Atrás</button>}
                 </div>
                 <h2 key={answers.length} className="animate-rise text-2xl md:text-4xl">{current.text}</h2>
                 <div className="mt-8 grid gap-3 md:grid-cols-2">{current.options.map((option, value) => <button key={option} type="button" onClick={() => setAnswers([...answers, value])}
-                    className="flex min-h-16 items-center gap-4 rounded-xl border border-line-strong px-5 py-4 text-left text-base font-bold text-fg-soft transition hover:-translate-y-0.5 hover:border-brand hover:bg-brand/10 hover:text-fg">
+                    className="flex min-h-16 items-center gap-4 rounded-xl border border-line-strong px-5 py-4 text-left text-base font-bold text-fg-soft transition hover:-translate-y-0.5 hover:border-blue hover:bg-blue/10 hover:text-fg">
                     <span className="grid size-8 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-sm text-muted">{String.fromCharCode(65 + value)}</span>{option}
                 </button>)}</div>
             </div>
@@ -128,10 +126,10 @@ export default function LoginPage() {
             </div>
             <p className="mt-1 text-sm text-muted">Puedes elegir otro si lo prefieres.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{LEVELS.map(option => <button key={option} type="button" aria-pressed={level === option} onClick={() => setPicked(option)}
-                className={cn('flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition', level === option ? 'border-brand bg-brand/12' : 'border-line hover:border-line-strong')}>
+                className={cn('flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition', level === option ? 'border-blue bg-blue/12' : 'border-line hover:border-line-strong')}>
                 <span className="flex items-center gap-2.5 text-lg font-bold">{levelLabel(option)}<DifficultySignal difficulty={option}/></span>
                 <span className="text-sm text-muted">{LEVEL_TEXT[option]}</span>
-                {option === suggested && <span className="rounded-full bg-brand/20 px-2.5 py-0.5 text-3xs font-black tracking-wider text-accent">SUGERIDO</span>}
+                {option === suggested && <span className="rounded-full bg-blue/20 px-2.5 py-0.5 text-3xs font-black tracking-wider text-accent">SUGERIDO</span>}
             </button>)}</div>
             <Button className="mt-8 min-h-13 px-8 text-base" disabled={!level} onClick={() => { if (level) { setLevel(level); if (account.weeklyGoal) navigate(ROUTES.plan); else setChoosingRhythm(true); } }}>Continuar <ArrowRight size={18}/></Button>
         </Card>}

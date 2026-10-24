@@ -32,7 +32,7 @@ export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: 
     return createPortal(<div role="dialog" aria-modal="true" aria-labelledby="practice-intro-title" className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-sunken/70 p-4 backdrop-blur-md">
         <div className="relative grid w-full max-w-4xl animate-pop overflow-hidden rounded-2xl border border-line-strong bg-raised shadow-[0_30px_90px_#000b] md:grid-cols-[2fr_3fr]">
             {/* Imagen del profesor. Si aún no existe, queda el degradado de la marca. */}
-            <div className="relative h-44 overflow-hidden bg-linear-160 from-brand via-brand-strong to-[#5a2410] md:h-auto">
+            <div className="relative h-44 overflow-hidden bg-raised md:h-auto">
                 {imageOk && <img src={INTRO_IMAGE} alt="" width={800} height={1000} decoding="async" onError={() => setImageOk(false)} className="absolute inset-0 size-full object-cover object-[center_25%] md:object-center"/>}
                 <div aria-hidden className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent md:bg-linear-to-r md:from-transparent md:via-transparent md:to-raised/80"/>
             </div>
@@ -42,7 +42,7 @@ export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: 
                 <h2 id="practice-intro-title" className="text-2xl md:text-3xl">Estás a punto de comenzar el modo práctica</h2>
                 <ul className="mt-6 space-y-4">
                     {POINTS.map(({ icon: Icon, text }) => <li key={text} className="flex items-start gap-3 text-sm leading-relaxed text-fg-soft">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand/15 text-accent-strong"><Icon size={16}/></span>
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue/15 text-accent-strong"><Icon size={16}/></span>
                         <span className="pt-1.5">{text}</span>
                     </li>)}
                 </ul>

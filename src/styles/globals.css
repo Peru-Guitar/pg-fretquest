@@ -41,26 +41,26 @@
   --color-canvas: #111111;
   --color-sunken: #151515;
   --color-surface: #1c1c1c;
-  --color-raised: #242321;
-  --color-field: #171717;
+  --color-raised: #232323;
+  --color-field: #181818;
 
   /* Bordes y texto. */
-  --color-line: #35312e;
-  --color-line-soft: #2a2826;
-  --color-line-strong: #51483f;
+  --color-line: #333333;
+  --color-line-soft: #292929;
+  --color-line-strong: #474747;
   --color-fg: #f5f5f5;
-  --color-fg-soft: #d7d0c9;
-  --color-muted: #b0aaa4;
-  --color-subtle: #938b83;
+  --color-fg-soft: #d4d4d4;
+  --color-muted: #b8b8b8;
+  --color-subtle: #a3a3a3;
 
-  /* PeruGuitar: acciones cálidas. `violet` queda como alias del naranja de marca (el morado era del diseño anterior). */
-  --color-brand: #e0662f;
-  --color-brand-strong: #c4521f;
-  --color-accent: #f1c7a1;
-  --color-accent-strong: #f1c7a1;
-  --color-violet: #e0662f;
-  --color-blue: #448fff;
-  --color-link: #f1c7a1;
+  /* PeruGuitar: colores del logo (rojo de marca, azul de acento). `violet` queda como alias del azul (el morado era del diseño anterior). El rojo solo va en los botones principales. */
+  --color-brand: #e74c3e;
+  --color-brand-strong: #c4392b;
+  --color-accent: #5ab8ec;
+  --color-accent-strong: #5ab8ec;
+  --color-violet: #3198dc;
+  --color-blue: #3198dc;
+  --color-link: #5ab8ec;
   --color-success: #28dfa1;
   --color-warn: #ffb359;
   --color-gold: #ffc156;
@@ -85,62 +85,59 @@
     to { opacity: 0; transform: scale(1); }
   }
   @keyframes beat {
-    0%, 20% { background: var(--color-violet); color: #fff; box-shadow: 0 0 20px #e0662f55; }
-    25%, 100% { background: transparent; color: #ac9cce; box-shadow: none; }
+    0%, 20% { background: var(--color-violet); color: #fff; box-shadow: 0 0 20px #3198dc55; }
+    25%, 100% { background: transparent; color: var(--color-muted); box-shadow: none; }
   }
 }
 
-/* Deslizador con el tramo recorrido en naranja: define --fill (0–100%) en línea. */
+/* Deslizador con el tramo recorrido en azul: define --fill (0–100%) en línea. */
 @utility range-brand {
   appearance: none;
   height: 0.5rem;
   min-height: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-brand-strong), var(--color-violet)) 0 / var(--fill, 0%) 100% no-repeat, var(--color-line);
+  background: linear-gradient(90deg, var(--color-blue), var(--color-accent)) 0 / var(--fill, 0%) 100% no-repeat, var(--color-line);
   cursor: pointer;
   &::-webkit-slider-thumb {
     appearance: none;
     width: 1.5rem;
     height: 1.5rem;
     border-radius: 999px;
-    background: #eef0ff;
-    box-shadow: 0 0 0 4px #8b73ff40, 0 2px 8px #0008;
+    background: #f5f5f5;
+    box-shadow: 0 0 0 4px #5ab8ec40, 0 2px 8px #0008;
   }
   &::-moz-range-thumb {
     width: 1.5rem;
     height: 1.5rem;
     border: 0;
     border-radius: 999px;
-    background: #eef0ff;
-    box-shadow: 0 0 0 4px #8b73ff40, 0 2px 8px #0008;
+    background: #f5f5f5;
+    box-shadow: 0 0 0 4px #5ab8ec40, 0 2px 8px #0008;
   }
 }
 
 /* Degradados de marca: se reutilizan en botones, barras y estados activos. */
 @utility bg-brand {
-  background-image: linear-gradient(110deg, var(--color-brand), var(--color-brand-strong));
+  background-color: var(--color-brand);
 }
 @utility bg-brand-soft {
-  background-image: linear-gradient(100deg, #e0662f24, #e0662f0c);
+  background-color: #3198dc1f;
 }
 @utility bg-card {
   background-image: linear-gradient(135deg, var(--color-raised), var(--color-surface));
-}
-@utility text-brand {
-  background-image: linear-gradient(105deg, #f1c7a1, #e0662f 80%);
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 @layer base {
   html {
     color-scheme: dark;
+    overflow-x: clip;
     scroll-padding-top: 5rem;
     scroll-padding-bottom: 6rem;
   }
   body {
     min-height: 100dvh;
-    background: radial-gradient(ellipse at 65% 0, #e0662f0a, transparent 52%), var(--color-canvas);
+    /* Base carbón compartida con PeruGuitar; el celeste queda en los acentos. */
+    background: var(--color-canvas);
     color: var(--color-fg);
     font-size: var(--text-base);
     -webkit-tap-highlight-color: transparent;
@@ -203,4 +200,14 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Sale del contenedor centrado y ocupa todo el ancho del área de contenido (sin la barra lateral). */
+@layer components {
+  .full-bleed {
+    --sidebar: 0px;
+    margin-inline: calc(50% - (100vw - var(--sidebar)) / 2);
+  }
+  @media (width >= 47.5625rem) { .full-bleed { --sidebar: 12.5rem; } }
+  @media (width >= 75.0625rem) { .full-bleed { --sidebar: 14rem; } }
 }

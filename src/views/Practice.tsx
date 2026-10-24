@@ -8,13 +8,14 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type Difficulty, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
-import { BackLink, Button, Caption, Card, Eyebrow, LinkButton, PageTitle } from '@/components/ui';
+import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
+import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise, setPracticeIntroSeen, usePracticeIntroSeen } from '@/lib/progress';
 import { PracticeIntro } from '@/components/practice/PracticeIntro';
-import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
+import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
@@ -314,14 +315,14 @@ function PracticeView({ mode }: { mode: Mode }) {
                 const selected = rounds === option;
                 const disabled = option > maxRounds;
                 return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} disabled={disabled} onClick={() => setRounds(option)}
-                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-brand text-white' : disabled ? 'cursor-not-allowed text-muted/40' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
+                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-blue text-white' : disabled ? 'cursor-not-allowed text-muted/40' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
             })}
         </div>
     </div>;
 
     return <>
-        <BackLink to={moduleUrl(activeModule.id)}>{activeModule.title}</BackLink>
-        <PageTitle eyebrow={activeModule.category} title={activeExercise.title} text={activeExercise.description}/>
+        <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id), label: activeModule.title }} eyebrow={`${activeModule.category} · Práctica`} title={activeExercise.title} text={activeExercise.description}
+            stats={[['Lección', `${activeModule.lessons.indexOf(activeExercise) + 1} de ${activeModule.lessons.length}`], ['Dificultad', levelLabel(activeExercise.difficulty)]]}/>
         {activeExercise.artist && <ArtistCredit id={activeExercise.artist}/>}
 
 
@@ -417,7 +418,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                                     return <span key={index} className="relative grid justify-items-center">
                                         {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
-                                        <span className={cn('z-10 px-1 text-base', note.string === row + 1 ? (playing ? 'rounded-[5px] bg-linear-135 from-brand to-brand-strong text-white shadow-[0_0_22px_#e0662f4a]' : 'bg-sunken text-fg-soft') : 'invisible')}>{note.fret}</span>
+                                        <span className={cn('z-10 px-1 text-base', note.string === row + 1 ? (playing ? 'rounded-[5px] bg-blue text-white' : 'bg-sunken text-fg-soft') : 'invisible')}>{note.fret}</span>
                                     </span>;
                                 })}
                             </div>)}
@@ -428,7 +429,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                     Va en <body> porque el `transform` animado de <main> encerraría un `fixed`. */}
                 {phase === 'countdown' && createPortal(<div role="status" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-sunken/60 px-6 text-center backdrop-blur-md">
                     {count < 0
-                        ? <span key={pulse} className="block size-28 animate-pop rounded-full bg-violet/60 shadow-[0_0_80px_#e0662f88] md:size-36"/>
+                        ? <span key={pulse} className="block size-28 animate-pop rounded-full bg-violet/60 shadow-[0_0_80px_#3198dc88] md:size-36"/>
                         : <span key={pulse} className={cn('block animate-pop font-black leading-none text-accent-strong', count > 0 ? 'text-[9rem] md:text-[12rem]' : 'text-6xl md:text-7xl')}>{count > 0 ? count : `Ronda ${round}`}</span>}
                     <div>
                         <p className="text-2xl font-bold md:text-3xl">{count < 0 ? FIGURES[figure].perBeat : round === 1 ? 'Prepárate' : 'Siguiente ronda'}</p>

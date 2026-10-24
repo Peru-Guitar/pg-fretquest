@@ -1,0 +1,7 @@
+{
+  "tool": "image_gen (built-in)",
+  "prompt": "Edit existing Fret Quest OG. Preserve typography, exact Spanish text, layout, guitarist photograph and dark background. Change orange guitar pick to sky blue #5ab8ec with blue shading, preserve white headstock. Change Quest and TU GIMNASIO DE GUITARRA to sky blue. No other changes.",
+  "assets": ["public/images/og-fretquest-v2.jpg", "public/images/og-fretquest-v2.webp"],
+  "dimensions": [1200, 630],
+  "icons": "PNG icons derived from existing celeste quest-mark.svg; maskable variant uses 320px mark centered on 512px charcoal canvas. Rebuild with node scripts/assets/sync-fretquest-icons.cjs from workspace root."
+}

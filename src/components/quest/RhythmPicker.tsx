@@ -9,7 +9,7 @@ export function RhythmPicker({ value, onChange }: { value: number | undefined; o
         <div role="radiogroup" aria-label="Días por semana" className="grid gap-2 sm:grid-cols-5">
             {RHYTHMS.map(rhythm => {
                 const selected = value === rhythm.days;
-                const tone = selected ? 'border-brand bg-brand/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong';
+                const tone = selected ? 'border-blue bg-blue/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong';
                 return <button key={rhythm.days} type="button" role="radio" aria-checked={selected} onClick={() => onChange(rhythm.days)} className={cn('flex flex-col items-center gap-1 rounded-xl border px-2 py-4 text-center transition', tone)}>
                         <b className="font-mono text-3xl">{rhythm.days}</b>
                         <span className="text-2xs text-muted">días / semana</span>
@@ -41,7 +41,7 @@ export function RhythmSelect({ value, onChange }: { value: number; onChange: (da
     }, [open]);
 
     const row = (rhythm: typeof current) => <>
-        <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-brand/15 font-mono text-xl font-black text-accent-strong">{rhythm.days}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-blue/15 font-mono text-xl font-black text-accent-strong">{rhythm.days}</span>
         <span className="min-w-0 flex-1 text-left">
             <b className="block text-sm text-fg">{rhythm.label} <span className="font-normal text-muted">· {rhythm.days} días por semana</span></b>
             <span className="block text-xs text-muted">{rhythm.text}</span>
@@ -50,14 +50,14 @@ export function RhythmSelect({ value, onChange }: { value: number; onChange: (da
 
     return <div ref={root} className="relative">
         <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}
-            className={cn('flex w-full items-center gap-3.5 rounded-xl border bg-field p-2.5 pr-4 transition', open ? 'border-brand' : 'border-line-strong hover:border-brand/60')}>
+            className={cn('flex w-full items-center gap-3.5 rounded-xl border bg-field p-2.5 pr-4 transition', open ? 'border-blue' : 'border-line-strong hover:border-blue/60')}>
             {row(current)}
             <ChevronDown size={18} className={cn('shrink-0 text-muted transition', open && 'rotate-180')}/>
         </button>
         {open && <ul role="listbox" aria-label="Días por semana" className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-line-strong bg-raised p-1.5 shadow-[0_20px_60px_#0009]">
             {RHYTHMS.map(rhythm => <li key={rhythm.days}>
                 <button type="button" role="option" aria-selected={rhythm.days === value} onClick={() => { onChange(rhythm.days); setOpen(false); }}
-                    className={cn('flex w-full items-center gap-3.5 rounded-lg p-2.5 pr-3 transition', rhythm.days === value ? 'bg-brand/12' : 'hover:bg-white/5')}>
+                    className={cn('flex w-full items-center gap-3.5 rounded-lg p-2.5 pr-3 transition', rhythm.days === value ? 'bg-blue/12' : 'hover:bg-white/5')}>
                     {row(rhythm)}
                     {rhythm.days === value && <Check size={17} className="shrink-0 text-accent"/>}
                 </button>
@@ -72,7 +72,7 @@ const SESSION_TEXT: Record<number, string> = { 15: 'Lo justo para mantener la ma
 export function SessionPicker({ value, onChange }: { value: number; onChange: (minutes: number) => void }) {
     return <div role="radiogroup" aria-label="Duración de la sesión" className="grid grid-cols-3 gap-2">
         {SESSION_MINUTES.map(minutes => <button key={minutes} type="button" role="radio" aria-checked={value === minutes} onClick={() => onChange(minutes)}
-            className={cn('flex flex-col items-center gap-1 rounded-xl border px-2 py-3.5 text-center transition', value === minutes ? 'border-brand bg-brand/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong')}>
+            className={cn('flex flex-col items-center gap-1 rounded-xl border px-2 py-3.5 text-center transition', value === minutes ? 'border-blue bg-blue/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong')}>
             <b className="font-mono text-2xl">{minutes}<span className="text-sm font-bold text-muted"> min</span></b>
             <span className="text-3xs leading-snug text-muted">{SESSION_TEXT[minutes]}</span>
         </button>)}

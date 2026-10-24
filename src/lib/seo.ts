@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://fretquest.peruguitar.com";
 export const SITE_NAME = "Fret Quest";
 export const DEFAULT_DESCRIPTION = "Tu gimnasio de guitarra eléctrica. Entrena coordinación, limpieza y control. Un producto de PeruGuitar.";
-const DEFAULT_IMAGE = { url: "/images/og-fretquest.jpg", width: 1200, height: 630, alt: "Fret Quest: entrenamiento de guitarra de PeruGuitar." };
+const DEFAULT_IMAGE = { url: "/images/og-fretquest-v2.jpg", width: 1200, height: 630, alt: "Fret Quest: entrenamiento de guitarra de PeruGuitar." };
 
 export function pageMetadata({ title, description = DEFAULT_DESCRIPTION, path, image, noindex = false }: {
   title?: string; description?: string; path: string; image?: string; noindex?: boolean;

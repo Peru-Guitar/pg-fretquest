@@ -25,7 +25,7 @@ export function UserMenu() {
     }, [open]);
 
     return <div className="flex items-center gap-6">
-        <span className="hidden items-center gap-2 text-sm text-[#b19bff] sm:flex" title={`${(level.next - level.points).toLocaleString('es')} pts para el nivel ${level.level + 1}`}>
+        <span className="hidden items-center gap-2 text-sm text-accent sm:flex" title={`${(level.next - level.points).toLocaleString('es')} pts para el nivel ${level.level + 1}`}>
             <Zap size={16} className="fill-gold text-gold"/>Nivel {level.level} · <b className="text-fg">{level.rank}</b><span className="text-muted">·</span><b className="font-mono text-fg">{level.points.toLocaleString('es')} pts</b>
         </span>
         <div ref={root} className="relative">

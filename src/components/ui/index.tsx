@@ -46,7 +46,7 @@ export function Card({ as: Tag = "section", className, children }: { as?: "secti
 }
 
 export function TipCard({ symbol = "✦", title, children }: { symbol?: string; title: string; children: ReactNode }) {
-  return <div className="rounded-lg border border-brand/25 bg-linear-145 from-[#e0662f18] to-surface p-6">
+  return <div className="rounded-lg border border-line bg-card p-6">
     <span className="text-3xl text-accent-strong">{symbol}</span>
     <h3 className="my-2 text-accent">{title}</h3>
     <p className="text-sm leading-loose text-fg-soft">{children}</p>
@@ -58,7 +58,7 @@ export function IconTile({ children, className }: { children: ReactNode; classNa
 }
 
 export function Avatar({ children, size = "md", className }: { children: ReactNode; size?: "sm" | "md"; className?: string }) {
-  return <span className={cn("grid shrink-0 place-items-center rounded-[10px] border border-brand/30 bg-brand-soft font-black text-accent", size === "sm" ? "size-8 text-sm" : "size-9.5", className)}>{children}</span>;
+  return <span className={cn("grid shrink-0 place-items-center rounded-[10px] border border-blue/30 bg-brand-soft font-black text-accent", size === "sm" ? "size-8 text-sm" : "size-9.5", className)}>{children}</span>;
 }
 
 export function EmptyState({ icon, title, children, action }: { icon: ReactNode; title: string; children: ReactNode; action?: ReactNode }) {
@@ -76,7 +76,7 @@ export function EmptyState({ icon, title, children, action }: { icon: ReactNode;
 export function Meter({ value, label, tone = "brand", size = "sm", className }: { value: number; label: string; tone?: "brand" | "success" | "blue"; size?: "sm" | "md" | "lg"; className?: string }) {
   const pct = Math.max(0, Math.min(100, value));
   return <div className={cn("w-full overflow-hidden rounded-full bg-line", { sm: "h-1.5", md: "h-2.5", lg: "h-3" }[size], className)} role="progressbar" aria-label={label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-    <div className={cn("h-full rounded-full transition-[width] duration-500 ease-out", { brand: "bg-linear-90 from-blue to-[#8350ff]", success: "bg-success", blue: "bg-blue" }[tone])} style={{ width: `${pct}%` }} />
+    <div className={cn("h-full rounded-full transition-[width] duration-500 ease-out", { brand: "bg-blue", success: "bg-success", blue: "bg-blue" }[tone])} style={{ width: `${pct}%` }} />
   </div>;
 }
 
@@ -92,7 +92,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
       const selected = itemValue === value;
       return <button key={itemValue} type="button" aria-pressed={selected} onClick={() => onChange(itemValue)} className={cn(
         "inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-bold transition xs:px-4 xs:text-sm",
-        selected ? "border-brand/40 bg-brand-soft text-accent" : "border-transparent text-muted hover:bg-white/5",
+        selected ? "border-blue/40 bg-brand-soft text-accent" : "border-transparent text-muted hover:bg-white/5",
       )}>{itemLabel ?? itemValue}</button>;
     })}
   </div>;
@@ -102,8 +102,8 @@ export function Toggle({ title, text, defaultOn = true }: { title: string; text:
   const [enabled, setEnabled] = useState(defaultOn);
   return <div className="my-6 flex items-center justify-between gap-5 border-b border-line py-5">
     <div><h3>{title}</h3><p className="mt-2 text-xs leading-relaxed text-muted">{text}</p></div>
-    <button type="button" role="switch" aria-checked={enabled} aria-label={title} onClick={() => setEnabled(!enabled)} className={cn("h-6 w-10 shrink-0 rounded-full p-0.75", enabled ? "bg-linear-90 from-[#439aff] to-[#8750ee]" : "bg-[#414b55]")}>
-      <span className={cn("block size-4.5 rounded-full transition-transform", enabled ? "translate-x-4 bg-white" : "bg-[#d6ded1]")} />
+    <button type="button" role="switch" aria-checked={enabled} aria-label={title} onClick={() => setEnabled(!enabled)} className={cn("h-6 w-10 shrink-0 rounded-full p-0.75", enabled ? "bg-blue" : "bg-line-strong")}>
+      <span className={cn("block size-4.5 rounded-full transition-transform", enabled ? "translate-x-4 bg-white" : "bg-fg-soft")} />
     </button>
   </div>;
 }
@@ -138,7 +138,7 @@ export function PageTitle({ eyebrow, title, text, children }: { eyebrow: string;
 export function SectionTitle({ title, to, label = "Ver todo", className }: { title: string; to?: string; label?: string; className?: string }) {
   return <div className={cn("flex items-center justify-between gap-2 xs:gap-4", className)}>
     <h2 className="text-base xs:text-lg xl:text-xl">{title}</h2>
-    {to && <Link to={to} className="flex items-center gap-1.5 text-3xs text-link xs:text-2xs md:text-xs">{label}<ArrowRight size={15} /></Link>}
+    {to && <Link to={to} className="flex items-center gap-1.5 text-2xs font-medium text-link md:text-xs">{label}<ArrowRight size={15} /></Link>}
   </div>;
 }
 
@@ -149,7 +149,7 @@ export function BackLink({ to, children }: { to: string; children: ReactNode }) 
 /* ── Estadísticas ────────────────────────────────────────── */
 
 const statTones = {
-  orange: "from-[#eb6c2220] [&_svg]:text-[#ff9d39]",
+  orange: "from-[#259eea20] [&_svg]:text-accent",
   blue: "from-[#259eea20] [&_svg]:text-[#34bdff]",
   green: "from-[#1fe5a018] [&_svg]:text-success",
   gold: "from-[#f4af2820] [&_svg]:text-gold",

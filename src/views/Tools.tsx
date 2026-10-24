@@ -26,11 +26,11 @@ export default function ToolsPage() {
     return <>
         <PageTitle eyebrow="PREPARA TU SONIDO" title="Herramientas" text="Utilidades para preparar y acompañar cada práctica."/>
         <div className="grid gap-4 xs:grid-cols-2 lg:grid-cols-3 xl:gap-5">
-            {tools.map(tool => <Link key={tool.to} to={tool.to} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_6px_25px_#e0662f16]">
+            {tools.map(tool => <Link key={tool.to} to={tool.to} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60">
                 <div className="relative h-44 overflow-hidden bg-sunken">
                     {tool.image
                         ? <img src={tool.image} alt="" width={1440} height={480} loading="lazy" decoding="async" className="h-44 w-full object-cover"/>
-                        : <span aria-hidden="true" className="absolute inset-0 grid place-items-center text-[#f1c7a1] opacity-60 [&_svg]:size-10 [&_svg]:stroke-1">{tool.icon}</span>}
+                        : <span aria-hidden="true" className="absolute inset-0 grid place-items-center text-[#5ab8ec] opacity-60 [&_svg]:size-10 [&_svg]:stroke-1">{tool.icon}</span>}
                 </div>
                 <div className="p-4 xl:p-5">
                     <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{tool.category}</p>
@@ -59,7 +59,7 @@ function ToolLayout({ title, text, tip, children, badge = 'DEMOSTRACIÓN VISUAL 
 
 /** Botón tipo chip compartido por el compás del metrónomo y las cuerdas del afinador. */
 const chip = (active: boolean) => cn('min-h-12 min-w-14 rounded-full border px-4 font-bold transition md:min-w-18',
-    active ? 'border-brand bg-brand text-white' : 'border-line-strong text-fg-soft hover:border-accent/60');
+    active ? 'border-blue bg-blue text-white' : 'border-line-strong text-fg-soft hover:border-accent/60');
 
 const IN_TUNE_CENTS = 5;
 const MIC_ERRORS: Partial<Record<string, string>> = {
@@ -76,7 +76,7 @@ function CentsScale({ cents, inTune }: { cents: number | null; inTune: boolean }
         <div className="relative h-16 flex-1">
             <div className="absolute inset-0 mask-[linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
                 {ticks.map(c => c !== 0 && <i key={c} style={{ left: `${50 + c}%` }} className={cn('absolute top-1/2 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
-                    c % 10 === 0 ? 'h-10' : 'h-4', c < 0 ? 'bg-[#e0662f]' : 'bg-[#2fd6d0]', c % 10 === 0 ? 'opacity-90' : 'opacity-50')}/>)}
+                    c % 10 === 0 ? 'h-10' : 'h-4', c < 0 ? 'bg-[#e74c3e]' : 'bg-[#2fd6d0]', c % 10 === 0 ? 'opacity-90' : 'opacity-50')}/>)}
             </div>
             <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-sm font-bold text-success">0</span>
             <span aria-hidden="true" style={{ left: `${50 + Math.max(-50, Math.min(50, cents ?? 0))}%` }}
@@ -102,14 +102,14 @@ export function TunerPage() {
         <h2 className="text-[1.375rem] md:text-3xl">Encuentra tu punto de equilibrio.</h2>
         <div className="relative mx-auto mt-16 max-w-4xl"><CentsScale cents={cents} inTune={inTune}/></div>
 
-        <p className="mt-12 bg-linear-to-b from-[#f0894f] to-[#c4521f] bg-clip-text text-[7rem] leading-none font-black text-transparent md:text-[9rem]">{note}</p>
+        <p className="mt-12 bg-linear-to-b from-[#f0786b] to-[#c4392b] bg-clip-text text-[7rem] leading-none font-black text-transparent md:text-[9rem]">{note}</p>
         <p aria-live="polite" className={cn('mt-2 min-h-6 font-bold tabular-nums', inTune ? 'text-success' : cents === null ? 'text-muted' : 'text-gold')}>
             {cents === null ? status : inTune ? '✓ En tono' : `${cents > 0 ? '+' : ''}${cents} cents · ${status.toLowerCase()}`}
         </p>
 
         <div className="mt-12 flex flex-wrap justify-center gap-2 md:gap-3">{GUITAR_STRINGS.map((string, index) =>
             <button key={index} aria-label={`Cuerda ${6 - index}, nota ${string.name}`} aria-pressed={locked === index} onClick={() => setLocked(locked === index ? null : index)}
-                className={cn(chip(target === index), 'text-xl', locked === index && 'ring-2 ring-[#f0894f]/70 ring-offset-2 ring-offset-surface')}>
+                className={cn(chip(target === index), 'text-xl', locked === index && 'ring-2 ring-[#f0786b]/70 ring-offset-2 ring-offset-surface')}>
                 {string.name}
             </button>)}
         </div>
@@ -144,14 +144,14 @@ function TempoRing({ tempo, pulse, accent }: { tempo: number; pulse: number; acc
     const angle = fraction * 2 * Math.PI - Math.PI / 2;
     return <div className="relative grid size-52 shrink-0 place-items-center md:size-64">
         <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
-            <defs><linearGradient id="tempo-arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c4521f"/><stop offset="1" stopColor="#f0894f"/></linearGradient></defs>
+            <defs><linearGradient id="tempo-arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c4392b"/><stop offset="1" stopColor="#f0786b"/></linearGradient></defs>
             <circle cx="100" cy="100" r={r} fill="#0d1424" stroke="var(--color-line)" strokeWidth="5"/>
             <circle cx="100" cy="100" r={r - 12} fill="none" stroke="#ffffff08" strokeWidth="1"/>
             <circle cx="100" cy="100" r={r} fill="none" stroke="url(#tempo-arc)" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={`${fraction * length} ${length}`} transform="rotate(-90 100 100)" className="drop-shadow-[0_0_6px_#e0662f80]"/>
-            <circle cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)} r="6" fill="#e0662f" stroke="#f6c9a8" strokeWidth="1.5"/>
+                strokeDasharray={`${fraction * length} ${length}`} transform="rotate(-90 100 100)" className="drop-shadow-[0_0_6px_#e74c3e80]"/>
+            <circle cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)} r="6" fill="#e74c3e" stroke="#fbd3ce" strokeWidth="1.5"/>
         </svg>
-        {pulse > 0 && <span key={pulse} aria-hidden="true" className={cn('absolute inset-0 animate-tick rounded-full border-2', accent ? 'border-[#f0894f] shadow-[0_0_40px_#e0662f90]' : 'border-[#a9775a] shadow-[0_0_24px_#e0662f50]')}/>}
+        {pulse > 0 && <span key={pulse} aria-hidden="true" className={cn('absolute inset-0 animate-tick rounded-full border-2', accent ? 'border-[#f0786b] shadow-[0_0_40px_#e74c3e90]' : 'border-[#a8574f] shadow-[0_0_24px_#e74c3e50]')}/>}
         <strong className="relative text-center text-[4.5rem] leading-none font-black text-fg md:text-[5.5rem]">{tempo}<small className="mt-3 block text-sm font-semibold tracking-[0.3em] text-fg-soft">BPM</small></strong>
     </div>;
 }

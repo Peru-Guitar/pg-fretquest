@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
-import { ArrowRight, Check, LogIn, Play, Target } from 'lucide-react';
+import { ArrowRight, Check, LogIn, Play } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
@@ -48,8 +48,7 @@ export default function HomePage() {
   </div>
 
   {/* Sin sesión: invitación destacada a entrar (plan según tu nivel + progreso guardado). */}
-  {hydrated && !account && <section className="relative mb-5 overflow-hidden rounded-xl border border-brand/50 bg-linear-120 from-brand/25 via-brand/8 to-transparent p-5 md:p-6">
-   <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-brand/30 blur-3xl"/>
+  {hydrated && !account && <section className="relative mb-5 overflow-hidden rounded-xl border border-line bg-card p-5 md:p-6">
    <div className="relative flex flex-wrap items-center justify-between gap-5">
     <div className="max-w-2xl">
      <h2 className="text-xl md:text-2xl">Entra y entrena con un plan hecho para ti</h2>
@@ -57,14 +56,14 @@ export default function HomePage() {
       {['Plan según tu nivel', 'Tu progreso guardado', 'Tu lugar en la comunidad'].map(item => <li key={item} className="flex items-center gap-1.5"><Check size={15} className="text-success"/>{item}</li>)}
      </ul>
     </div>
-    <Link to={ROUTES.login} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_30px_#e0662f55] transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
+    <Link to={ROUTES.login} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-brand hover:bg-brand-strong px-6 font-bold text-white transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
    </div>
   </section>}
 
   <div>
-   <section className="relative flex min-h-97 items-center overflow-hidden rounded-xl border border-line-strong bg-[radial-gradient(ellipse_at_85%_30%,#e0662f26,transparent_55%),linear-gradient(120deg,#24201c,#191817_55%,#111111)] 2xl:min-h-105">
+   <section className="relative flex min-h-97 items-center overflow-hidden rounded-xl border border-line-strong bg-[linear-gradient(120deg,#232323,#151515_55%,#111111)] 2xl:min-h-105">
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
-    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f5_0%,#191817e6_38%,#19181780_65%,#19181720_100%)] max-xs:bg-[#191817cc]"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#151515f5_0%,#151515e6_38%,#15151580_65%,#15151520_100%)] max-xs:bg-[#151515cc]"/>
     <div className="relative z-10 w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
      <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{practicedModule ? 'TU ÚLTIMO EJERCICIO' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
      <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">{lastLesson.title}</h2>
@@ -95,7 +94,7 @@ export default function HomePage() {
   <div className="mb-7.5 space-y-6">{levelModules.map(module =>
    <section key={module.moduleId} className="relative overflow-hidden rounded-xl border border-line p-4 md:p-5">
     <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover"/>
-    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f2_0%,#191817d9_50%,#19181799_100%)]"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#151515f2_0%,#151515d9_50%,#15151599_100%)]"/>
     <div className="relative mb-4 flex items-center justify-between gap-4">
      <h3 className="text-lg font-bold md:text-xl">{module.title}</h3>
      <Link to={moduleUrl(module.moduleId)} className="text-xs text-accent hover:underline">Ver módulo →</Link>
@@ -111,23 +110,26 @@ export default function HomePage() {
 
 
 
-  <SectionTitle title="Nunca es tarde para volver a lo básico" to={moduleUrl(basics.id)} label="Ver el módulo" className="mt-7.5 mb-4"/>
-  <section className="relative overflow-hidden rounded-lg border border-[#aa7b4740] bg-[radial-gradient(ellipse_at_100%_0%,#d99a2030,transparent_60%),linear-gradient(160deg,#211d18,#191817_60%,#141312)] p-5 md:p-6.5">
-   {/* Fondo: seis cuerdas y trastes que se desvanecen hacia la izquierda. */}
-   <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full [mask-image:linear-gradient(90deg,transparent,#000_70%)]" preserveAspectRatio="none" viewBox="0 0 100 60">
-    {[0, 1, 2, 3, 4, 5].map(string => <line key={string} x1="0" x2="100" y1={8 + string * 9} y2={8 + string * 9} stroke="#eab14a" strokeOpacity={0.1 + string * 0.025} strokeWidth={0.15 + string * 0.06} vectorEffect="non-scaling-stroke"/>)}
-    {[30, 48, 64, 78, 90].map(fret => <line key={fret} x1={fret} x2={fret} y1="0" y2="60" stroke="#eab14a" strokeOpacity="0.07" vectorEffect="non-scaling-stroke"/>)}
-   </svg>
-   <div className="relative flex items-center gap-4 lg:gap-6">
-    <div className="hidden size-12 shrink-0 place-items-center rounded-full border border-[#aa7b4766] bg-[#d99a2010] text-gold drop-shadow-[0_0_8px_#eab14a22] xs:grid md:size-16"><Target size={34}/></div>
-    <div className="flex-1">
-     <Eyebrow>{basics.title.toUpperCase()}</Eyebrow>
-     <p className="mt-1.5 text-xs leading-relaxed text-muted">Dale un repaso a la digitación y la coordinación: la base que sostiene todo lo demás.</p>
+  <SectionTitle title="Nunca es tarde para volver a lo básico" className="mt-7.5 mb-4"/>
+  <section className="grid overflow-hidden rounded-xl border border-line bg-card md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+   <div className="relative flex min-h-56 flex-col justify-end p-5 md:p-6.5">
+    <img src={basics.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(0deg,#080b14f2_15%,#080b1466_100%)]"/>
+    <div className="relative">
+     <Eyebrow>{basics.category.toUpperCase()}</Eyebrow>
+     <h3 className="mt-1.5 text-xl font-black md:text-2xl">{basics.title}</h3>
+     <p className="mt-2 text-sm leading-relaxed text-fg-soft">Dale un repaso: la base que sostiene todo lo demás.</p>
+     <LinkButton to={moduleUrl(basics.id)} variant="secondary" className="mt-5">Ver el módulo<ArrowRight size={16}/></LinkButton>
     </div>
    </div>
-   <div className="relative mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">{basics.lessons.filter(isPractice).map(lesson =>
-    <Link key={lesson.id} to={practiceUrl(basics.id, lesson.id)} className="rounded-md border border-white/10 bg-[#19181799] px-3 py-2.5 text-sm backdrop-blur-sm transition hover:border-accent/60 hover:text-accent">{lesson.title}</Link>)}
-   </div>
+   <ol className="divide-y divide-line">{basics.lessons.filter(isPractice).map((lesson, index) =>
+    <li key={lesson.id}><Link to={practiceUrl(basics.id, lesson.id)} className="group flex items-center gap-4 px-5 py-4 transition hover:bg-white/3 md:px-6">
+     <span className="w-6 font-mono text-sm text-accent">{String(index + 1).padStart(2, '0')}</span>
+     <span className="min-w-0 flex-1 truncate font-bold transition group-hover:text-accent">{lesson.title}</span>
+     <DifficultySignal difficulty={lesson.difficulty}/>
+     <Play size={15} className="text-muted transition group-hover:text-accent"/>
+    </Link></li>)}
+   </ol>
   </section>
  </>;
 }

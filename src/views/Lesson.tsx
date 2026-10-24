@@ -3,15 +3,18 @@
 import { ROUTES, lessonUrl, moduleIdFromSlug } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, useParams } from '@/lib/router';
-import { GuitarArt } from '@/components/quest/QuestUI';
 import { lessonMeta } from '@/components/quest/lessonMeta';
 import { ArtistHeader, CategoryHeader } from '@/components/quest/ArtistCredit';
 import { groupByArtist } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { ReadStatus } from '@/components/quest/LessonStatus';
 import { useProgress } from '@/lib/progressDb';
-import { BackLink, Badge, Card, DetailLayout, Eyebrow, PageTitle, Tags, TipCard } from '@/components/ui';
-import { courses, } from '@/data/questMock';
+import { ModuleHero } from '@/components/quest/ModuleHero';
+import type { ReactNode } from 'react';
+import { levelLabel } from '@/lib/account';
+import { courses, type Difficulty } from '@/data/questMock';
+
+const LEVEL_ORDER: Difficulty[] = ['base', 'intermedio', 'avanzado', 'experto'];
 
 export default function LessonPage() {
     const lessonId = moduleIdFromSlug(useParams().modulo);
@@ -20,43 +23,27 @@ export default function LessonPage() {
     const progress = useProgress();
     const readings = course.lessons.filter(lesson => lesson.type === 'reading').length;
     const practices = course.lessonCount - readings;
-    const mix = [readings && `${readings} ${readings === 1 ? 'lectura' : 'lecturas'}`, practices && `${practices} ${practices === 1 ? 'práctica' : 'prácticas'}`].filter(Boolean).join(' · ');
+
+    // Rango de dificultad de las prácticas del módulo (p. ej. «Básico – Avanzado»).
+    const levels = LEVEL_ORDER.filter(level => course.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level));
+    const range = levels.length ? [...new Set([levels[0], levels.at(-1)!])].map(levelLabel).join(' – ') : '';
 
     if (!course.available) return <ComingSoon title={course.title}/>;
     const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && (lesson.artist || lesson.category));
 
     return <>
-        <BackLink to={ROUTES.exercises}>Ejercicios</BackLink>
-        <PageTitle eyebrow={course.category} title={course.title} text={course.description}/>
-        <DetailLayout aside={<>
-            <Card>
-                <Eyebrow className="mb-3">SOBRE ESTE MÓDULO</Eyebrow>
-                <div className="flex flex-col gap-4 text-sm text-fg-soft"><span>◷ {mix}</span></div>
-            </Card>
-            <TipCard title="Entrena lo que necesites.">No hay un orden obligatorio. Elige la lección que quieras mejorar hoy y vuelve a ella cuando lo necesites.</TipCard>
-        </>}>
-            <section className="relative h-75 overflow-hidden rounded-xl border border-line-strong bg-surface">
-                <GuitarArt variant={course.art} layout="cover"/>
-                <div className="relative z-10 h-full max-w-full bg-linear-90 from-canvas from-20% to-transparent p-6 xs:p-7.5 md:max-w-[70%]">
-                    <Badge>CONTENIDO DUMMY · VISTA DE DEMOSTRACIÓN</Badge>
-                    <h2 className="mt-6 mb-5 text-[clamp(1.75rem,3.4vw,2.6875rem)] leading-tight font-black">Tu técnica.<br/>Tu entrenamiento.</h2>
-                    <span className="text-xs text-fg-soft">{mix}</span>
-                </div>
-            </section>
-            <Card>
-                <h2 className="mb-3">Qué vas a entrenar</h2>
-                <p className="text-sm leading-relaxed text-muted">{course.description} Trabaja primero la limpieza y la comodidad. Aumenta la complejidad del patrón antes de perseguir velocidad.</p>
-                <Tags className="mt-5" items={course.skills.map(skill => `✓ ${skill}`)}/>
-            </Card>
+        <ModuleHero image={course.image} back={{ to: ROUTES.exercises, label: 'Ejercicios' }} eyebrow={course.category} title={course.title} text={course.description}
+            stats={([practices > 0 && ['Prácticas', practices], readings > 0 && ['Lecturas', readings], range && ['Dificultad', range]].filter(Boolean) as [string, ReactNode][])}/>
+        <h2 className="mb-4 text-lg xl:text-xl">Lecciones del módulo</h2>
+        <div className="flex flex-col gap-6">
             <div>
-                <h2 className="mb-4 text-lg xl:text-xl">Lecciones del módulo</h2>
                 {/* Si hay ejercicios de artistas o con categoría, se agrupan con su cabecera; si no, una sola lista. */}
                 <div className="flex flex-col gap-6">{groupByArtist(course.lessons.map(lesson => ({ ...lesson, artist: lesson.type === 'practice' ? lesson.artist : undefined, category: lesson.type === 'practice' ? lesson.category : undefined }))).map(group => <section key={`${group.artist}-${group.category}`} className="flex flex-col gap-3">
                     {group.artist ? <ArtistHeader id={group.artist}/> : group.category ? <CategoryHeader title={group.category}/> : hasArtists && <b className="text-fg">De la comunidad</b>}
-                <div className="divide-y divide-line rounded-lg border border-line">{group.lessons.map(item => {
+                <div className="grid gap-3 md:grid-cols-2">{group.lessons.map(item => {
                     const lesson = course.lessons.find(candidate => candidate.id === item.id)!;
                     const { Icon, description } = lessonMeta(lesson);
-                    return <Link key={lesson.id} to={lessonUrl(course.id, lesson.id)} className="flex items-center gap-3 bg-card px-3.5 py-4 transition first:rounded-t-lg last:rounded-b-lg hover:bg-white/3 md:gap-4 md:px-5 md:py-5">
+                    return <Link key={lesson.id} to={lessonUrl(course.id, lesson.id)} className="flex items-center gap-3 rounded-lg border border-line bg-card px-3.5 py-4 transition hover:-translate-y-0.5 hover:border-accent/50 md:gap-4 md:px-5 md:py-5">
                         <span className="w-7 shrink-0 font-mono text-sm text-accent md:w-8 md:text-base">{String(course.lessons.indexOf(lesson) + 1).padStart(2, '0')}</span>
                         <div className="min-w-0 flex-1">
                             <h3 className="mb-1 flex flex-wrap items-center gap-2 text-md wrap-anywhere md:text-[0.9375rem]">{lesson.title}</h3>
@@ -69,6 +56,6 @@ export default function LessonPage() {
                 })}</div>
                 </section>)}</div>
             </div>
-        </DetailLayout>
+        </div>
     </>;
 }

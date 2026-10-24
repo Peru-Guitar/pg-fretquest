@@ -31,11 +31,11 @@ export function AudioPlayer({ src, duration: fallback = 0, label }: { src: strin
         onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => setLoaded(e.currentTarget.duration)}
       />
-      <button type="button" onClick={toggle} aria-label={playing ? "Pausar" : `Reproducir ${label}`} className="grid size-11 shrink-0 place-items-center rounded-full bg-brand text-white shadow-[0_4px_20px_#4f4aff25] transition hover:-translate-y-px hover:shadow-[0_5px_25px_#6254ff44]">
+      <button type="button" onClick={toggle} aria-label={playing ? "Pausar" : `Reproducir ${label}`} className="grid size-11 shrink-0 place-items-center rounded-full bg-brand text-white shadow-[0_4px_20px_#4f4aff25] transition hover:-translate-y-px hover:shadow-[0_5px_25px_#3198dc44]">
         {playing ? <Pause className="size-5 fill-current" /> : <Play className="ml-0.5 size-5 fill-current" />}
       </button>
-      <div className="relative h-1.5 flex-1 rounded-full bg-line has-focus-visible:ring-2 has-focus-visible:ring-[#aa91ff]/60 has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface">
-        <div className="absolute inset-y-0 left-0 rounded-full bg-[#aa91ff]" style={{ width: `${progress}%` }} />
+      <div className="relative h-1.5 flex-1 rounded-full bg-line has-focus-visible:ring-2 has-focus-visible:ring-[#5ab8ec]/60 has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface">
+        <div className="absolute inset-y-0 left-0 rounded-full bg-[#5ab8ec]" style={{ width: `${progress}%` }} />
         <input
           type="range"
           min={0}

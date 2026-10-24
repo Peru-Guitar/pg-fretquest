@@ -17,9 +17,9 @@ const minutesByDay = [20, 35, 12, 0, 25, 45, 0, 18, 30, 8, 0, 0, 22, 40, 0, 15, 
 const practicedDays = minutesByDay.filter(minutes => minutes > 0).length;
 const heatLevels = [
     { label: 'Sin práctica', max: 0, className: 'bg-white/5' },
-    { label: '1–15 min', max: 15, className: 'bg-[#3b3580]' },
-    { label: '16–30 min', max: 30, className: 'bg-[#5d4bc4]' },
-    { label: '31+ min', max: Infinity, className: 'bg-[#a181ff]' },
+    { label: '1–15 min', max: 15, className: 'bg-[#1d3a5f]' },
+    { label: '16–30 min', max: 30, className: 'bg-[#2f6fa8]' },
+    { label: '31+ min', max: Infinity, className: 'bg-accent' },
 ];
 const heatLevel = (minutes: number) => heatLevels.find(level => minutes <= level.max)!;
 const history = [['Púa alternada', 'Hoy, 18:30', '96%', '+150 XP'], ['Cruces de cuerda', 'Ayer, 19:10', '92%', '+120 XP'], ['Sincronización de manos', '19 oct, 17:45', '94%', '+180 XP']];
@@ -57,7 +57,7 @@ export default function ProgressPage() {
                         const minutes = current ? value : Math.max(5, value - 6);
                         return <div key={index} className="flex h-full w-10 flex-col items-center justify-end gap-2.5 text-3xs whitespace-nowrap text-muted">
                             <span>{minutes} min</span>
-                            <i className="min-h-2.5 w-full rounded-t bg-linear-to-b from-[#9a74ff] to-[#4261f3] shadow-[0_0_12px_#6153ff22]" style={{ height: `${minutes * 3}px` }}/>
+                            <i className="min-h-2.5 w-full rounded-t bg-blue" style={{ height: `${minutes * 3}px` }}/>
                             <small>{['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][index]}</small>
                         </div>;
                     })}
@@ -86,7 +86,7 @@ export default function ProgressPage() {
                 <div className="my-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-2xs text-muted">
                     {heatLevels.map(level => <span key={level.label} className="flex items-center gap-1.5"><span className={cn('size-3 rounded', level.className)}/>{level.label}</span>)}
                 </div>
-                <div className="border-t border-line pt-4.5 text-xs text-[#b7bee2]">✦ Tu mejor semana: <strong>3 h 20 min</strong></div>
+                <div className="border-t border-line pt-4.5 text-xs text-fg-soft">✦ Tu mejor semana: <strong>3 h 20 min</strong></div>
             </Card>
         </div>
         <SectionTitle title="Tus logros" className="mt-7 mb-4"/>

@@ -37,12 +37,12 @@ function AccountForm({ account }: { account: Account }) {
         <PageTitle eyebrow="MI CUENTA" title="Tus datos" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
         <div role="tablist" aria-label="Secciones de Mi cuenta" className="mb-6 flex gap-1 border-b border-line">
             {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-                className={cn('-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition', tab === id ? 'border-brand text-fg' : 'border-transparent text-muted hover:text-fg')}><Icon size={16}/>{label}</button>)}
+                className={cn('-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition', tab === id ? 'border-blue text-fg' : 'border-transparent text-muted hover:text-fg')}><Icon size={16}/>{label}</button>)}
         </div>
 
         {tab === 'profile' && <Card><form onSubmit={save}>
             <div className="flex items-center gap-4">
-                <span className="grid size-16 shrink-0 place-items-center rounded-full bg-linear-135 from-gold to-brand text-2xl font-black text-white">{(name || '?').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
+                <span className="grid size-16 shrink-0 place-items-center rounded-full border border-line-strong bg-raised text-fg text-2xl font-black">{(name || '?').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
                 <div><b className="text-lg">{name || 'Sin nombre'}</b><p className="text-sm text-muted">{[[form.city.trim(), form.country.trim()].filter(Boolean).join(', '), form.guitar.trim()].filter(Boolean).join(' · ') || 'Completa tu perfil'}</p></div>
             </div>
             <Field label="Nombre visible"><input value={form.name} maxLength={40} required onChange={event => change({ name: event.target.value })}/></Field>
@@ -63,7 +63,7 @@ function AccountForm({ account }: { account: Account }) {
                 <h2 className="text-lg">Mi nivel</h2>
                 <p className="mt-1 text-sm text-muted">Ordena tu plan. Cámbialo cuando quieras o <Link to={ROUTES.retakeQuiz} className="text-accent hover:underline">repite el cuestionario</Link>.</p>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{LEVELS.map(level => <button key={level} type="button" aria-pressed={account.level === level} onClick={() => setLevel(level)}
-                    className={cn('min-h-11 rounded-lg border text-sm font-bold transition', account.level === level ? 'border-brand bg-brand/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong')}>{levelLabel(level)}</button>)}</div>
+                    className={cn('min-h-11 rounded-lg border text-sm font-bold transition', account.level === level ? 'border-blue bg-blue/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong')}>{levelLabel(level)}</button>)}</div>
             </section>
             <section className="py-7">
                 <h2 className="text-lg">Mi ritmo</h2>

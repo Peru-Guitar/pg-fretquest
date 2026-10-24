@@ -17,7 +17,7 @@ export default function LearnPage() {
     return <>
         <PageTitle eyebrow="EJERCICIOS" title="¿Qué quieres mejorar?" text="Elige un módulo y entrena la técnica que quieres mejorar."/>
         <div className="mb-7 flex justify-end">
-            <label className="flex w-full items-center gap-2 rounded-md border border-line-strong bg-[#121d2f] px-3 text-[#9da7ae] lg:w-auto">
+            <label className="flex w-full items-center gap-2 rounded-md border border-line-strong bg-field px-3 text-muted lg:w-auto">
                 <Search size={17}/>
                 <input className="w-full min-w-48 border-0 bg-transparent px-0 text-xs text-fg outline-none" aria-label="Buscar módulos o ejercicios" placeholder="Busca módulos, técnicas o ejercicios" value={query} onChange={event => setQuery(event.target.value)}/>
             </label>
