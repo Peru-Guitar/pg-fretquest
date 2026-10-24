@@ -3,8 +3,7 @@
  * se le da el crédito con su nombre (y su foto) para reconocer su autoría.
  * La foto va en `public/images/artists/{id}.webp` (cuadrada, ~400×400); si no existe, se ven sus iniciales.
  */
-/** `photoCredit`: autor y licencia de la foto (p. ej. «Foto: Nombre · CC BY-SA 4.0»), obligatorio si la licencia lo pide. */
-export type Artist = { id: string; name: string; note: string; photoCredit?: string };
+export type Artist = { id: string; name: string; note: string };
 
 export const artists: Record<string, Artist> = {
   'yngwie-malmsteen': { id: 'yngwie-malmsteen', name: 'Yngwie Malmsteen', note: 'Guitarrista sueco, referente del metal neoclásico y del sweep picking.' },
