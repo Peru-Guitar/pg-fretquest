@@ -194,9 +194,9 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
     const [low, high] = [Math.min(...frets), Math.max(...frets)];
     const [first, , middle, , last] = up;
     return {
-        description: `La posición ${position} de la pentatónica de Gm en sweep (trastes ${low}–${high}): grupos de cinco notas en tres cuerdas que suben de la sexta a la primera y bajan por el mismo camino.`,
+        description: `Patrón extendido de la pentatónica de Gm: une la posición ${position} con la ${position < 5 ? position + 1 : 1} y cubre los trastes ${low}–${high}. Se toca en sweep, en grupos de cinco notas sobre tres cuerdas, subiendo de la sexta a la primera y bajando por el mismo camino.`,
         notation: 'Pentatónica de Gm (G Bb C D F) · Semicorcheas · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
-        goal: 'Barrer tres cuerdas en cada grupo sin mover la mano: la púa cae en una sola dirección al cambiar de cuerda y las notas de la misma cuerda se ligan.',
+        goal: 'Salir de la caja de una sola posición: estirar la mano para unir dos posiciones de la escala y barrer tres cuerdas en cada grupo, con la púa en una sola dirección al cambiar de cuerda y las notas de la misma cuerda ligadas.',
         steps: [
             `La mano se queda en los trastes ${low}–${high}: índice en el ${low} y meñique en el ${high}; abre la mano en vez de desplazarla.`,
             `Cada grupo son cinco notas: dos en la cuerda grave, una en la del medio y dos en la aguda (el primero: ${first.fret}–${up[1].fret} en la sexta, ${middle.fret} en la quinta, ${up[3].fret}–${last.fret} en la cuarta).`,
