@@ -28,6 +28,8 @@ export type PracticeStudy = {
      * y liga en la misma cuerda: hammer-on al subir de traste, pull-off al bajar.
      */
     picking?: 'alternate' | 'legato';
+    /** Desde esta nota (índice del patrón) se usa la técnica de arpegio (`legato`), p. ej. un sweep al final de un lick. */
+    legatoFrom?: number;
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
     artist?: string;
     /** Velocidad inicial del metrónomo (100 BPM por defecto). */
@@ -210,7 +212,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Sigue la tablatura: cada grupo de notas se repite dos veces antes de pasar al siguiente.',
-            'Usa púa alternada en todo el lick, menos en el arpegio final, donde la púa barre las cuerdas.',
+            'Usa púa alternada en todo el lick, menos en el arpegio final: ahí la púa barre las cuerdas (⊓ al subir, V al bajar) y en la primera cuerda se liga con hammer-on y pull-off (h y p).',
             'Mantén la mano relajada en los cambios de posición; deja que el brazo la lleve.',
         ],
         mistakes: ['Acentuar algunas notas más que otras.', 'Llegar tarde a los cambios de cuerda o de posición.', 'Dejar sonar la cuerda anterior.', 'Tensar la mano en los estiramientos.'],
@@ -219,6 +221,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'sextillos',
         artist: 'yngwie-malmsteen',
         bpm: 60,
+        // El arpegio final de Bm va en sweep: púa solo al cambiar de cuerda, hammer-on / pull-off en la primera.
+        legatoFrom: yngwieBars.flat().length - bmSweep.length,
         pattern: yngwieBars.flat(),
     },
 };
@@ -227,13 +231,15 @@ export const practiceStudies: Record<string, PracticeStudy> = {
 export type Stroke = 'down' | 'up' | 'hammer' | 'pull';
 
 /** Ataque de cada nota del patrón según la técnica del estudio. */
-export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate'): Stroke[] {
-    if (picking === 'alternate') return pattern.map((_, index) => index % 2 === 0 ? 'down' : 'up');
+export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate', legatoFrom = Infinity): Stroke[] {
+    if (picking === 'alternate' && legatoFrom === Infinity) return pattern.map((_, index) => index % 2 === 0 ? 'down' : 'up');
     // Arpegios: la púa solo ataca al cambiar de cuerda, siguiendo el movimiento (⊓ hacia la aguda, V hacia la grave);
     // en la misma cuerda se liga: hammer-on si el traste sube, pull-off si baja. Cuerda 1 = la más aguda.
     return pattern.map((note, index) => {
+        if (picking === 'alternate' && index < legatoFrom) return index % 2 === 0 ? 'down' : 'up';
         const previous = pattern[index - 1];
-        if (!previous) return 'down';
+        // Primera nota del patrón o del tramo de arpegio: empieza el barrido hacia abajo.
+        if (!previous || index === legatoFrom) return 'down';
         if (note.string < previous.string) return 'down';
         if (note.string > previous.string) return 'up';
         return note.fret > previous.fret ? 'hammer' : 'pull';
