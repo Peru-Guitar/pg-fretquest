@@ -79,17 +79,17 @@ export default function HomePage() {
 
   <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
   <div className="mb-7.5 space-y-6">{levelModules.map(module =>
-   <section key={module.moduleId}>
-    <Link to={moduleUrl(module.moduleId)} className="group relative mb-3 flex h-20 items-center justify-between overflow-hidden rounded-lg border border-line px-5 transition hover:border-accent/60">
-     <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
-     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f5_0%,#191817cc_45%,#19181760_100%)]"/>
-     <h3 className="relative text-lg font-bold md:text-xl">{module.title}</h3>
-     <span className="relative text-xs text-accent">Ver módulo →</span>
-    </Link>
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{module.lessons.map(lesson =>
-     <Link key={lesson.id} to={practiceUrl(module.moduleId, lesson.id)} className="flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
+   <section key={module.moduleId} className="relative overflow-hidden rounded-xl border border-line p-4 md:p-5">
+    <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f2_0%,#191817d9_50%,#19181799_100%)]"/>
+    <div className="relative mb-4 flex items-center justify-between gap-4">
+     <h3 className="text-lg font-bold md:text-xl">{module.title}</h3>
+     <Link to={moduleUrl(module.moduleId)} className="text-xs text-accent hover:underline">Ver módulo →</Link>
+    </div>
+    <div className="relative grid grid-cols-2 gap-3 lg:grid-cols-4">{module.lessons.map(lesson =>
+     <Link key={lesson.id} to={practiceUrl(module.moduleId, lesson.id)} className="flex flex-col rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-white/10">
       <h4 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h4>
-      <span className="mt-3 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+      <span className="mt-3 block text-2xs text-fg-soft">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
      </Link>)}
     </div>
    </section>)}
