@@ -8,13 +8,13 @@ import { Avatar, Badge, Caption, Card, Eyebrow, LinkButton, Meter, Stat } from '
 export default function ResultsPage() {
     return <div className="mx-auto max-w-237 py-2 text-center">
         <Badge>RESULTADO DE DEMOSTRACIÓN</Badge>
-        <div className="relative mx-auto mt-7 mb-5 grid size-32.5 -rotate-5 place-items-center rounded-[28px] border border-[#9b6dff77] bg-radial from-[#9563ff33] to-transparent to-70% text-[#c6a5ff]">
+        <div className="relative mx-auto mt-7 mb-5 grid size-32.5 -rotate-5 place-items-center rounded-[28px] border border-blue/50 bg-radial from-blue/20 to-transparent to-70% text-accent">
             <Trophy size={58}/><span className="absolute top-1 right-2 text-2xl">✦</span>
         </div>
         <Eyebrow className="justify-center">OTRO PASO HACIA TU MEJOR VERSIÓN</Eyebrow>
         <h1 className="my-3 text-4xl md:text-[2.75rem]">¡Entrenamiento completado!</h1>
         <p className="mb-4.5 leading-relaxed text-muted">Sesión de púa alternada · Resumen visual de ejemplo.</p>
-        <div className="text-[1.625rem] tracking-[0.35em] text-[#ffc767] [text-shadow:0_0_15px_#f9b94733]">★ ★ ★</div>
+        <div className="text-[1.625rem] tracking-[0.35em] text-gold">★ ★ ★</div>
         <div className="mt-7.5 mb-6 grid grid-cols-3 gap-2.5 xl:gap-4">
             <Stat stacked tone="green" icon={<Target/>} value="96%" label="Precisión"/>
             <Stat stacked tone="blue" icon={<Clock3/>} value="8 min" label="Tiempo de práctica"/>

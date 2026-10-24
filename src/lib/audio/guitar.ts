@@ -6,6 +6,8 @@
  * registro y Tone.js afina las intermedias a partir de la muestra más cercana. La distorsión se suma con efectos.
  */
 
+import { audio } from "./metronome";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tone = any;
 
@@ -25,6 +27,7 @@ let loading: Promise<void> | null = null;
 
 /** Carga Tone.js y las muestras. Debe llamarse desde un clic (lo exigen los navegadores). */
 export function prepare(): Promise<void> {
+  unlock();
   if (tone && master) {
     // El navegador suspende el audio al cambiar de pestaña, bloquear el celular o cambiar de salida: se reactiva en cada clic.
     if (tone.getContext().state !== "running") void tone.start();
@@ -35,6 +38,8 @@ export function prepare(): Promise<void> {
   }
   loading ??= (async () => {
     tone = await import("tone");
+    // Tone usa el contexto ya desbloqueado en el clic (el import asíncrono pierde el gesto y iOS no lo dejaría sonar).
+    tone.setContext(audio());
     await tone.start();
     master = new tone.Gain(1).toDestination();
     // Distorsión y después un filtro que recorta los agudos ásperos, como el parlante de un amplificador.
@@ -59,6 +64,21 @@ export function prepare(): Promise<void> {
     throw error;
   });
   return loading;
+}
+
+/**
+ * Desbloquea el audio dentro del clic, antes de cualquier `await`: iOS solo activa el sonido en ese momento.
+ * También pide sonar aunque el iPhone esté en modo silencio, como un reproductor de música.
+ */
+function unlock(): void {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session) session.type = "playback";
+  const ac = audio();
+  // Un búfer mudo termina de desbloquear el audio en Safari antiguo.
+  const source = ac.createBufferSource();
+  source.buffer = ac.createBuffer(1, 1, 22050);
+  source.connect(ac.destination);
+  source.start();
 }
 
 /** Toca una nota. `string`: 1 (aguda) a 6 (grave). */

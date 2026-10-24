@@ -22,11 +22,11 @@ const share = (part: number, total: number) => total > 0 ? Math.round(part / tot
 function Bar({ icon: Icon, label, value, pct, tone }: { icon: typeof Users; label: string; value: string; pct: number; tone: 'users' | 'time' }) {
     return <div className="min-w-0">
         <div className="mb-1.5 flex items-center justify-between gap-2 text-2xs text-muted">
-            <span className="flex items-center gap-1.5"><Icon size={13} className={tone === 'users' ? 'text-accent' : 'text-gold'}/>{label}</span>
+            <span className="flex items-center gap-1.5"><Icon size={13} className={tone === 'users' ? 'text-accent' : 'text-success'}/>{label}</span>
             <span><b className="text-fg tabular-nums">{value}</b> · {pct}%</span>
         </div>
         <div className={'h-1.5 overflow-hidden rounded-full bg-line'} role="progressbar" aria-label={label} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className={cn('h-full rounded-full transition-[width] duration-700 ease-out', tone === 'users' ? 'bg-linear-90 from-brand-strong to-brand' : 'bg-linear-90 from-gold/60 to-gold')} style={{ width: `${Math.max(pct, 2)}%` }}/>
+            <div className={cn('h-full rounded-full transition-[width] duration-700 ease-out', tone === 'users' ? 'bg-blue' : 'bg-success')} style={{ width: `${Math.max(pct, 2)}%` }}/>
         </div>
     </div>;
 }
@@ -34,7 +34,7 @@ function Bar({ icon: Icon, label, value, pct, tone }: { icon: typeof Users; labe
 /** Dato del módulo: sin barra, solo la cifra. */
 function Figure({ icon: Icon, tone, value, label }: { icon: typeof Users; tone: 'users' | 'time'; value: string; label: string }) {
     return <div className="flex items-center gap-3">
-        <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', tone === 'users' ? 'bg-brand/12 text-accent' : 'bg-gold/12 text-gold')}><Icon size={18}/></span>
+        <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', tone === 'users' ? 'bg-blue/12 text-accent' : 'bg-success/12 text-success')}><Icon size={18}/></span>
         <div><b className="block text-2xl leading-none tabular-nums">{value}</b><span className="text-2xs text-muted">{label}</span></div>
     </div>;
 }

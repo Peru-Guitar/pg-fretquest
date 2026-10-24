@@ -12,9 +12,8 @@ import { cn } from '@/lib/cn';
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
-const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-brand';
+const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-accent';
 const sidebarLink = { base: 'mb-1 min-h-11.5 gap-3 px-3.5 text-md', active: 'before:inset-y-2.5 before:-left-px before:w-[3px]' };
-const bottomLink = { base: 'min-h-13 flex-col justify-center gap-1 text-3xs', active: 'before:inset-x-1/4 before:bottom-0 before:h-0.5' };
 
 export function AppShell({ children }: { children: ReactNode }) {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -24,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     // «Mi plan» solo con sesión; mientras no se sabe (antes de hidratar) se reserva su hueco, invisible.
     const hydrated = useHydrated();
     const links = !hydrated || account ? primaryLinks : primaryLinks.filter(link => link.to !== ROUTES.plan);
-    // Analytics: solo con rol admin, y solo en el menú lateral (no en la barra móvil).
+    // Analytics: solo con rol admin, y solo en el menú lateral.
     const admin = isAdmin(account);
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
     const isActive = (to: string, active: boolean) => active || (to === ROUTES.exercises && pathname.startsWith(`${ROUTES.exercises}/`));
@@ -43,8 +42,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             menuOpen ? 'overflow-y-auto shadow-[20px_0_80px_#0005]' : 'invisible -translate-x-full md:visible',
         )}>
             <Link to="/" className="relative flex items-center gap-2 px-px pb-3 font-black whitespace-nowrap md:gap-0.5 xl:gap-2">
-                <img className="h-12 w-11 object-contain drop-shadow-[0_0_10px_#e0662f30] md:w-9 xl:w-11" src="/icons/quest-mark.svg" alt=""/>
-                <span className="text-2xl tracking-tight md:text-[1.3125rem] xl:text-[1.4375rem]">Fret <span className="text-brand">Quest</span></span>
+                <img className="h-12 w-11 object-contain drop-shadow-[0_0_10px_#3198dc30] md:w-9 xl:w-11" src="/icons/quest-mark.svg" alt=""/>
+                <span className="text-2xl tracking-tight md:text-[1.3125rem] xl:text-[1.4375rem]">Fret Quest</span>
             </Link>
             <p className="mx-3.5 mt-3 mb-3 text-3xs tracking-[0.2em] text-subtle">TU ENTRENAMIENTO</p>
             <nav aria-label="Principal">
@@ -66,20 +65,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="min-w-0 md:ml-50 xl:ml-56">
-            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas/95 px-4.5 backdrop-blur-md md:justify-end md:px-6 xl:px-9.5">
+            {/* Sticky solo en móvil: ahí el botón del menú es la única navegación. */}
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas px-4.5 md:static md:justify-end md:px-6 xl:px-9.5">
                 <div className="flex items-center gap-4 md:hidden">
                     <button aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X/> : <Menu/>}</button>
-                    <Link to="/" className="text-lg font-black tracking-tight">Fret <span className="text-brand">Quest</span></Link>
+                    <Link to="/" className="text-lg font-black tracking-tight">Fret Quest</Link>
                 </div>
                 <AccountBar/>
             </header>
-            <main id="main-content" key={pathname} className="mx-auto max-w-365 min-w-0 animate-rise px-4.5 pt-6.5 pb-24 md:px-6 md:py-7.5 xl:px-9.5 xl:pt-9 xl:pb-11">
+            <main id="main-content" key={pathname} className="mx-auto max-w-365 min-w-0 animate-rise px-4.5 pt-6.5 pb-11 md:px-6 md:py-7.5 xl:px-9.5 xl:pt-9 xl:pb-11">
                 {children}
             </main>
         </div>
-
-        <nav aria-label="Accesos móviles" className="fixed inset-x-0 bottom-0 z-30 grid grid-flow-col auto-cols-fr border-t border-line-soft bg-canvas/95 p-1.5 pb-[calc(5px+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
-            {navigation(links, bottomLink)}
-        </nav>
     </div>;
 }

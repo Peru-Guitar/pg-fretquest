@@ -80,16 +80,16 @@ export default function GuidePage() {
             { icon: Compass, title: 'Elige tu nivel', text: 'Un cuestionario corto te sugiere tu nivel y tu plan.' },
             { icon: Gauge, title: 'Fija tu ritmo', text: 'Días por semana y minutos por día: tu meta semanal.' },
             { icon: Play, title: 'Practica', text: 'Ejercicio a ejercicio, con metrónomo y tablatura.' },
-        ].map(({ icon: Icon, title, text }, index) => <li key={title} className="relative overflow-hidden rounded-2xl border border-brand/30 bg-linear-135 from-brand/12 to-card p-5">
+        ].map(({ icon: Icon, title, text }, index) => <li key={title} className="relative overflow-hidden rounded-2xl border border-line bg-card p-5">
             <span className="absolute top-3 right-4 font-mono text-4xl font-black text-white/6">{index + 1}</span>
-            <span className="grid size-10 place-items-center rounded-xl bg-brand/20 text-accent-strong"><Icon size={20}/></span>
+            <span className="grid size-10 place-items-center rounded-xl bg-blue/20 text-accent-strong"><Icon size={20}/></span>
             <h2 className="mt-3 text-lg">{title}</h2>
             <p className="mt-1 text-sm text-muted">{text}</p>
         </li>)}</ol>
 
         <div className="grid gap-5 lg:grid-cols-2">{SECTIONS.map(({ icon: Icon, title, points, to, link }) => <Card key={title} className="flex flex-col">
-            <h2 className="flex items-center gap-3 text-xl"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand/12 text-accent-strong"><Icon size={20}/></span>{title}</h2>
-            <ul className="mt-4 flex flex-1 flex-col gap-2.5">{points.map(point => <li key={point} className="flex gap-2.5 text-sm leading-relaxed text-fg-soft"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand"/>{point}</li>)}</ul>
+            <h2 className="flex items-center gap-3 text-xl"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue/12 text-accent-strong"><Icon size={20}/></span>{title}</h2>
+            <ul className="mt-4 flex flex-1 flex-col gap-2.5">{points.map(point => <li key={point} className="flex gap-2.5 text-sm leading-relaxed text-fg-soft"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-blue"/>{point}</li>)}</ul>
             {to && <Link to={to} className="mt-5 self-start text-sm font-bold text-accent hover:underline">{link} →</Link>}
         </Card>)}</div>
     </>;

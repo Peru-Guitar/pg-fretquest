@@ -18,7 +18,7 @@ export default function SettingsPage() {
         <PageTitle eyebrow="HAZLO TUYO" title="Tu espacio. A tu manera." text="Los pequeños detalles también hacen parte de tu aventura."/>
         <div className="md:grid md:grid-cols-[140px_minmax(0,1fr)] md:gap-5 lg:grid-cols-[180px_minmax(0,780px)] lg:gap-7.5">
             <nav className="mb-5 flex gap-2 md:mb-0 md:flex-col" aria-label="Secciones de ajustes">{sections.map(label =>
-                <button key={label} aria-current={tab === label ? 'page' : undefined} onClick={() => { setTab(label); setSaved(false); }} className={cn('min-h-11 flex-1 rounded-md border px-2 text-center text-xs xs:px-4 xs:text-sm md:flex-none md:text-left', tab === label ? 'border-violet/25 bg-violet/10 text-[#bca7ff]' : 'border-transparent text-muted')}>{label}</button>)}
+                <button key={label} aria-current={tab === label ? 'page' : undefined} onClick={() => { setTab(label); setSaved(false); }} className={cn('min-h-11 flex-1 rounded-md border px-2 text-center text-xs xs:px-4 xs:text-sm md:flex-none md:text-left', tab === label ? 'border-violet/25 bg-violet/10 text-accent' : 'border-transparent text-muted')}>{label}</button>)}
             </nav>
             <form className="min-w-0" onSubmit={event => { event.preventDefault(); setSaved(true); }}><Card as="div">
                 <Eyebrow className="mb-3">{tab.toUpperCase()}</Eyebrow>
@@ -34,7 +34,7 @@ export default function SettingsPage() {
                     <h2 className="mb-3">Tu ambiente</h2>
                     <p className="text-sm text-muted">Explora los estados visuales del selector de apariencia.</p>
                     <div className="mt-5.5 flex flex-wrap gap-3 xl:flex-nowrap">{themes.map(({ label, Icon }) =>
-                        <button type="button" key={label} onClick={() => setTheme(label)} aria-pressed={theme === label} className={cn('flex min-w-20 flex-1 items-center gap-2 rounded-lg border bg-[#121c2e] px-2 py-3 text-xs xs:min-w-25 xs:px-3 xl:gap-3 xl:p-4', theme === label ? 'border-violet text-[#c1abff]' : 'border-line')}>
+                        <button type="button" key={label} onClick={() => setTheme(label)} aria-pressed={theme === label} className={cn('flex min-w-20 flex-1 items-center gap-2 rounded-lg border bg-field px-2 py-3 text-xs xs:min-w-25 xs:px-3 xl:gap-3 xl:p-4', theme === label ? 'border-violet text-accent' : 'border-line')}>
                             <Icon/>{label}{theme === label && <Check size={15}/>}
                         </button>)}
                     </div>

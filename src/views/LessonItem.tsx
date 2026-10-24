@@ -7,7 +7,8 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAccount } from '@/lib/account';
 import { setReadingDone, useProgress } from '@/lib/progressDb';
 import { timeAgo } from '@/lib/timeAgo';
-import { BackLink, Button, Card, PageTitle } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { ModuleHero } from '@/components/quest/ModuleHero';
 import PracticePage, { type Mode } from '@/views/Practice';
 import { courses, } from '@/data/questMock';
 
@@ -30,8 +31,8 @@ export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
     const next = course.lessons[index + 1];
 
     return <>
-        <BackLink to={moduleUrl(course.id)}>{course.title}</BackLink>
-        <PageTitle eyebrow={`${course.category} · LECTURA`} title={lesson.title} text={lesson.summary}/>
+        <ModuleHero image={course.image} back={{ to: moduleUrl(course.id), label: course.title }} eyebrow={`${course.category} · Lectura`} title={lesson.title} text={lesson.summary}
+            stats={[['Lección', `${index + 1} de ${course.lessons.length}`], ['Puntos', lesson.points.length]]}/>
         <Card as="section" className="md:px-10 md:py-9 xl:px-12">
             <article className="flex flex-col gap-8">
                 {lesson.points.map((point, number) => <section key={point.title} className="flex gap-4">

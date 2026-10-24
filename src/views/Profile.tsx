@@ -6,13 +6,13 @@ import { player } from '@/data/questMock';
 
 export default function ProfilePage() {
     return <>
-        <section className="relative h-37.5 overflow-hidden rounded-xl border border-[#68509e] bg-radial-[at_80%_70%] from-[#663a9e] via-[#24264b] via-55% to-surface p-7.5 md:h-47.5">
-            <Guitar strokeWidth={0.7} className="absolute -top-15 right-22 size-75 -rotate-24 text-[#b183ff60]" aria-hidden="true"/>
-            <Eyebrow className="absolute right-5 bottom-6 left-6 text-4xs text-[#d3c4ed] md:left-auto md:right-7.5">NO SE TRATA DE LLEGAR. SE TRATA DE SEGUIR TOCANDO.</Eyebrow>
+        <section className="relative h-37.5 overflow-hidden rounded-xl border border-line bg-radial-[at_80%_70%] from-[#1d4a7a] via-[#111a30] via-55% to-surface p-7.5 md:h-47.5">
+            <Guitar strokeWidth={0.7} className="absolute -top-15 right-22 size-75 -rotate-24 text-accent/30" aria-hidden="true"/>
+            <Eyebrow className="absolute right-5 bottom-6 left-6 text-4xs text-fg-soft md:left-auto md:right-7.5">NO SE TRATA DE LLEGAR. SE TRATA DE SEGUIR TOCANDO.</Eyebrow>
         </section>
         <div className="relative -mt-5 mb-7.5 flex flex-wrap items-center gap-2.5 px-2 xs:gap-4 md:-mt-6 md:px-3 xl:flex-nowrap xl:gap-6 xl:px-6">
-            <span className="relative grid size-18 shrink-0 place-items-center rounded-[22px] border-6 border-canvas bg-linear-135 from-[#68432d] to-[#30231c] text-4xl font-black text-accent xs:size-21.5 md:size-27.5 md:text-5xl">
-                {player.name[0]}<small className="absolute -bottom-3 left-4 rounded-[5px] bg-linear-100 from-[#4799ff] to-[#8a48fa] px-2 py-0.5 text-sm text-white xs:left-5.5 md:left-7.5">{player.level}</small>
+            <span className="relative grid size-18 shrink-0 place-items-center rounded-[22px] border-6 border-canvas bg-raised text-4xl font-black text-accent xs:size-21.5 md:size-27.5 md:text-5xl">
+                {player.name[0]}<small className="absolute -bottom-3 left-4 rounded-[5px] bg-blue px-2 py-0.5 text-sm text-white xs:left-5.5 md:left-7.5">{player.level}</small>
             </span>
             <div className="flex-1 pt-7.5 xs:pt-9 md:pt-10">
                 <h1 className="text-3xl md:text-[clamp(1.6875rem,2.5vw,2.375rem)]">{player.name}<span className="text-accent">.</span></h1>
