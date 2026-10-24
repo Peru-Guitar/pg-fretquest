@@ -266,7 +266,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         if (currentRow >= 0 && !(document.activeElement instanceof HTMLSelectElement)) rowRefs.current[currentRow]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, [currentRow]);
 
-    // Cabecera fija: aparece mientras suena y la cabecera del ejercicio ya salió de la pantalla.
+    // Cabecera fija: aparece mientras suena y la cabecera del ejercicio ya salió de la pantalla, debajo del header de la app (h-16).
     const headerRef = useRef<HTMLDivElement | null>(null);
     const [headerHidden, setHeaderHidden] = useState(false);
     useEffect(() => {
@@ -379,7 +379,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                     {!active && <div className="ml-auto flex flex-wrap items-center gap-3 text-sm text-muted">{session ? <span>Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</span> : roundsGroup}</div>}
                 </div>
                 </div>
-                {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-0 z-40 rounded-b-xl border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
+                {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-16 z-20 rounded-b-xl border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-2.5 md:px-6">
                         <div className="min-w-0 flex-1">
                             <p className="truncate font-bold text-fg">{activeExercise.title}</p>
