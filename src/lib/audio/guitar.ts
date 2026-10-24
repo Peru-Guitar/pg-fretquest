@@ -1,16 +1,17 @@
 /**
- * Sonido de guitarra acústica para las tablaturas (mismo enfoque que erpskool y chordy).
+ * Sonido de guitarra eléctrica con distorsión para las tablaturas (mismo enfoque que erpskool y chordy).
  *
  * Tone.js se importa en la primera reproducción y las muestras se descargan una sola vez
- * de la colección tonejs-instruments. Solo se cargan las cuerdas al aire y dos notas agudas;
- * Tone.js afina las notas intermedias a partir de la muestra más cercana.
+ * de la colección tonejs-instruments (guitarra eléctrica limpia). Se cargan ocho notas repartidas por el
+ * registro y Tone.js afina las intermedias a partir de la muestra más cercana. La distorsión se suma con efectos.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tone = any;
 
-const SAMPLE_BASE = "https://nbrosowsky.github.io/tonejs-instruments/samples/guitar-acoustic/";
-const SAMPLES = ["E2", "A2", "D3", "G3", "B3", "E4", "A4", "D5"];
+const SAMPLE_BASE = "https://nbrosowsky.github.io/tonejs-instruments/samples/guitar-electric/";
+// Nota → archivo (la colección escribe los sostenidos con «s»: Fs3 = F#3).
+const SAMPLES = ["E2", "A2", "C3", "F#3", "C4", "F#4", "C5", "A5"];
 
 // Afinación estándar en MIDI, de la cuerda 1 (Mi agudo) a la 6 (Mi grave)
 const OPEN_STRINGS = [64, 59, 55, 50, 45, 40];
@@ -24,17 +25,28 @@ let loading: Promise<void> | null = null;
 
 /** Carga Tone.js y las muestras. Debe llamarse desde un clic (lo exigen los navegadores). */
 export function prepare(): Promise<void> {
+  if (tone && master) {
+    // El navegador suspende el audio al cambiar de pestaña, bloquear el celular o cambiar de salida: se reactiva en cada clic.
+    if (tone.getContext().state !== "running") void tone.start();
+    // Si se acaba de detener, la salida sigue en 0 un momento (`silence`): vuelve ya para no perder las primeras notas.
+    const now = tone.now();
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(1, now);
+  }
   loading ??= (async () => {
     tone = await import("tone");
     await tone.start();
     master = new tone.Gain(1).toDestination();
+    // Distorsión y después un filtro que recorta los agudos ásperos, como el parlante de un amplificador.
+    const cabinet = new tone.Filter(3800, "lowpass").connect(master);
+    const drive = new tone.Distortion({ distortion: 0.9, oversample: "4x" }).connect(cabinet);
     sampler = new tone.Sampler({
-      urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n}.mp3`])),
+      urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`])),
       baseUrl: SAMPLE_BASE,
       // Sin reverb y con release corto: cada nota se apaga antes de la siguiente, sin eco.
       release: 0.25,
-      volume: -4,
-    }).connect(master);
+      volume: -10,
+    }).connect(drive);
     // Clic corto del metrónomo: «tick» agudo en el tiempo, «tac» más grave en el contratiempo.
     clicker = new tone.Synth({
       oscillator: { type: "square" },

@@ -5,7 +5,7 @@ import type { AudioDevices, MicPitch } from "@/lib/audio/mic";
 import { GUITAR_STRINGS, centsBetween, nearestString } from "@/lib/audio/pitch";
 import { DeviceSelect, LevelMeter } from "./AudioInput";
 
-const NOTE_NAMES = ["Mi", "La", "Re", "Sol", "Si", "Mi"];
+const NOTE_NAMES = ["E", "A", "D", "G", "B", "E"];
 const IN_TUNE_CENTS = 5;
 const MIC_ERRORS: Partial<Record<string, string>> = {
   denied: "Permiso de micrófono denegado. Actívalo en la configuración del navegador.",

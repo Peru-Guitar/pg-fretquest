@@ -6,7 +6,7 @@ function ArtistPhoto({ id, name, className }: { id: string; name: string; classN
     const [ok, setOk] = useState(true);
     const initials = name.split(' ').map(part => part[0]).join('').slice(0, 2);
     return <span className={cn('grid shrink-0 place-items-center overflow-hidden rounded-full bg-linear-135 from-gold to-brand font-black text-white', className)}>
-        {ok ? <img src={artistImage(id)} alt="" onError={() => setOk(false)} className="size-full object-cover"/> : initials}
+        {ok ? <img src={artistImage(id)} alt="" width={400} height={400} loading="lazy" decoding="async" onError={() => setOk(false)} className="size-full object-cover"/> : initials}
     </span>;
 }
 
@@ -40,6 +40,14 @@ export function ArtistHeader({ id }: { id: string }) {
     return <h3 className="flex items-center gap-3.5 text-2xl md:text-3xl">
         <ArtistPhoto id={id} name={artist.name} className="size-12 text-base ring-2 ring-gold/40 md:size-14"/>
         <span className="shrink-0">{artist.name}</span>
+        <span aria-hidden className="h-px flex-1 bg-linear-90 from-gold/50 to-line"/>
+    </h3>;
+}
+
+/** Título de un grupo de lecciones de una misma categoría (p. ej. «Grupos de tres cuerdas»), con el mismo estilo que el de artista. */
+export function CategoryHeader({ title }: { title: string }) {
+    return <h3 className="flex items-center gap-3.5 text-2xl md:text-3xl">
+        <span className="shrink-0">{title}</span>
         <span aria-hidden className="h-px flex-1 bg-linear-90 from-gold/50 to-line"/>
     </h3>;
 }

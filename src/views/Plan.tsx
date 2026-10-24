@@ -2,7 +2,7 @@
 
 import { ROUTES, lessonUrl, practiceUrl } from '@/lib/routes';
 import { Link, Navigate } from '@/lib/router';
-import { BookOpen, CalendarDays, Check, Compass, Flame, ListOrdered, RotateCcw, Sparkles } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, Clock, Compass, Flame, ListOrdered, RotateCcw, Sparkles } from 'lucide-react';
 import { Card, PageTitle } from '@/components/ui';
 import { courses, } from '@/data/questMock';
 import { ArtistHeader } from '@/components/quest/ArtistCredit';
@@ -15,12 +15,19 @@ import { cn } from '@/lib/cn';
 
 const now = () => Date.now();
 
-/** Chips del registro: veces (naranja) y última práctica en formato humano, coloreada por lo reciente que es. */
-function StatChips({ stats }: { stats: { count: number; last: number } }) {
+/** Tiempo legible: segundos, minutos u horas. */
+const duration = (seconds: number) => seconds < 60 ? `${seconds} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
+
+/**
+ * Chips del registro: tiempo de esta semana (solo si la practicaste), veces (naranja) y última práctica
+ * en formato humano, coloreada por lo reciente que es.
+ */
+function StatChips({ stats, weekSeconds }: { stats: { count: number; last: number }; weekSeconds: number }) {
     if (stats.count === 0) return <span className="rounded-full border border-dashed border-line-strong px-3 py-1 text-2xs font-bold text-muted">Sin practicar</span>;
     const hours = (now() - stats.last) / 3_600_000;
     const recency = hours <= 48 ? 'border-success/40 bg-success/12 text-success' : hours <= 96 ? 'border-gold/40 bg-gold/12 text-gold' : 'border-line-strong bg-white/4 text-muted';
     return <>
+        {weekSeconds > 0 && <span title="Tiempo practicado esta semana" className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/12 px-3 py-1 text-2xs font-bold text-gold"><Clock size={13}/>{duration(weekSeconds)} esta semana</span>}
         <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-2xs font-bold text-accent"><Flame size={13} className="fill-current"/>{stats.count} {stats.count === 1 ? 'vez' : 'veces'}</span>
         <time dateTime={new Date(stats.last).toISOString()} title={fullDateTime(stats.last)} className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-2xs font-bold first-letter:uppercase', recency)}><CalendarDays size={13}/>{timeAgo(stats.last)}</time>
     </>;
@@ -43,10 +50,9 @@ export default function PlanPage() {
     // Progreso real (Firestore): minutos de hoy, días completados esta semana y resumen por lección.
     const todayMinutes = Math.floor((todayOf(progress)?.seconds ?? 0) / 60);
     const practiced = completedDaysThisWeek(progress);
-    // Minutos por lección esta semana: la más practicada llena su barra y las demás se miden contra ella.
+    // Tiempo por lección esta semana (chip del registro).
     const weekSeconds: Record<string, number> = {};
     for (const day of Object.values(progress.days)) for (const [lessonId, lesson] of Object.entries(day.lessons ?? {})) weekSeconds[lessonId] = (weekSeconds[lessonId] ?? 0) + (lesson.seconds ?? 0);
-    const maxWeekSeconds = Math.max(0, ...Object.values(weekSeconds));
     const statsOf = (lessonId: string) => { const summary = progress.lessons[lessonId]; return summary ? { count: summary.days, last: summary.lastAt.toMillis() } : { count: 0, last: 0 }; };
     const planStats = blocks.flatMap(block => block.lessons).map(lesson => statsOf(lesson.id));
     const totals = {
@@ -138,24 +144,19 @@ export default function PlanPage() {
                 <h2 className="mt-1.5 mb-4 text-lg">{block.title}</h2>
                 <div className="flex flex-col gap-5">{groupByArtist(block.lessons).map(group => <div key={group.artist ?? 'none'} className="flex flex-col gap-3">
                 {group.artist ? <ArtistHeader id={group.artist}/> : block.lessons.some(lesson => lesson.artist) && <b className="text-sm text-fg">De la comunidad</b>}
-                <div className="divide-y divide-line overflow-hidden rounded-lg border border-line">{group.lessons.map(lesson => {
+                <div className="divide-y divide-line rounded-lg border border-line">{group.lessons.map(lesson => {
                     const stats = statsOf(lesson.id);
-                    return <Link key={lesson.id} to={practiceUrl(block.moduleId, lesson.id)} className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-white/3">
+                    return <Link key={lesson.id} to={practiceUrl(block.moduleId, lesson.id)} className="flex items-center gap-3 px-4 py-3.5 transition first:rounded-t-lg last:rounded-b-lg hover:bg-white/3">
                         {/* Actividad, no «terminada»: punto naranja si ya la practicaste alguna vez. */}
                         <span title={stats.count > 0 ? 'Con actividad' : 'Sin actividad'} className={cn('grid size-7 shrink-0 place-items-center rounded-full border', stats.count > 0 ? 'border-brand/50' : 'border-line-strong')}>
                             {stats.count > 0 && <span className="size-2.5 rounded-full bg-brand shadow-[0_0_8px_#e0662f]"/>}
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="flex flex-wrap items-center gap-2 font-bold">{lesson.title}</p>
-                            {/* Progreso de la semana: minutos de esta lección frente a la más practicada. */}
-                            <span className="mt-2 flex max-w-sm items-center gap-2.5">
-                                <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-white/8"><span className="block h-full rounded-full bg-linear-90 from-brand to-gold transition-[width]" style={{ width: `${maxWeekSeconds ? (weekSeconds[lesson.id] ?? 0) / maxWeekSeconds * 100 : 0}%` }}/></span>
-                                <span className="w-24 shrink-0 font-mono text-2xs text-muted">{Math.round((weekSeconds[lesson.id] ?? 0) / 60)} min semana</span>
-                            </span>
-                            <span className="mt-2 flex flex-wrap gap-1.5 sm:hidden"><StatChips stats={stats}/></span>
+                            <span className="mt-2 flex flex-wrap gap-1.5 sm:hidden"><StatChips stats={stats} weekSeconds={weekSeconds[lesson.id] ?? 0}/></span>
                         </div>
                         {/* Registro de esta lección: veces practicada (una por día) y última fecha, en chips. */}
-                        <span className="hidden shrink-0 items-center gap-2 sm:flex"><StatChips stats={stats}/></span>
+                        <span className="hidden shrink-0 items-center gap-2 sm:flex"><StatChips stats={stats} weekSeconds={weekSeconds[lesson.id] ?? 0}/></span>
                         <DifficultySignal difficulty={lesson.difficulty}/>
                     </Link>;
                 })}</div>

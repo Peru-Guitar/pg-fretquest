@@ -6,7 +6,11 @@ import { clickAt, getTone, playAt, silence } from "./guitar";
  * con `notesPerBeat` notas (1 = negras, 6 = sextillos); los clics alternan tick (acentuado) y tac. Todo queda en el reloj de audio; la interfaz se sincroniza con `Draw`.
  */
 
-export type PatternNote = { string: number; fret: number };
+/**
+ * `slide`: se llega deslizando el dedo desde la nota anterior en la misma cuerda, sin púa.
+ * `beats`: duración en pulsos cuando no es la figura del estudio (p. ej. 1 = negra para la nota final).
+ */
+export type PatternNote = { string: number; fret: number; slide?: boolean; beats?: number };
 
 type RoundOptions = {
   /** Toca la guitarra de guía (Práctica). En Progreso solo suena el metrónomo. */
@@ -58,19 +62,28 @@ export function scheduleRound(bpm: number, pattern: PatternNote[], options: Roun
   const step = click / perBeat;
   const clicksPerBeat = options.clicksPerBeat ?? 1;
   const clickEvery = perBeat / clicksPerBeat;
+  // Cada nota dura un paso de la figura, salvo las que llevan `beats`. El metrónomo va en su propia rejilla,
+  // así sigue sonando mientras se sostiene una nota larga.
+  const lengths = pattern.map((note) => (note.beats ? note.beats * perBeat : 1));
+  const totalSteps = lengths.reduce((sum, length) => sum + length, 0);
+  for (let at = 0; at < totalSteps; at += clickEvery) {
+    transport.schedule((time: number) => clickAt(time, clicksPerBeat > 1 ? at % perBeat === 0 : (at / perBeat) % 2 === 0), start + at * step);
+  }
+  let at = 0;
   pattern.forEach((note, index) => {
+    const length = lengths[index];
     transport.schedule((time: number) => {
-      if (index % clickEvery === 0) clickAt(time, clicksPerBeat > 1 ? index % perBeat === 0 : (index / perBeat) % 2 === 0);
-      if (options.guide) playAt(note.string, note.fret, step * 0.95, time);
+      if (options.guide) playAt(note.string, note.fret, length * step * 0.95, time);
       draw.schedule(ui(() => options.onStep(index)), time);
-    }, start + index * step);
+    }, start + at * step);
+    at += length;
   });
   // El fin no va por `Draw`: Draw descarta los eventos atrasados (pestaña en segundo plano, scroll pesado)
   // y la ronda se quedaría «reproduciendo» para siempre. Un temporizador siempre llega.
   let ended: ReturnType<typeof setTimeout> | undefined;
   transport.schedule((time: number) => {
     ended = setTimeout(ui(options.onEnd), Math.max(0, (time - tone.now()) * 1000));
-  }, start + pattern.length * step);
+  }, start + totalSteps * step);
 
   transport.start("+0.05");
   return () => {
