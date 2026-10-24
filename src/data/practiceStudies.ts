@@ -214,42 +214,42 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
     };
 };
 
-// Modos sobre C (patrón del curso de erpskool, «Escala de Do mayor»), agrupados por su tercera: los mayores en
-// «Escala mayor» y los menores en «Escala menor», junto a la menor natural (eólico).
-// Tres notas por cuerda desde C en el traste 3 de la quinta cuerda, dos octavas; cada parte sube una cuerda más que la anterior
-// y regresa. La última baja hasta la sexta cuerda, vuelve a subir y termina en C.
+// Modos de la escala mayor de C (patrón del curso de erpskool, «Escala de Do mayor»): todos con las notas de C mayor,
+// cada uno desde su grado (D dórico, E frigio…). Se agrupan por su tercera: los mayores en «Escala mayor» y los menores
+// en «Escala menor», junto a la menor natural (A eólico).
+// Tres notas por cuerda desde la tónica en la quinta cuerda, dos octavas; cada parte sube una cuerda más que la anterior
+// y regresa. La última baja hasta la sexta cuerda, vuelve a subir y termina en la tónica.
 const OPEN_MIDI = [64, 59, 55, 50, 45, 40];
-const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NOTE_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const MAJOR_PCS = [0, 2, 4, 5, 7, 9, 11];
-/** Modos en el orden en que se presentan: id de lección, grado de la escala mayor del que salen y grupo. */
+/** Modos en el orden en que se presentan: id de lección, grado de C mayor del que salen y grupo. */
 export const SCALE_MODES = [
-    { id: 'scales-01', degree: 0, mode: 'jónico', group: 'Escala mayor', color: 'Es la escala mayor: brillante y estable. Es la referencia con la que se comparan los otros modos.' },
-    { id: 'scales-04', degree: 3, mode: 'lidio', group: 'Escala mayor', color: 'Es la escala mayor con la cuarta aumentada (F#): suena abierta y suspendida.' },
-    { id: 'scales-05', degree: 4, mode: 'mixolidio', group: 'Escala mayor', color: 'Es la escala mayor con la séptima menor (Bb): el sonido del acorde de dominante.' },
-    { id: 'scales-06', degree: 5, mode: 'eólico', group: 'Escala menor', color: 'Es la escala menor natural: el sonido menor de referencia.' },
-    { id: 'scales-02', degree: 1, mode: 'dórico', group: 'Escala menor', color: 'Es la menor natural con la sexta mayor (A): un color menor más luminoso.' },
-    { id: 'scales-03', degree: 2, mode: 'frigio', group: 'Escala menor', color: 'Es la menor natural con la segunda menor (Db): oscuro, de sabor español.' },
-    { id: 'scales-07', degree: 6, mode: 'locrio', group: 'Escala menor', color: 'Es la menor natural con la segunda menor y la quinta disminuida (Db, Gb): inestable y tenso.' },
+    { id: 'scales-01', degree: 0, mode: 'jónico', group: 'Escala mayor', color: 'Es la escala mayor misma: brillante y estable.' },
+    { id: 'scales-04', degree: 3, mode: 'lidio', group: 'Escala mayor', color: 'Mayor con la cuarta aumentada (#4): suena abierto y suspendido.' },
+    { id: 'scales-05', degree: 4, mode: 'mixolidio', group: 'Escala mayor', color: 'Mayor con la séptima menor (b7): el sonido del acorde de dominante.' },
+    { id: 'scales-06', degree: 5, mode: 'eólico', group: 'Escala menor', color: 'Es la escala menor natural: la relativa menor de C mayor.' },
+    { id: 'scales-02', degree: 1, mode: 'dórico', group: 'Escala menor', color: 'Menor con la sexta mayor: un color menor más luminoso.' },
+    { id: 'scales-03', degree: 2, mode: 'frigio', group: 'Escala menor', color: 'Menor con la segunda menor (b2): oscuro, de sabor español.' },
+    { id: 'scales-07', degree: 6, mode: 'locrio', group: 'Escala menor', color: 'Con la segunda menor y la quinta disminuida (b2, b5): inestable y tenso.' },
 ] as const;
-/** Intervalos (semitonos desde C) del modo que sale del grado `degree` de la escala mayor. */
-const modeIntervals = (degree: number) => [0, 1, 2, 3, 4, 5, 6].map(step => (MAJOR_PCS[(degree + step) % 7] - MAJOR_PCS[degree] + 12) % 12);
-// Lidio lleva F# (cuarta aumentada); el resto de alteraciones de los modos sobre C son bemoles.
-const noteName = (pc: number, degree: number) => pc === 6 && degree === 3 ? 'F#' : NOTE_NAMES[pc];
+const ORDINALS = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo'];
+/** Tónica de cada modo: el grado de C mayor del que sale. */
+export const modeRoot = (degree: number) => NOTE_NAMES[degree];
 const note = (string: number, midi: number): PatternNote => ({ string, fret: midi - OPEN_MIDI[string - 1] });
 const modeStudy = ({ degree, mode, color }: typeof SCALE_MODES[number]): PracticeStudy => {
-    const intervals = modeIntervals(degree);
-    const notes = intervals.map(pc => noteName(pc, degree));
-    const root = 'C';
-    const rootMidi = 48;
-    const scale = (offset: number) => rootMidi + intervals[((offset % 7) + 7) % 7] + Math.floor(offset / 7) * 12;
+    const root = modeRoot(degree);
+    const notes = [0, 1, 2, 3, 4, 5, 6].map(step => NOTE_NAMES[(degree + step) % 7]);
+    // La tónica va en la quinta cuerda entre los trastes 1 y 12.
+    const rootMidi = 45 + (((MAJOR_PCS[degree] - 9 + 12) % 12) || 12);
+    const scale = (offset: number) => { const index = degree + offset; return rootMidi - MAJOR_PCS[degree] + MAJOR_PCS[((index % 7) + 7) % 7] + Math.floor(index / 7) * 12; };
     const up = Array.from({ length: 15 }, (_, index) => note(5 - Math.floor(index / 3), scale(index)));
     const below = [-1, -2, -3].map(offset => note(6, scale(offset)));
     const part = (strings: number) => [...up.slice(0, strings * 3), ...up.slice(1, strings * 3 - 1).reverse()];
     const start = up[0].fret;
     return {
-        description: `${root} ${mode} con un patrón de tres notas por cuerda que recorre el mástil desde ${root} en el traste ${start} de la quinta cuerda. ${color}`,
+        description: `${root} ${mode}: el ${ORDINALS[degree]} modo de la escala mayor de C (mismas notas, empezando en ${root}), con un patrón de tres notas por cuerda desde ${root} en el traste ${start} de la quinta cuerda. ${color}`,
         notation: `${root} ${mode} (${notes.join(' ')}) · Corcheas · Púa alternada`,
-        goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos de C y mejorar el picking.`,
+        goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos de C mayor y mejorar el picking.`,
         steps: [
             `Antes del patrón, toca la escala completa: de ${root} en el traste ${start} de la quinta cuerda a ${root} en el traste ${up[14].fret} de la primera, dos octavas más arriba.`,
             `El patrón tiene cuatro partes. Cada una sale de ${root}, sube una cuerda más que la anterior y regresa hasta el traste ${up[1].fret} de la quinta cuerda.`,
