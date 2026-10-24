@@ -214,19 +214,54 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
     };
 };
 
-// Escala mayor de C desde la quinta cuerda (curso de erpskool): cada parte sale de C, sube una cuerda más que la anterior y regresa.
-const run = (string: number, frets: number[]): PatternNote[] => frets.map(fret => ({ string, fret }));
-const C_IONIAN_UP = [...run(5, [3, 5, 7]), ...run(4, [3, 5, 7]), ...run(3, [4, 5, 7]), ...run(2, [5, 6, 8]), ...run(1, [5, 7, 8])];
-
-export const practiceStudies: Record<string, PracticeStudy> = {
-    'scales-01': {
-        description: 'La escala de C mayor, primer modo de la escala mayor (modo jónico), con un patrón que recorre el mástil de cuerda en cuerda desde C en el traste 3 de la quinta cuerda.',
-        notation: 'Escala mayor de C (C D E F G A B) · Corcheas · Púa alternada',
-        goal: 'Conocer las posiciones de la escala de C mayor, reconocerlas en el mástil y mejorar el picking.',
+// Modos de la escala mayor y de la menor natural de C (patrón del curso de erpskool, «Escala de Do mayor»).
+// Tres notas por cuerda desde la tónica en la quinta cuerda, dos octavas; cada parte sube una cuerda más que la anterior
+// y regresa. La última baja hasta la sexta cuerda, vuelve a subir y termina en la tónica.
+const OPEN_MIDI = [64, 59, 55, 50, 45, 40];
+const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+export const SCALE_PARENTS = {
+    major: { name: 'escala mayor de C', group: 'Escala mayor', pcs: [0, 2, 4, 5, 7, 9, 11] },
+    minor: { name: 'escala menor natural de C', group: 'Escala menor', pcs: [0, 2, 3, 5, 7, 8, 10] },
+};
+export type ScaleParent = keyof typeof SCALE_PARENTS;
+const MODE_NAMES = ['jónico', 'dórico', 'frigio', 'lidio', 'mixolidio', 'eólico', 'locrio'];
+const MODE_COLOR: Record<string, string> = {
+    'jónico': 'Es la escala mayor misma: brillante y estable.',
+    'dórico': 'Menor, pero con la sexta mayor: un color menor más luminoso.',
+    'frigio': 'Menor con la segunda menor (b2): oscuro, de sabor español.',
+    'lidio': 'Mayor con la cuarta aumentada (#4): suena abierto y suspendido.',
+    'mixolidio': 'Mayor con la séptima menor (b7): el sonido del acorde de dominante.',
+    'eólico': 'Es la escala menor natural: el sonido menor de referencia.',
+    'locrio': 'Con la segunda menor y la quinta disminuida (b2, b5): inestable y tenso.',
+};
+const ORDINALS = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo'];
+/** Modo del grado `degree` (0–6) de la escala `parent`: tónica, nombre y notas en orden. Los modos de la menor natural arrancan en eólico. */
+export function scaleMode(parent: ScaleParent, degree: number) {
+    const { pcs } = SCALE_PARENTS[parent];
+    const root = pcs[degree];
+    const mode = MODE_NAMES[(degree + (parent === 'minor' ? 5 : 0)) % 7];
+    const notes = [0, 1, 2, 3, 4, 5, 6].map(step => NOTE_NAMES[pcs[(degree + step) % 7]]);
+    return { root: NOTE_NAMES[root], mode, title: `${NOTE_NAMES[root]} ${mode}`, notes, rootPc: root };
+}
+const note = (string: number, midi: number): PatternNote => ({ string, fret: midi - OPEN_MIDI[string - 1] });
+const modeStudy = (parent: ScaleParent, degree: number): PracticeStudy => {
+    const { pcs, name } = SCALE_PARENTS[parent];
+    const { root, mode, notes } = scaleMode(parent, degree);
+    // La tónica va en la quinta cuerda entre los trastes 1 y 12.
+    const rootMidi = 45 + (((pcs[degree] - 9 + 12) % 12) || 12);
+    const scale = (offset: number) => { const index = degree + offset; const octave = Math.floor(index / 7); return rootMidi - pcs[degree] + pcs[((index % 7) + 7) % 7] + octave * 12; };
+    const up = Array.from({ length: 15 }, (_, index) => note(5 - Math.floor(index / 3), scale(index)));
+    const below = [-1, -2, -3].map(offset => note(6, scale(offset)));
+    const part = (strings: number) => [...up.slice(0, strings * 3), ...up.slice(1, strings * 3 - 1).reverse()];
+    const start = up[0].fret;
+    return {
+        description: `${root} ${mode}: el ${ORDINALS[degree]} modo de la ${name}, con un patrón de tres notas por cuerda que recorre el mástil desde ${root} en el traste ${start} de la quinta cuerda. ${MODE_COLOR[mode]}`,
+        notation: `${root} ${mode} (${notes.join(' ')}) · Corcheas · Púa alternada`,
+        goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos y mejorar el picking.`,
         steps: [
-            'Antes del patrón, toca la escala completa: del traste 3 de la quinta cuerda (C) al traste 8 de la primera, otra vez en C.',
-            'El patrón tiene cuatro partes. Cada una sale de C, sube una cuerda más que la anterior y regresa hasta el traste 5 de la quinta cuerda.',
-            'En la cuarta parte sube hasta la primera cuerda, regresa por todas las notas hasta la sexta, vuelve a subir (5 y 7) y termina en C, en el traste 3 de la quinta cuerda.',
+            `Antes del patrón, toca la escala completa: de ${root} en el traste ${start} de la quinta cuerda a ${root} en el traste ${up[14].fret} de la primera, dos octavas más arriba.`,
+            `El patrón tiene cuatro partes. Cada una sale de ${root}, sube una cuerda más que la anterior y regresa hasta el traste ${up[1].fret} de la quinta cuerda.`,
+            `En la cuarta parte sube hasta la primera cuerda, regresa por todas las notas hasta la sexta, vuelve a subir (${below[1].fret} y ${below[0].fret}) y termina en ${root}, en el traste ${start} de la quinta cuerda.`,
             'Al subir, mantén apoyados los dedos que ya pisaste; al bajar, levántalos uno a uno para que suene la nota anterior.',
             'Toca con púa alternada y silencia con la mano las cuerdas que ya no usas.',
         ],
@@ -235,12 +270,18 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'corcheas',
         bpm: 60,
         ...withSections([
-            { title: 'Hasta la cuarta cuerda', pattern: [...C_IONIAN_UP.slice(0, 6), ...run(4, [5, 3]), ...run(5, [7, 5])] },
-            { title: 'Hasta la tercera cuerda', pattern: [...C_IONIAN_UP.slice(0, 9), ...run(3, [5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5])] },
-            { title: 'Hasta la segunda cuerda', pattern: [...C_IONIAN_UP.slice(0, 12), ...run(2, [6, 5]), ...run(3, [7, 5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5])] },
-            { title: 'Hasta la primera cuerda y de vuelta', pattern: [...C_IONIAN_UP, ...run(1, [7, 5]), ...run(2, [8, 6, 5]), ...run(3, [7, 5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5, 3]), ...run(6, [7, 5, 3, 5, 7]), ...run(5, [3])] },
+            { title: 'Hasta la cuarta cuerda', pattern: part(2) },
+            { title: 'Hasta la tercera cuerda', pattern: part(3) },
+            { title: 'Hasta la segunda cuerda', pattern: part(4) },
+            { title: 'Hasta la primera cuerda y de vuelta', pattern: [...up, ...up.slice(0, 14).reverse(), ...below, below[1], below[0], up[0]] },
         ]),
-    },
+    };
+};
+/** Id de lección de cada modo: `scales-01`… para la escala mayor y `scales-minor-01`… para la menor natural. */
+export const scaleLessonId = (parent: ScaleParent, degree: number) => `scales-${parent === 'minor' ? 'minor-' : ''}0${degree + 1}`;
+
+export const practiceStudies: Record<string, PracticeStudy> = {
+    ...Object.fromEntries((['major', 'minor'] as const).flatMap(parent => [0, 1, 2, 3, 4, 5, 6].map(degree => [scaleLessonId(parent, degree), modeStudy(parent, degree)]))),
     'fingering-01': {
         description: 'Cromático clásico 1–2–3–4 en todas las cuerdas, de ida y de vuelta, en cuatro posiciones del mástil: trastes 1, 5, 7 y 12.',
         goal: 'Soltar los dedos. Cada posición se siente distinta: abajo los trastes están más separados y arriba más juntos, así que la mano tiene que adaptarse a cada zona.',
