@@ -22,6 +22,7 @@ export default function HomePage() {
  const isPractice = (lesson: { type: string }): lesson is PracticeLesson => lesson.type === 'practice';
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
+ const basics = courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
  // Por cada módulo de tu nivel (sin nivel: base), 4 ejercicios al azar. Se barajan tras hidratar para no chocar con el HTML estático.
  const level = hydrated ? account?.level ?? null : null;
@@ -109,14 +110,19 @@ export default function HomePage() {
 
 
 
-  <section className="mt-7.5 flex flex-wrap items-center gap-4 rounded-lg border border-line bg-card p-5 md:p-6.5 lg:flex-nowrap lg:gap-6">
-   <div className="hidden size-12 shrink-0 place-items-center rounded-full border border-[#aa7b4766] bg-[#d99a2010] text-gold drop-shadow-[0_0_8px_#eab14a22] xs:grid md:size-16"><Target size={34}/></div>
-   <div className="flex-1">
-    <Eyebrow>ENTRENA CON INTENCIÓN</Eyebrow>
-    <h2 className="my-1.5 text-[1.0625rem] xs:text-lg xl:text-[1.3125rem]">La velocidad llega con el control.</h2>
-    <p className="text-xs leading-relaxed text-muted">Repite patrones cómodos, observa la limpieza y descansa entre series.</p>
+  <section className="mt-7.5 rounded-lg border border-line bg-card p-5 md:p-6.5">
+   <div className="flex flex-wrap items-center gap-4 lg:flex-nowrap lg:gap-6">
+    <div className="hidden size-12 shrink-0 place-items-center rounded-full border border-[#aa7b4766] bg-[#d99a2010] text-gold drop-shadow-[0_0_8px_#eab14a22] xs:grid md:size-16"><Target size={34}/></div>
+    <div className="flex-1">
+     <Eyebrow>{basics.title.toUpperCase()}</Eyebrow>
+     <h2 className="my-1.5 text-[1.0625rem] xs:text-lg xl:text-[1.3125rem]">Nunca es tarde para volver a lo básico.</h2>
+     <p className="text-xs leading-relaxed text-muted">Dale un repaso a la digitación y la coordinación: la base que sostiene todo lo demás.</p>
+    </div>
+    <LinkButton to={moduleUrl(basics.id)} variant="secondary" className="max-md:w-full md:max-lg:ml-19 lg:ml-auto">Ver el módulo</LinkButton>
    </div>
-   <LinkButton to={moduleUrl('fingering')} variant="secondary" className="max-md:w-full md:max-lg:ml-19 lg:ml-auto">Ver digitación y coordinación</LinkButton>
+   <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">{basics.lessons.filter(isPractice).map(lesson =>
+    <Link key={lesson.id} to={practiceUrl(basics.id, lesson.id)} className="rounded-md border border-line px-3 py-2.5 text-sm transition hover:border-accent/60 hover:text-accent">{lesson.title}</Link>)}
+   </div>
   </section>
  </>;
 }
