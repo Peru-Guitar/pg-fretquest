@@ -25,7 +25,7 @@ export default function HomePage() {
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
  // 12 ejercicios al azar de los módulos de tu nivel (sin nivel: base). Se barajan tras hidratar para no chocar con el HTML estático.
  const level = hydrated ? account?.level ?? null : null;
- const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
+ const [seed] = useState(() => 1 + Math.floor(Math.random() * 2147483646));
  const levelLessons = useMemo(() => {
   let state = seed;
   const random = () => (state = (state * 48271) % 2147483647) / 2147483647;
