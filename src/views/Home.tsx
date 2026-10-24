@@ -81,7 +81,7 @@ export default function HomePage() {
 
   <SectionTitle title="Últimas lecciones agregadas" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{latestLessons(8).map(({ lesson, moduleId, moduleTitle }) =>
-   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
+   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="flex flex-col rounded-lg border border-brand/25 bg-linear-135 from-brand/15 via-card to-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60 hover:from-brand/25">
     <div className="mb-2 flex items-center justify-between gap-2">
      <p className="truncate text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
      <DifficultySignal difficulty={lesson.difficulty} className="shrink-0"/>
