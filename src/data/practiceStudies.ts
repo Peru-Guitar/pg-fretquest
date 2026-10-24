@@ -270,6 +270,27 @@ const modeStudy = ({ degree, mode, color }: typeof SCALE_MODES[number]): Practic
     };
 };
 
+// Estudio de Jason Becker: arpegios de tres cuerdas en sweep con pull-off en la primera cuerda. Un compás por línea, «traste/cuerda».
+const BECKER_BARS = [
+    '12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 10/1',
+    '14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
+    '12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 10/1',
+    '9/1 10/1 9/1 12/2 11/3 12/2 9/1 10/1 9/1 12/2 11/3 12/2 9/1 10/1 9/1 12/2 9/1',
+    '14/1 10/1 12/2 11/3 12/2 10/1 19/1 14/1 15/2 16/3 15/2 14/1 19/1 14/1 15/2 14/1',
+    '19/1 15/1 15/2 16/3 15/2 19/1 22/1 15/1 15/2 16/3 15/2 15/1 19/1 15/1 15/2 15/1',
+    '17/1 15/1 15/2 14/3 15/2 15/1 17/1 15/1 15/2 14/3 15/2 15/1 17/1 15/1 15/2 15/1',
+    '17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 12/1',
+    '15/1 12/1 14/2 14/3 14/2 12/1 15/1 12/1 14/2 14/3 12/3 14/4 16/5 14/4 12/3 14/3',
+    '10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
+    '14/1 12/1 12/2 11/3 12/2 12/1 14/1 12/1 12/2 11/3 12/2 12/1 14/1 12/1 12/2 12/1',
+    '14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
+    '16/1 13/1 15/2 16/3 15/2 13/1 19/1 16/1 18/2 19/3 18/2 16/1 22/1 19/1 21/2 19/1',
+    '21/1 17/1 17/2 18/3 19/4 17/2 17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 12/1',
+    '15/1 12/1 14/2 15/3 12/3 14/4 12/1 9/1 11/2 12/3 9/3 11/4 14/2 11/2 12/3 11/2',
+    '15/1 12/1 14/2 15/3 12/3 14/4 16/5 13/5 10/5 12/6 9/6 12/6 10/5 13/5 11/4 9/3 12/3 11/2',
+];
+const beckerBars = BECKER_BARS.map(bar => bar.split(' ').map(note => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
+
 export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(SCALE_MODES.map(mode => [mode.id, modeStudy(mode)])),
     'fingering-01': {
@@ -434,6 +455,27 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         artist: 'yngwie-malmsteen',
         bpm: 100,
         pattern: yngwieDescent,
+    },
+    'licks-phrasing-becker-01': {
+        description: 'Un estudio de Jason Becker: arpegios en sweep sobre tres cuerdas, con pull-off en la primera cuerda, que suben por el mástil y bajan al final hasta la sexta cuerda.',
+        notation: 'Semicorcheas: un compás por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
+        goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición.',
+        steps: [
+            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
+            'Cada figura empieza en la primera cuerda con un pull-off (p) y barre la segunda y la tercera: la púa cae hacia abajo al bajar a las cuerdas graves y hacia arriba al volver.',
+            'Practica cada compás por separado hasta que suene parejo y luego únelos de dos en dos.',
+            'En los cambios de posición (compases 5, 6, 13 y 14) deja que el brazo lleve la mano; no estires los dedos.',
+            'El último compás baja por el arpegio hasta la sexta cuerda: mantén el barrido igual de limpio en las cuerdas graves.',
+        ],
+        mistakes: ['Que las notas del barrido suenen juntas como un acorde: levanta cada dedo al pasar a la siguiente cuerda.', 'Atacar con púa las notas ligadas.', 'Acelerar en los barridos y frenar en los pull-offs.'],
+        criterion: 'Toca todo el estudio sin pausas y con las notas al mismo volumen. Sube el BPM solo cuando el sweep no suene a acorde.',
+        // Algunos compases traen 17 o 18 notas: con 18 por fila cada compás entra entero en una fila.
+        perRow: 18,
+        figure: 'semicorcheas',
+        picking: 'legato',
+        artist: 'jason-becker',
+        bpm: 50,
+        ...withSections(beckerBars.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-vinnie-01': {
         description: 'Un lick de Vinnie Moore en Am: la escala baja con tres notas por cuerda, cambia de posición a mitad de camino y resuelve en A.',

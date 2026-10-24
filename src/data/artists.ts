@@ -7,6 +7,7 @@ export type Artist = { id: string; name: string; note: string };
 
 export const artists: Record<string, Artist> = {
   'yngwie-malmsteen': { id: 'yngwie-malmsteen', name: 'Yngwie Malmsteen', note: 'Guitarrista sueco, referente del metal neoclásico y del sweep picking.' },
+  'jason-becker': { id: 'jason-becker', name: 'Jason Becker', note: 'Guitarrista estadounidense del shred neoclásico, famoso por su sweep picking y sus arpegios.' },
   'vinnie-moore': { id: 'vinnie-moore', name: 'Vinnie Moore', note: 'Guitarrista estadounidense del shred neoclásico, conocido por su púa alternada precisa.' },
 };
 

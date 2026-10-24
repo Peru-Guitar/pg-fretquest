@@ -1077,6 +1077,11 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
+ id: 'licks-phrasing-becker-01', title: 'Arpegios en sweep con pull-off',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  id: 'licks-phrasing-vinnie-01', title: 'Descenso en Am a tres notas por cuerda',
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
@@ -1095,6 +1100,7 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
  'licks-phrasing-yngwie-02': '2026-10-24',
  'licks-phrasing-vinnie-01': '2026-10-24',
+ 'licks-phrasing-becker-01': '2026-10-24',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-0${position}`, '2026-10-23'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'arpeggios')!.lessons.map(lesson => [lesson.id, '2026-10-23'])),
  'licks-phrasing-yngwie-01': '2026-10-23',
