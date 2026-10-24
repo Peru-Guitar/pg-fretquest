@@ -492,7 +492,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         perRow: 12,
         figure: 'sextillos',
         artist: 'vinnie-moore',
-        bpm: 100,
+        bpm: 80,
         pattern: vinnieDescent,
     },
     'arpeggios-modal-chain': {
