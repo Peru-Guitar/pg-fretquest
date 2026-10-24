@@ -118,11 +118,13 @@ function PracticeView({ mode }: { mode: Mode }) {
     const bars: { notes: PatternNote[]; start: number; columns: number; part?: { number: number; title: string } }[] = [];
     let offset = 0;
     for (const [sectionIndex, section] of (study?.sections ?? [{ title: undefined, pattern }]).entries()) {
-        for (let at = 0; at < section.pattern.length; at += perRow)
-            bars.push({ notes: section.pattern.slice(at, at + perRow), start: offset + at, columns: Math.min(perRow, section.pattern.length), part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
+        for (let at = 0; at < section.pattern.length; at += perRow) {
+            const notes = section.pattern.slice(at, at + perRow);
+            bars.push({ notes, start: offset + at, columns: notes.length >= 6 ? notes.length : perRow, part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
+        }
         offset += section.pattern.length;
     }
-    // Una parte más corta que una fila reparte sus notas en todo el ancho.
+    // Una fila incompleta con 6 notas o más las reparte en todo el ancho; con menos, quedan alineadas con las filas completas.
     const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
