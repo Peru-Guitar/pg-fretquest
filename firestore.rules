@@ -3,12 +3,16 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    // Rol: `users/{uid}.role` ('admin'). Solo se da desde la consola o el CLI; la app no puede cambiarlo.
+    function isAdmin() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin'; }
 
-    // Perfil privado: cada usuario solo lee y escribe el suyo (nombre, ciudad, país, guitarra, nivel, ritmo, sesión, última práctica).
+    // Perfil privado: cada usuario solo lee y escribe el suyo (nombre, ciudad, país, guitarra, nivel, ritmo, sesión, última práctica). `role` se conserva tal cual.
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      // El admin también los lee: Analytics cuenta los usuarios.
+      allow read: if isOwner(uid) || isAdmin();
       allow write: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'weeklyGoal', 'sessionMinutes', 'lastPractice'])
+        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'weeklyGoal', 'sessionMinutes', 'lastPractice', 'role'])
+        && request.resource.data.get('role', null) == (resource == null ? null : resource.data.get('role', null))
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40))
         && (!('level' in request.resource.data) || (request.resource.data.level in ['base', 'intermedio', 'avanzado', 'experto']))
         && (!('weeklyGoal' in request.resource.data) || (request.resource.data.weeklyGoal is int && request.resource.data.weeklyGoal >= 2 && request.resource.data.weeklyGoal <= 6))
