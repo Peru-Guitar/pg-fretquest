@@ -1,4 +1,4 @@
-import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, SCALE_PARENTS, practiceStudies, scaleLessonId, scaleMode } from './practiceStudies';
+import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, SCALE_MODES, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -1081,12 +1081,12 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
-// Escalas y patrones: los modos de la escala mayor de C, agrupados («Escala mayor»; luego vendrá «Escala menor»). Cada modo se suma al tener su estudio.
+// Escalas y patrones: los siete modos sobre C, agrupados en «Escala mayor» y «Escala menor» (ver SCALE_MODES).
 Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
- description: 'Los modos de la escala mayor y de la menor natural, todos en la tonalidad de C: C jónico, D dórico, E frigio… Conoce sus posiciones en el mástil y mejora el picking.',
+ description: 'Los modos sobre C, agrupados en mayores (jónico, lidio, mixolidio) y menores (eólico, dórico, frigio, locrio). Conoce sus posiciones en el mástil y mejora el picking.',
  skills: ['Modos', 'Posiciones', 'Púa alternada'],
  lessons: [
-  ...(['major', 'minor'] as const).flatMap(parent => [0, 1, 2, 3, 4, 5, 6].map((degree): Lesson => ({ id: scaleLessonId(parent, degree), title: scaleMode(parent, degree).title, category: SCALE_PARENTS[parent].group, type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 }))),
+  ...SCALE_MODES.map(({ id, mode, group }): Lesson => ({ id, title: `C ${mode}`, category: group, type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
  ],
 });
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
