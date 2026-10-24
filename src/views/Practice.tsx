@@ -25,8 +25,11 @@ const now = () => Date.now();
 /** Marca de ataque sobre cada nota de la tablatura. */
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Púa hacia abajo' }, up: { mark: 'V', title: 'Púa hacia arriba' }, hammer: { mark: 'h', title: 'Hammer-on (sin púa)', legato: true }, pull: { mark: 'p', title: 'Pull-off (sin púa)', legato: true }, slide: { mark: 's', title: 'Slide (sin púa)', legato: true } };
 // Rondas por práctica; siempre empieza en 1.
-/** Rondas disponibles según la dificultad: cuanto más difícil, menos repeticiones (experto: una sola, sin selector). */
-const ROUND_OPTIONS: Record<Difficulty, number[]> = { base: [1, 3, 5, 7, 10], intermedio: [1, 3, 5], avanzado: [1, 3], experto: [1] };
+const ROUND_OPTIONS = [1, 3, 5, 7, 10];
+/** Rondas máximas según la dificultad: cuanto más difícil, menos repeticiones. */
+const MAX_ROUNDS: Record<Difficulty, number> = { base: 10, intermedio: 5, avanzado: 3, experto: 1 };
+/** Tiempo de práctica que deben caber las rondas: un ejercicio largo admite menos repeticiones. */
+const ROUNDS_BUDGET_SECONDS = 90;
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -300,13 +303,16 @@ function PracticeView({ mode }: { mode: Mode }) {
         </select>
     </label>;
 
-    const roundOptions = ROUND_OPTIONS[activeExercise.difficulty];
-    const roundsGroup = roundOptions.length > 1 && <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
+    // Duración de una ronda al BPM inicial del ejercicio (no al elegido, para que el tope no cambie al mover la velocidad).
+    const roundSeconds = pattern.length / FIGURES[figure].notesPerBeat / (study?.bpm ?? 100) * 60;
+    const maxRounds = Math.min(MAX_ROUNDS[activeExercise.difficulty], Math.max(1, Math.floor(ROUNDS_BUDGET_SECONDS / roundSeconds)));
+    const roundsGroup = <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
         <div className="flex overflow-hidden rounded-md border border-line-strong">
-            {roundOptions.map(option => {
+            {ROUND_OPTIONS.map(option => {
                 const selected = rounds === option;
-                return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} onClick={() => setRounds(option)}
-                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-brand text-white' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
+                const disabled = option > maxRounds;
+                return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} disabled={disabled} onClick={() => setRounds(option)}
+                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-brand text-white' : disabled ? 'cursor-not-allowed text-muted/40' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
             })}
         </div>
     </div>;
