@@ -38,6 +38,25 @@ const chromaticAt = (position: number, order = [1, 2, 3, 4]): PatternNote[] => {
     return [...[6, 5, 4, 3, 2, 1].flatMap(fingers), ...[2, 3, 4, 5, 6].flatMap(fingers)];
 };
 const chromaticPositions: [string, number][] = [['Desde el primer traste', 1], ['Desde el quinto traste', 5], ['Desde el séptimo traste', 7], ['Desde el traste 12', 12]];
+// Arpegios de séptima (guía «No más arpegios aburridos» de peruguitar.com): una línea por cuerda tocada, «cuerda:trastes».
+// Todos en corcheas, 16 notas (dos compases de 4/4), sobre la escala mayor de Do.
+const tab = (text: string): PatternNote[] => text.trim().split('\n').flatMap(line => {
+    const [string, frets] = line.trim().split(':');
+    return frets.split('-').map(fret => ({ string: Number(string), fret: Number(fret) }));
+});
+const ARPEGGIOS = {
+    cmaj7: tab(`5:3-7\n4:5\n3:4-5\n2:5\n1:3-7-3\n2:5\n3:5-4\n4:5\n5:7-3-7`),
+    fmaj7: tab(`5:8-12\n4:10\n3:9-10\n2:10\n1:8-12-8\n2:10\n3:10-9\n4:10\n5:12-8-12`),
+    dm7: tab(`5:5-8\n4:7\n3:5-7\n2:6\n1:5-8-5\n2:6\n3:7-5\n4:7\n5:8-5-8`),
+    em7: tab(`5:7-10\n4:9\n3:7-9\n2:8\n1:7-10-7\n2:8\n3:9-7\n4:9\n5:10-7-10`),
+    am7: tab(`5:12-15\n4:14\n3:12-14\n2:13\n1:12-15-12\n2:13\n3:14-12\n4:14\n5:15-12-15`),
+    g7: tab(`5:10-14\n4:12\n3:10-12\n2:12\n1:10-15-10\n2:12\n3:12-10\n4:12\n5:14-10-14`),
+    g7ii: tab(`5:10\n4:9-12\n3:10\n2:8-12\n1:10\n2:12-8\n3:10\n4:12-9\n5:10\n4:12-9\n5:10`),
+    bm7b5: tab(`5:2-5\n4:3\n3:2-4\n2:3\n1:1-5-1\n2:3\n3:4-2\n4:3\n5:5-2-5`),
+    bm7b5d: tab(`5:5-8\n4:7\n3:4-7\n2:6\n1:5-7-5\n2:6\n3:7-4\n4:7\n5:8-5-8`),
+};
+const ARPEGGIO_TEXT = 'Afinación estándar E A D G B e · Escala mayor de Do · Corcheas: dos compases de 4/4 por acorde';
+
 const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
 // Lick 1 de Yngwie Malmsteen: cada acorde es una célula de tres notas en una cuerda (aguda, grave, media, aguda, media, grave)
@@ -101,6 +120,77 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'negras',
         perRow: 15,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [1, 3, 5, 3, 5]) }))),
+    },
+    'arpeggios-maj7': {
+        description: 'Los dos arpegios Maj7 de la escala mayor de Do: CMaj7 (grado I) y FMaj7 (grado IV). Fórmula 1 – 3 – 5 – 7.',
+        notation: ARPEGGIO_TEXT,
+        goal: 'Interiorizar el color de la séptima mayor. El recorrido de los dedos es exactamente el mismo para CMaj7 y FMaj7: solo cambia el traste de partida.',
+        steps: ['Al armonizar la escala mayor obtenemos dos acordes Maj7, en el primer y cuarto grado: CMaj7 y FMaj7.', 'La característica de ambos es la séptima mayor en su estructura. Fórmula: 1 – 3 – 5 – 7.', 'Sube desde la quinta cuerda hasta la primera y vuelve. Resolvemos en la tercera mayor y no en la tónica para no dejar un silencio en el compás.', 'Una nota por corchea, con el metrónomo. Toca cada arpegio limpio antes de pasar al siguiente.'],
+        mistakes: ['Dejar sonar dos notas a la vez al cruzar de cuerda.', 'Mover la mano entera en lugar de estirar el meñique para la séptima.', 'Acelerar en la bajada.'],
+        criterion: 'Cuando los dos arpegios suenen parejos a una velocidad cómoda, sube el BPM. La meta de la guía es 160 BPM en corcheas.',
+        figure: 'corcheas',
+        bpm: 80,
+        perRow: 16,
+        ...withSections([{ title: 'CMaj7 · grado I', pattern: ARPEGGIOS.cmaj7 }, { title: 'FMaj7 · grado IV', pattern: ARPEGGIOS.fmaj7 }]),
+    },
+    'arpeggios-m7': {
+        description: 'Los tres arpegios m7 de la escala mayor de Do: Dm7 (II), Em7 (III) y Am7 (VI). Fórmula 1 – b3 – 5 – b7.',
+        notation: ARPEGGIO_TEXT,
+        goal: 'Reconocer el color menor con séptima menor. Los tres arpegios usan el mismo recorrido de dedos: solo varía el traste.',
+        steps: ['Al armonizar la escala mayor obtenemos tres acordes m7, en el segundo, tercer y sexto grado: Dm7, Em7 y Am7.', 'Su característica es la tercera menor y la séptima menor. Fórmula: 1 – b3 – 5 – b7.', 'Volvemos a resolver en la tercera, esta vez la tercera menor, para no dejar un silencio en el compás.', 'Una nota por corchea. Cambia de arpegio sin detenerte: es el mismo dibujo en otra posición.'],
+        mistakes: ['Confundir el dibujo con el de Maj7 (la tercera y la séptima están un traste más abajo).', 'Perder el pulso al cambiar de posición entre arpegios.'],
+        criterion: 'Sube el BPM cuando puedas encadenar los tres sin pausas y con todas las notas iguales.',
+        figure: 'corcheas',
+        bpm: 80,
+        perRow: 16,
+        ...withSections([{ title: 'Dm7 · grado II', pattern: ARPEGGIOS.dm7 }, { title: 'Em7 · grado III', pattern: ARPEGGIOS.em7 }, { title: 'Am7 · grado VI', pattern: ARPEGGIOS.am7 }]),
+    },
+    'arpeggios-dominant': {
+        description: 'El arpegio de séptima de dominante de la escala mayor de Do: G7 (grado V), en dos formas. Fórmula 1 – 3 – 5 – b7.',
+        notation: ARPEGGIO_TEXT,
+        goal: 'Escuchar la tensión del dominante: tercera mayor con séptima menor forman el tritono que pide resolver al primer grado.',
+        steps: ['Al armonizar la escala mayor obtenemos un único acorde de séptima de dominante, en el quinto grado: G7.', 'Su característica es la tercera mayor junto a la séptima menor. Fórmula: 1 – 3 – 5 – b7.', 'La segunda parte es una variación de G7 para verlo de otra forma; para completar el compás se repiten las últimas notas.', 'Una nota por corchea. Escucha la tensión: es la que hace que la música avance.'],
+        mistakes: ['Tocar la séptima mayor por costumbre de Maj7.', 'Perder el pulso en los saltos de cuerda de la variación.'],
+        criterion: 'Sube el BPM cuando las dos formas suenen igual de limpias.',
+        figure: 'corcheas',
+        bpm: 80,
+        perRow: 16,
+        ...withSections([{ title: 'G7 · grado V', pattern: ARPEGGIOS.g7 }, { title: 'G7 · variación', pattern: ARPEGGIOS.g7ii }]),
+    },
+    'arpeggios-half-diminished': {
+        description: 'El arpegio semidisminuido de la escala mayor de Do: Bm7b5 (grado VII) y su primera inversión. Fórmula 1 – b3 – b5 – b7.',
+        notation: ARPEGGIO_TEXT,
+        goal: 'Dominar el color semidisminuido: tercera menor, quinta disminuida y séptima menor. La inversión amplía tu visión del mástil.',
+        steps: ['Al armonizar la escala mayor obtenemos un único acorde m7b5, en el séptimo grado: Bm7b5.', 'Su característica es la tercera menor, la quinta disminuida y la séptima menor. Fórmula: 1 – b3 – b5 – b7.', 'La segunda parte es la primera inversión, Bm7b5/D: empieza desde la tercera.', 'Reto: encuentra tú las inversiones que faltan, desde la quinta o desde la séptima menor.'],
+        mistakes: ['Tocar la quinta justa en lugar de la disminuida.', 'Tensar la mano en la posición baja del mástil.'],
+        criterion: 'Sube el BPM cuando las dos formas salgan sin dudar en la quinta disminuida.',
+        figure: 'corcheas',
+        bpm: 80,
+        perRow: 16,
+        ...withSections([{ title: 'Bm7b5 · grado VII', pattern: ARPEGGIOS.bm7b5 }, { title: 'Bm7b5/D · primera inversión', pattern: ARPEGGIOS.bm7b5d }]),
+    },
+    'arpeggios-harmonized': {
+        description: 'Los siete arpegios de séptima de la escala mayor de Do, de corrido y sin pausas, hasta la octava: CMaj7, Dm7, Em7, FMaj7, G7, Am7, Bm7b5 y de nuevo CMaj7, subiendo por el mástil.',
+        notation: ARPEGGIO_TEXT,
+        goal: 'Encadenar la escala armonizada completa, de la tónica a su octava. Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba: el cambio tiene que sonar continuo.',
+        steps: ['El orden es el de la escala: I CMaj7, II Dm7, III Em7, IV FMaj7, V G7, VI Am7, VII Bm7b5 y cierra en la octava con CMaj7.', 'Todos usan el mismo recorrido: suben de la quinta a la primera cuerda, vuelven y resuelven en la tercera.', 'El paso de un arpegio al siguiente es corto y en la misma cuerda: prepara la mano mientras tocas las últimas notas.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por corchea, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
+        mistakes: ['Detenerse o acentuar el primer tiempo de cada arpegio nuevo.', 'Perder la tercera o la séptima correcta al cambiar de tipo de acorde (mayor, menor, dominante, semidisminuido).', 'Tensar la mano en los trastes altos.'],
+        criterion: 'Recorre los ocho arpegios sin cortes antes de subir el BPM. Si un cambio falla, practica solo ese par de arpegios.',
+        figure: 'corcheas',
+        bpm: 70,
+        perRow: 16,
+        ...withSections([
+            { title: 'CMaj7 · I', pattern: ARPEGGIOS.cmaj7 },
+            { title: 'Dm7 · II', pattern: ARPEGGIOS.dm7 },
+            { title: 'Em7 · III', pattern: ARPEGGIOS.em7 },
+            { title: 'FMaj7 · IV', pattern: ARPEGGIOS.fmaj7 },
+            { title: 'G7 · V', pattern: ARPEGGIOS.g7 },
+            { title: 'Am7 · VI', pattern: ARPEGGIOS.am7 },
+            // Una octava arriba (traste 14): sigue la subida en lugar de saltar al traste 2.
+            { title: 'Bm7b5 · VII', pattern: ARPEGGIOS.bm7b5.map(note => ({ ...note, fret: note.fret + 12 })) },
+            // Cierra en la octava: CMaj7 doce trastes arriba (traste 15), dos trastes por debajo de donde termina Bm7b5.
+            { title: 'CMaj7 · I (octava)', pattern: ARPEGGIOS.cmaj7.map(note => ({ ...note, fret: note.fret + 12 })) },
+        ]),
     },
     'licks-phrasing-yngwie-01': {
         description: 'Un lick neoclásico de Yngwie Malmsteen en Si menor: pequeños grupos de notas que recorren varios acordes y terminan con un arpegio en sweep.',

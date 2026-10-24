@@ -18,6 +18,8 @@ const OPEN_STRINGS = [64, 59, 55, 50, 45, 40];
 let tone: Tone = null;
 let sampler: Tone = null;
 let clicker: Tone = null;
+/** Salida común: permite cortar todo el sonido de golpe al detener. */
+let master: Tone = null;
 let loading: Promise<void> | null = null;
 
 /** Carga Tone.js y las muestras. Debe llamarse desde un clic (lo exigen los navegadores). */
@@ -25,19 +27,20 @@ export function prepare(): Promise<void> {
   loading ??= (async () => {
     tone = await import("tone");
     await tone.start();
+    master = new tone.Gain(1).toDestination();
     sampler = new tone.Sampler({
       urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n}.mp3`])),
       baseUrl: SAMPLE_BASE,
       // Sin reverb y con release corto: cada nota se apaga antes de la siguiente, sin eco.
       release: 0.25,
       volume: -4,
-    }).toDestination();
+    }).connect(master);
     // Clic corto del metrónomo: «tick» agudo en el tiempo, «tac» más grave en el contratiempo.
     clicker = new tone.Synth({
       oscillator: { type: "square" },
       envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 },
       volume: -16,
-    }).toDestination();
+    }).connect(master);
     await tone.loaded();
   })().catch((error) => {
     loading = null; // permite reintentar
@@ -73,7 +76,16 @@ export function getTone(): Tone {
   return tone;
 }
 
-/** Corta el sonido de inmediato (al pulsar detener). */
+/**
+ * Corta el sonido al instante (al pulsar Detener o Esc). Además de soltar las notas, baja la salida a 0:
+ * Tone programa los eventos con unos milisegundos de antelación y, si no, aún sonaría un clic o una nota.
+ * La salida vuelve a su nivel poco después, lista para la siguiente práctica.
+ */
 export function silence(): void {
-  sampler?.releaseAll();
+  if (!tone || !master) return;
+  const now = tone.now();
+  sampler?.releaseAll(now);
+  master.gain.cancelScheduledValues(now);
+  master.gain.setValueAtTime(0, now);
+  master.gain.setValueAtTime(1, now + 0.25);
 }
