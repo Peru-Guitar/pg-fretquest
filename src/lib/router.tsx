@@ -46,7 +46,7 @@ export function useParams<T extends Record<string, string | undefined> = Record<
 }
 
 /**
- * Parámetros de la URL (?sesion, ?rutina, ?repetir), como en React Router: tupla y solo de lectura.
+ * Parámetros de la URL (?sesion, ?repetir), como en React Router: tupla y solo de lectura.
  * Se leen de `window.location` y no con el `useSearchParams` de Next, que en la exportación estática dejaría
  * la página vacía en el HTML (sin contenido para Google ni para la vista previa). En el HTML valen vacíos.
  */

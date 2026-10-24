@@ -4,9 +4,9 @@ import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
 import { Check, LogIn, Play, Target } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
-import { courses, routines, type PracticeLesson } from '@/data/questMock';
-import { useLastExercise } from '@/lib/progress';
-import { suggestion, useAccount } from '@/lib/account';
+import { courses, type PracticeLesson } from '@/data/questMock';
+import { useCompletedExercises, useLastExercise } from '@/lib/progress';
+import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
  // Con sesión: el último ejercicio practicado; si aún no hay ninguno, el que sigue en su plan. Sin sesión: el último abierto.
@@ -22,6 +22,13 @@ export default function HomePage() {
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
+ // Módulos de tu nivel (sin nivel: los de base), con la siguiente lección que te falta en cada uno.
+ const completed = useCompletedExercises();
+ const level = hydrated ? account?.level ?? null : null;
+ const levelModules = planFor(level ?? 'base').slice(0, 3).map(block => {
+  const done = block.lessons.filter(lesson => completed.has(lesson.id)).length;
+  return { ...block, image: courses.find(course => course.id === block.moduleId)!.image, done, next: block.lessons.find(lesson => !completed.has(lesson.id)) ?? block.lessons[0] };
+ });
  return <>
   <div className="mb-6 flex items-start justify-between gap-4 md:mb-7 lg:items-center">
    <div>
@@ -64,13 +71,18 @@ export default function HomePage() {
    </section>
   </div>
 
-  <SectionTitle title="¿Qué necesitas entrenar hoy?" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
-  <div className="mb-7.5 grid gap-3 md:grid-cols-3 xl:gap-4.5">{routines.map((routine, index) =>
-   <Link key={routine.id} to={routine.id === 'focus' ? ROUTES.exercises : practiceUrl(routine.moduleId, undefined, `rutina=${routine.id}`)} className="flex flex-col items-start rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
-    <Eyebrow>{String(index + 1).padStart(2, '0')} · {routine.duration}</Eyebrow>
-    <h2 className="mt-3 text-[1.3125rem] md:text-[1.0625rem] xl:text-xl">{routine.title}</h2>
-    <p className="mt-3 mb-5 flex-1 text-sm leading-relaxed text-muted">{routine.description}</p>
-    <span className="text-xs text-accent">{routine.id === 'focus' ? 'Elegir técnica' : 'Ver rutina'} →</span>
+  <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Módulos para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
+  <div className="mb-7.5 grid gap-3 md:grid-cols-3 xl:gap-4.5">{levelModules.map(module =>
+   <Link key={module.moduleId} to={practiceUrl(module.moduleId, module.next.id)} className="group relative flex min-h-56 flex-col items-start justify-end overflow-hidden rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
+    <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#19181740_0%,#191817cc_55%,#191817f5_100%)]"/>
+    <div className="relative w-full">
+     <Eyebrow>{module.lessons.length} {module.lessons.length === 1 ? 'LECCIÓN' : 'LECCIONES'} PARA TI</Eyebrow>
+     <h2 className="mt-2 text-[1.3125rem] md:text-[1.0625rem] xl:text-xl">{module.title}</h2>
+     <p className="mt-2 mb-4 text-sm leading-relaxed text-fg-soft">Sigue: {module.next.title}</p>
+     <div className="h-1 w-full overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(module.done / module.lessons.length * 100)}%` }}/></div>
+     <span className="mt-1.5 block text-2xs text-muted">{module.done} de {module.lessons.length}</span>
+    </div>
    </Link>)}
   </div>
 
