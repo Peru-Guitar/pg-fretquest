@@ -117,13 +117,13 @@ export function watchProgress(uid: string | null) {
   emit({ uid, days: {}, lessons: {}, readings: {} });
   const stopDays = onSnapshot(query(collection(db, "users", uid, "days"), where("date", ">=", weekStartKey())), snapshot => {
     emit({ ...progress, days: Object.fromEntries(snapshot.docs.map(item => [item.id, item.data({ serverTimestamps: "estimate" }) as DayDoc])) });
-  }, () => { /* sin permisos o sin conexión: queda lo último conocido */ });
+  }, error => console.warn("progreso: días", error)); // sin permisos o sin conexión: queda lo último conocido
   const stopLessons = onSnapshot(collection(db, "users", uid, "lessons"), snapshot => {
     emit({ ...progress, lessons: Object.fromEntries(snapshot.docs.map(item => [item.id, item.data({ serverTimestamps: "estimate" }) as LessonSummary])) });
-  }, () => { /* idem */ });
+  }, error => console.warn("progreso: lecciones", error));
   const stopReadings = onSnapshot(collection(db, "users", uid, "readings"), snapshot => {
     emit({ ...progress, readings: Object.fromEntries(snapshot.docs.map(item => [item.id, item.data({ serverTimestamps: "estimate" }) as Reading])) });
-  }, () => { /* idem */ });
+  }, error => console.warn("progreso: lecturas", error));
   unsubscribe = () => { stopDays(); stopLessons(); stopReadings(); };
 }
 

@@ -5,21 +5,25 @@ import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, useParams } from '@/lib/router';
 import { GuitarArt } from '@/components/quest/QuestUI';
 import { lessonMeta } from '@/components/quest/lessonMeta';
-import { ArtistHeader } from '@/components/quest/ArtistCredit';
+import { ArtistHeader, CategoryHeader } from '@/components/quest/ArtistCredit';
 import { groupByArtist } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
+import { ReadStatus } from '@/components/quest/LessonStatus';
+import { useProgress } from '@/lib/progressDb';
 import { BackLink, Badge, Card, DetailLayout, Eyebrow, PageTitle, Tags, TipCard } from '@/components/ui';
 import { courses, } from '@/data/questMock';
 
 export default function LessonPage() {
     const lessonId = moduleIdFromSlug(useParams().modulo);
     const course = courses.find(item => item.id === lessonId) ?? courses[0];
+    // Lecturas marcadas como leídas (solo con sesión).
+    const progress = useProgress();
     const readings = course.lessons.filter(lesson => lesson.type === 'reading').length;
     const practices = course.lessonCount - readings;
     const mix = [readings && `${readings} ${readings === 1 ? 'lectura' : 'lecturas'}`, practices && `${practices} ${practices === 1 ? 'práctica' : 'prácticas'}`].filter(Boolean).join(' · ');
 
     if (!course.available) return <ComingSoon title={course.title}/>;
-    const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && lesson.artist);
+    const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && (lesson.artist || lesson.category));
 
     return <>
         <BackLink to={ROUTES.exercises}>Ejercicios</BackLink>
@@ -46,13 +50,13 @@ export default function LessonPage() {
             </Card>
             <div>
                 <h2 className="mb-4 text-lg xl:text-xl">Lecciones del módulo</h2>
-                {/* Si hay ejercicios de artistas, se agrupan por artista con su cabecera; si no, una sola lista. */}
-                <div className="flex flex-col gap-6">{groupByArtist(course.lessons.map(lesson => ({ ...lesson, artist: lesson.type === 'practice' ? lesson.artist : undefined }))).map(group => <section key={group.artist ?? 'none'} className="flex flex-col gap-3">
-                    {group.artist ? <ArtistHeader id={group.artist}/> : hasArtists && <b className="text-fg">De la comunidad</b>}
-                <div className="divide-y divide-line overflow-hidden rounded-lg border border-line">{group.lessons.map(item => {
+                {/* Si hay ejercicios de artistas o con categoría, se agrupan con su cabecera; si no, una sola lista. */}
+                <div className="flex flex-col gap-6">{groupByArtist(course.lessons.map(lesson => ({ ...lesson, artist: lesson.type === 'practice' ? lesson.artist : undefined, category: lesson.type === 'practice' ? lesson.category : undefined }))).map(group => <section key={`${group.artist}-${group.category}`} className="flex flex-col gap-3">
+                    {group.artist ? <ArtistHeader id={group.artist}/> : group.category ? <CategoryHeader title={group.category}/> : hasArtists && <b className="text-fg">De la comunidad</b>}
+                <div className="divide-y divide-line rounded-lg border border-line">{group.lessons.map(item => {
                     const lesson = course.lessons.find(candidate => candidate.id === item.id)!;
                     const { Icon, description } = lessonMeta(lesson);
-                    return <Link key={lesson.id} to={lessonUrl(course.id, lesson.id)} className="flex items-center gap-3 bg-card px-3.5 py-4 transition hover:bg-white/3 md:gap-4 md:px-5 md:py-5">
+                    return <Link key={lesson.id} to={lessonUrl(course.id, lesson.id)} className="flex items-center gap-3 bg-card px-3.5 py-4 transition first:rounded-t-lg last:rounded-b-lg hover:bg-white/3 md:gap-4 md:px-5 md:py-5">
                         <span className="w-7 shrink-0 font-mono text-sm text-accent md:w-8 md:text-base">{String(course.lessons.indexOf(lesson) + 1).padStart(2, '0')}</span>
                         <div className="min-w-0 flex-1">
                             <h3 className="mb-1 flex flex-wrap items-center gap-2 text-md wrap-anywhere md:text-[0.9375rem]">{lesson.title}</h3>
@@ -60,6 +64,7 @@ export default function LessonPage() {
                             <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-fg-soft">{lesson.type === 'practice' ? lesson.description : lesson.summary}</p>
                         </div>
                         {lesson.type === 'practice' && <DifficultySignal difficulty={lesson.difficulty}/>}
+                        {lesson.type === 'reading' && progress.uid && <ReadStatus done={!!progress.readings[lesson.id]}/>}
                     </Link>;
                 })}</div>
                 </section>)}</div>

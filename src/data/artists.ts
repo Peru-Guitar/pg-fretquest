@@ -7,17 +7,19 @@ export type Artist = { id: string; name: string; note: string };
 
 export const artists: Record<string, Artist> = {
   'yngwie-malmsteen': { id: 'yngwie-malmsteen', name: 'Yngwie Malmsteen', note: 'Guitarrista sueco, referente del metal neoclásico y del sweep picking.' },
+  'vinnie-moore': { id: 'vinnie-moore', name: 'Vinnie Moore', note: 'Guitarrista estadounidense del shred neoclásico, conocido por su púa alternada precisa.' },
 };
 
 export const artistImage = (id: string) => `/images/artists/${id}.webp`;
 
-/** Agrupa lecciones por artista (en el orden en que aparecen); las que no tienen artista van juntas con `artist: null`. */
-export function groupByArtist<T extends { artist?: string }>(lessons: T[]) {
-    const groups: { artist: string | null; lessons: T[] }[] = [];
+/** Agrupa lecciones por artista y categoría (en el orden en que aparecen); las que no tienen ninguno van juntas con `artist: null`. */
+export function groupByArtist<T extends { artist?: string; category?: string }>(lessons: T[]) {
+    const groups: { artist: string | null; category: string | null; lessons: T[] }[] = [];
     for (const lesson of lessons) {
         const artist = lesson.artist ?? null;
-        const group = groups.find(item => item.artist === artist);
-        if (group) group.lessons.push(lesson); else groups.push({ artist, lessons: [lesson] });
+        const category = lesson.category ?? null;
+        const group = groups.find(item => item.artist === artist && item.category === category);
+        if (group) group.lessons.push(lesson); else groups.push({ artist, category, lessons: [lesson] });
     }
     return groups;
 }

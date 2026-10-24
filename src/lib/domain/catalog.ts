@@ -39,7 +39,7 @@ export interface Level {
   lessons: Lesson[];
 }
 
-/** Lick de relleno (pentatónica de La menor) mientras se escriben los ejercicios reales. */
+/** Lick de relleno (pentatónica de Am) mientras se escriben los ejercicios reales. */
 const PLACEHOLDER_TAB = `e|-----------------5-8-5-----|
 B|-----------5-8---------8-5-|
 G|-----5-7-------------------|
@@ -53,7 +53,7 @@ function placeholderExercises(lessonId: string): Exercise[] {
     title: `Ejercicio ${n}`,
     technique: "Alternate picking",
     objective: "Mejorar la coordinación, precisión y sincronización de ambas manos.",
-    description: "Ejercicio provisional: lick de pentatónica de La menor tocado con púa alternada estricta. Se reemplazará por el ejercicio propio de esta lección.",
+    description: "Ejercicio provisional: lick de pentatónica de Am tocado con púa alternada estricta. Se reemplazará por el ejercicio propio de esta lección.",
     steps: [
       "Afina la guitarra y activa el metrónomo a 60 BPM.",
       "Toca una nota por clic (negras) hasta que suene limpio; luego pasa a corcheas y semicorcheas.",

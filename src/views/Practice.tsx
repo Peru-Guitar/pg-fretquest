@@ -3,14 +3,13 @@
 import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, routines, tempos, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
 import { BackLink, Badge, Button, Caption, Card, Eyebrow, LinkButton, PageTitle, Tags } from '@/components/ui';
 import { cn } from '@/lib/cn';
-import { buttonClass } from '@/components/ui/buttonClass';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise, setPracticeIntroSeen, usePracticeIntroSeen } from '@/lib/progress';
@@ -81,17 +80,6 @@ export default function PracticePage({ mode }: { mode: Mode }) {
     const course = courses.find(item => item.id === exerciseId);
     if (course && !course.available) return <ComingSoon title={course.title}/>;
     return <PracticeView key={`${modulo}:${leccion}`} mode={mode}/>;
-}
-
-/** Botón de inicio con una línea que explica qué pasará al pulsarlo. */
-function StartChoice({ primary, onClick, icon, label, description }: { primary: boolean; onClick: () => void; icon: ReactNode; label: string; description: string }) {
-    return <button type="button" onClick={onClick} className={cn(buttonClass(primary ? 'primary' : 'secondary'), 'min-w-0 flex-1 justify-start whitespace-normal py-2.5 text-left xs:flex-none')}>
-        {icon}
-        <span className="flex flex-col">
-            <span>{label}</span>
-            <span className={cn('text-xs font-normal', primary ? 'text-white/80' : 'text-muted')}>{description}</span>
-        </span>
-    </button>;
 }
 
 function PracticeView({ mode }: { mode: Mode }) {
@@ -296,8 +284,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [showBar]);
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
-        <StartChoice primary onClick={() => start(true)} icon={<Headphones size={16}/>} label="Escuchar ejercicio" description="Escucha primero el ejercicio"/>
-        <StartChoice primary={false} onClick={() => introSeen ? start(false) : setShowIntro(true)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Registra tu progreso"/>
+        <Button onClick={() => start(true)} className="min-w-40"><Headphones size={16}/>Escuchar ejercicio</Button>
+        <Button variant="secondary" onClick={() => introSeen ? start(false) : setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;

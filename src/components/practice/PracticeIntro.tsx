@@ -17,7 +17,7 @@ const POINTS = [
  * «No volver a mostrar»; cancelar no inicia nada.
  */
 export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: boolean) => void; onCancel: () => void }) {
-    const [dontShowAgain, setDontShowAgain] = useState(true);
+    const [dontShowAgain, setDontShowAgain] = useState(false);
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
     useEffect(() => {

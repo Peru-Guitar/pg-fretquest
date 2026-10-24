@@ -1,4 +1,4 @@
-import { practiceStudies } from './practiceStudies';
+import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -6,7 +6,7 @@ export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; poi
 /** Lección de práctica: patrón para tocar en la sala de práctica. */
 /** Dificultad propia de cada ejercicio (factor de puntos). */
 export type Difficulty = 'base' | 'intermedio' | 'avanzado' | 'experto';
-export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
+export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; /** Categoría del patrón dentro del módulo (p. ej. «Grupos de tres cuerdas»): agrupa las lecciones. */ category?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
 export type Lesson = ReadingLesson | PracticeLesson;
 export type TechniqueModule = { id: string; title: string; category: string; description: string; art: string; level: string; icon: string; completedLessons: number; skills: string[]; lessons: Lesson[] };
 // Visual fixtures for guitarists with basic playing experience. No teaching, evaluation or persistence.
@@ -512,7 +512,7 @@ const moduleFixtures: TechniqueModule[] = [
       },
       {
         "id": "economy-picking-07",
-        "title": "Ejercicios de velocidad y precisión",
+        "title": "Velocidad y precisión con economy picking",
         "minutes": 5,
         "xp": 50,
         "type": "practice",
@@ -1164,10 +1164,10 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
  return low === high ? DIFFICULTY_LABEL[low] : `${DIFFICULTY_LABEL[low]} – ${DIFFICULTY_LABEL[high]}`;
 }
 // Módulo de arpegios (guía «No más arpegios aburridos»): va justo después de Digitación.
-const arpeggioLesson = (id: string, title: string, difficulty: Difficulty = 'intermedio'): Lesson => ({ id, title, type: 'practice', difficulty, minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 });
+const arpeggioLesson = (id: string, title: string, difficulty: Difficulty = 'intermedio', category = 'Arpegios de séptima'): Lesson => ({ id, title, category, type: 'practice', difficulty, minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 });
 moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingering') + 1, 0, {
  id: 'arpeggios', title: 'Arpegios', category: 'ARPEGIOS',
- description: 'Arpegios de séptima sobre la escala mayor de Do: el color de cada grado, de Maj7 a semidisminuido.',
+ description: 'Arpegios de séptima y modales sobre la escala mayor de C: el color de cada grado y la tensión que define cada modo.',
  art: 'sweep', level: 'Intermedio', icon: '10', completedLessons: 0,
  skills: ['Armonía', 'Cruce de cuerdas', 'Fórmulas'],
  lessons: [
@@ -1175,12 +1175,32 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingerin
   arpeggioLesson('arpeggios-m7', 'Arpegios m7'),
   arpeggioLesson('arpeggios-dominant', 'Arpegio de dominante'),
   arpeggioLesson('arpeggios-half-diminished', 'Arpegio semidisminuido'),
-  arpeggioLesson('arpeggios-harmonized', 'La escala armonizada', 'avanzado'),
+  arpeggioLesson('arpeggios-harmonized', 'Los arpegios de séptima encadenados', 'avanzado'),
+  ...MODAL_ARPEGGIO_LESSONS.map(({ id, title }) => arpeggioLesson(id, title, 'intermedio', 'Arpegios modales')),
+  arpeggioLesson('arpeggios-modal-chain', 'Los arpegios modales encadenados', 'avanzado', 'Arpegios modales'),
  ],
 });
+// Módulo de pentatónica: las cinco posiciones de Gm en grupos de tres cuerdas. Va después de Arpegios.
+moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggios') + 1, 0, {
+ id: 'pentatonic', title: 'Pentatónica', category: 'ESCALAS',
+ description: 'Aprende a usar la pentatónica en diferentes patrones: secuencias que recorren cada posición por grupos de cuerdas y cambian de dirección para que la escala deje de sonar de arriba abajo.',
+ art: 'solo', level: 'Intermedio', icon: '11', completedLessons: 0,
+ skills: ['Posiciones', 'Secuencias', 'Púa alternada'],
+ lessons: [1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-0${position}`, title: `Posición ${position} · desde ${PENTATONIC_G_START[position - 1]}`, category: 'Grupos de tres cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson)).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-sweep-0${position}`, title: `Posición ${position} · Sweep pentatónico de 5 notas`, category: 'Sweep en grupo de 5 notas', type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))),
+});
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
- id: 'licks-phrasing-yngwie-01', title: 'Sextillos neoclásicos en Si menor',
- type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 80,
+ id: 'licks-phrasing-yngwie-01', title: 'Patrón de Sextillos Neoclásicos',
+ type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
+ id: 'licks-phrasing-yngwie-02', title: 'Bajada estilo neoclásico en Em armónica',
+ type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
+ id: 'licks-phrasing-vinnie-01', title: 'Descenso en Am a tres notas por cuerda',
+ type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
 // Sustituye las fichas provisionales del módulo por sus estudios completos.
@@ -1198,7 +1218,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'fingering', 'arpeggios', 'licks-phrasing'].includes(module.id),
+ available: ['recommendations', 'fingering', 'arpeggios', 'pentatonic', 'licks-phrasing'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,
