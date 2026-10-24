@@ -28,7 +28,7 @@ export function ArtistCredit({ id }: { id: string }) {
         <div className="min-w-0">
             <p className="text-3xs font-black tracking-[0.18em] text-gold">EJERCICIO DE ARTISTA</p>
             <h2 className="mt-1 text-xl md:text-2xl">Realizado por {artist.name}</h2>
-            <p className="mt-1 text-sm text-muted">{artist.note} El patrón es de su autoría; aquí lo adaptamos para practicarlo.</p>
+            <p className="mt-1 text-sm text-muted">{artist.note}</p>
         </div>
     </section>;
 }
