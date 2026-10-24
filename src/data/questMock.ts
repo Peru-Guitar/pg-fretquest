@@ -1081,9 +1081,18 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
+// Escalas y patrones: los modos de la escala mayor de C, agrupados («Escala mayor»; luego vendrá «Escala menor»). Cada modo se suma al tener su estudio.
+Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
+ description: 'Los modos de la escala mayor, todos en la tonalidad de C: C jónico, D dórico, E frigio… Conoce sus posiciones en el mástil y mejora el picking.',
+ skills: ['Modos', 'Posiciones', 'Púa alternada'],
+ lessons: [
+  { id: 'scales-01', title: 'C jónico', category: 'Escala mayor', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 },
+ ],
+});
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
 const ADDED: Record<string, string> = {
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
+ 'scales-01': '2026-10-24',
  'licks-phrasing-yngwie-02': '2026-10-24',
  'licks-phrasing-vinnie-01': '2026-10-24',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-0${position}`, '2026-10-23'])),
@@ -1106,7 +1115,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'fingering', 'arpeggios', 'pentatonic', 'licks-phrasing'].includes(module.id),
+ available: ['recommendations', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,
