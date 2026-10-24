@@ -1,6 +1,6 @@
 import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
-type LessonBase = { id: string; title: string; minutes: number; xp: number };
+type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
 export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; points: { title: string; text: string }[]; note?: string };
 /** Lección de práctica: patrón para tocar en la sala de práctica. */
@@ -1081,6 +1081,16 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
+// Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
+const ADDED: Record<string, string> = {
+ ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
+ 'licks-phrasing-yngwie-02': '2026-10-24',
+ 'licks-phrasing-vinnie-01': '2026-10-24',
+ ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-0${position}`, '2026-10-23'])),
+ ...Object.fromEntries(moduleFixtures.find(module => module.id === 'arpeggios')!.lessons.map(lesson => [lesson.id, '2026-10-23'])),
+ 'licks-phrasing-yngwie-01': '2026-10-23',
+};
+for (const module of moduleFixtures) for (const lesson of module.lessons) if (ADDED[lesson.id]) lesson.added = ADDED[lesson.id];
 // Sustituye las fichas provisionales del módulo por sus estudios completos.
 for (const module of moduleFixtures) {
  if (module.id === 'fingering') module.completedLessons = 0;
@@ -1105,6 +1115,12 @@ export const courses = moduleFixtures.map(module => ({
 // Orden estable: disponibles primero; cada grupo conserva el orden del temario.
 })).sort((a, b) => Number(b.available) - Number(a.available));
 
+/** Las lecciones de práctica publicadas más recientemente (solo módulos disponibles). */
+export const latestLessons = (count: number) => courses
+ .filter(course => course.available)
+ .flatMap(course => course.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice' && !!lesson.added).map(lesson => ({ lesson, moduleId: course.id, moduleTitle: course.title })))
+ .sort((a, b) => b.lesson.added!.localeCompare(a.lesson.added!))
+ .slice(0, count);
 
 /** Velocidades fijas (BPM con notas en corcheas). Los nombres describen la exigencia del ejercicio, no el nivel de quien toca. Cada lección acota su rango con `tempo.min` / `tempo.max`. */
 export const tempos = [

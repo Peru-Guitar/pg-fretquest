@@ -5,7 +5,7 @@ import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
 import { Check, LogIn, Play, Target } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
-import { courses, type PracticeLesson } from '@/data/questMock';
+import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
 import { useLastExercise } from '@/lib/progress';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
@@ -75,6 +75,18 @@ export default function HomePage() {
      {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div>
    </section>
+  </div>
+
+  <SectionTitle title="Últimas lecciones agregadas" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
+  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{latestLessons(8).map(({ lesson, moduleId, moduleTitle }) =>
+   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
+    <div className="mb-2 flex items-center justify-between gap-2">
+     <p className="truncate text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
+     <span className="shrink-0 rounded-full bg-brand/20 px-2 py-0.5 text-3xs font-bold text-accent">NUEVO</span>
+    </div>
+    <h3 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
+    <span className="mt-3 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+   </Link>)}
   </div>
 
   <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
