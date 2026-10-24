@@ -38,3 +38,8 @@ export const useLastExercise = lastExercise.use;
 export const setLastExercise = lastExercise.set;
 
 
+
+/** Aviso del modo práctica ya visto («No volver a mostrar»). */
+const practiceIntro = createLocalStore<boolean>("fretquest.practiceIntroSeen", false);
+export const usePracticeIntroSeen = practiceIntro.use;
+export const setPracticeIntroSeen = practiceIntro.set;

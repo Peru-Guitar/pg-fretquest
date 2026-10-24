@@ -13,7 +13,8 @@ import { cn } from '@/lib/cn';
 import { buttonClass } from '@/components/ui/buttonClass';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
-import { setLastExercise } from '@/lib/progress';
+import { setLastExercise, setPracticeIntroSeen, usePracticeIntroSeen } from '@/lib/progress';
+import { PracticeIntro } from '@/components/practice/PracticeIntro';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
@@ -109,6 +110,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
+    const introSeen = usePracticeIntroSeen();
+    const [showIntro, setShowIntro] = useState(false);
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
     const sessionRef = useRef(session);
@@ -294,7 +297,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
         <StartChoice primary onClick={() => start(true)} icon={<Headphones size={16}/>} label="Escuchar ejercicio" description="Escucha primero el ejercicio"/>
-        <StartChoice primary={false} onClick={() => start(false)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Registra tu progreso"/>
+        <StartChoice primary={false} onClick={() => introSeen ? start(false) : setShowIntro(true)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Registra tu progreso"/>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
@@ -394,6 +397,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         {stopButton}
                     </div>
                 </div>, document.body)}
+                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={dontShowAgain => { setShowIntro(false); if (dontShowAgain) setPracticeIntroSeen(true); start(false); }}/>}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
                 <p className="border-t border-line px-5 py-3 text-xs text-muted"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
                 <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
