@@ -6,11 +6,13 @@ import { useLastExercise } from '@/lib/progress';
 import { suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
- // Con sesión y nivel: la lección que sigue en su plan. Sin sesión: retoma el último ejercicio abierto.
+ // Con sesión: el último ejercicio practicado; si aún no hay ninguno, el que sigue en su plan. Sin sesión: el último abierto.
  const account = useAccount();
  const plan = account ? suggestion(account) : null;
  const opened = useLastExercise();
- const last = plan ? { moduleId: plan.done && plan.lastLesson ? plan.lastLesson.moduleId : plan.next.moduleId, exerciseId: plan.done && plan.lastLesson ? plan.lastLesson.lesson.id : plan.next.lesson.id } : opened;
+ const practicedId = account?.lastPractice?.lessonId;
+ const practicedModule = practicedId ? courses.find(course => course.lessons.some(lesson => lesson.id === practicedId)) : undefined;
+ const last = practicedModule ? { moduleId: practicedModule.id, exerciseId: practicedId } : plan ? { moduleId: plan.next.moduleId, exerciseId: plan.next.lesson.id } : opened;
  const isPractice = (lesson: { type: string }): lesson is PracticeLesson => lesson.type === 'practice';
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
@@ -44,16 +46,14 @@ export default function HomePage() {
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f5_0%,#191817e6_38%,#19181780_65%,#19181720_100%)] max-xs:bg-[#191817cc]"/>
     <div className="relative z-10 w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
-     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{plan ? (plan.done ? 'HOY YA PRACTICASTE' : `TU PLAN · ${plan.position + 1 > plan.total ? 1 : plan.position + 1} DE ${plan.total}`) : currentModule.title.toUpperCase()}</p>
+     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{practicedModule ? 'TU ÚLTIMO EJERCICIO' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
      <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">{lastLesson.title}</h2>
      <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{lastLesson.description}</p>
      <div className="mt-6 mb-4.5"/>
-     {plan?.done
-      ? <div className="flex flex-wrap items-center gap-3">
-        <span className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/15 px-4 text-sm font-bold text-success"><Check size={17}/>Práctica de hoy hecha · mañana: {plan.next.lesson.title}</span>
-        <LinkButton to="/train" variant="secondary">Práctica libre</LinkButton>
-       </div>
-      : <LinkButton to={`/practice/${currentModule.id}?exercise=${lastLesson.id}`}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>}
+     <div className="flex flex-wrap items-center gap-3">
+      <LinkButton to={`/practice/${currentModule.id}?exercise=${lastLesson.id}`}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>
+      {practicedModule && plan && plan.next.lesson.id !== lastLesson.id && <LinkButton to={`/practice/${plan.next.moduleId}?exercise=${plan.next.lesson.id}`} variant="secondary">Sigue en tu plan: {plan.next.lesson.title}</LinkButton>}
+     </div>
      {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to="/login" className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div>
    </section>
