@@ -111,7 +111,7 @@ export default function HomePage() {
 
 
 
-  <section className="mt-7.5 rounded-lg border border-brand/25 bg-linear-135 from-brand/15 via-card to-card p-5 md:p-6.5">
+  <section className="mt-7.5 rounded-lg border border-line bg-card p-5 md:p-6.5">
    <div className="flex flex-wrap items-center gap-4 lg:flex-nowrap lg:gap-6">
     <div className="hidden size-12 shrink-0 place-items-center rounded-full border border-[#aa7b4766] bg-[#d99a2010] text-gold drop-shadow-[0_0_8px_#eab14a22] xs:grid md:size-16"><Target size={34}/></div>
     <div className="flex-1">
@@ -122,7 +122,7 @@ export default function HomePage() {
     <LinkButton to={moduleUrl(basics.id)} variant="secondary" className="max-md:w-full md:max-lg:ml-19 lg:ml-auto">Ver el módulo</LinkButton>
    </div>
    <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">{basics.lessons.filter(isPractice).map(lesson =>
-    <Link key={lesson.id} to={practiceUrl(basics.id, lesson.id)} className="rounded-md border border-line bg-white/3 px-3 py-2.5 text-sm transition hover:border-accent/60 hover:text-accent">{lesson.title}</Link>)}
+    <Link key={lesson.id} to={practiceUrl(basics.id, lesson.id)} className="rounded-md border border-line px-3 py-2.5 text-sm transition hover:border-accent/60 hover:text-accent">{lesson.title}</Link>)}
    </div>
   </section>
  </>;
