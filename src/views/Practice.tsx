@@ -30,6 +30,8 @@ const ROUND_OPTIONS = [1, 3, 5, 7, 10];
 const MAX_ROUNDS: Record<Difficulty, number> = { base: 10, intermedio: 5, avanzado: 3, experto: 1 };
 /** Tiempo de práctica que deben caber las rondas: un ejercicio largo admite menos repeticiones. */
 const ROUNDS_BUDGET_SECONDS = 90;
+/** BPM de referencia para medir el largo de un ejercicio, igual para todos. */
+const ROUNDS_REFERENCE_BPM = 100;
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -303,8 +305,8 @@ function PracticeView({ mode }: { mode: Mode }) {
         </select>
     </label>;
 
-    // Duración de una ronda al BPM inicial del ejercicio (no al elegido, para que el tope no cambie al mover la velocidad).
-    const roundSeconds = pattern.length / FIGURES[figure].notesPerBeat / (study?.bpm ?? 100) * 60;
+    // Duración de una ronda a un BPM fijo de referencia (no al elegido, para que el tope no cambie al mover la velocidad).
+    const roundSeconds = pattern.length / FIGURES[figure].notesPerBeat / ROUNDS_REFERENCE_BPM * 60;
     const maxRounds = Math.min(MAX_ROUNDS[activeExercise.difficulty], Math.max(1, Math.floor(ROUNDS_BUDGET_SECONDS / roundSeconds)));
     const roundsGroup = <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
         <div className="flex overflow-hidden rounded-md border border-line-strong">
