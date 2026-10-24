@@ -1212,8 +1212,6 @@ export const routines = [
  { id: 'focus', title: 'Mejorar una técnica', duration: 'A tu medida', description: 'Elige una habilidad y concentra tu sesión.', moduleId: 'legato' },
 ];
 
-/** URL única de una lección; la página decide qué mostrar según su tipo. */
-export const lessonUrl = (moduleId: string, lessonId: string) => `/modules/${moduleId}/${lessonId}`;
 
 /** Velocidades fijas (BPM con notas en corcheas). Los nombres describen la exigencia del ejercicio, no el nivel de quien toca. Cada lección acota su rango con `tempo.min` / `tempo.max`. */
 export const tempos = [

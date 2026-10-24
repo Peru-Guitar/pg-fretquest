@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES } from '@/lib/routes';
 import { Check, Clock3, Target, Trophy, Zap } from 'lucide-react';
 import { Achievements } from '@/components/quest/QuestUI';
 import { Avatar, Badge, Caption, Card, Eyebrow, LinkButton, Meter, Stat } from '@/components/ui';
@@ -30,7 +31,7 @@ export default function ResultsPage() {
         <h2 className="mt-7.5 mb-5">Las pequeñas victorias cuentan.</h2>
         <Achievements/>
         <div className="mt-7.5 mb-4.5 flex flex-col justify-center gap-4 md:flex-row">
-            <LinkButton to="/train">Elegir otro ejercicio</LinkButton>
+            <LinkButton to={ROUTES.exercises}>Elegir otro ejercicio</LinkButton>
             <LinkButton to="/practice" variant="secondary">Volver a practicar</LinkButton>
         </div>
         <Caption className="justify-center text-2xs md:text-sm">Esta vista usa datos de ejemplo. No se ha evaluado ni guardado ninguna sesión.</Caption>

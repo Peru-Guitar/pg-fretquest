@@ -1,9 +1,10 @@
 'use client';
 
+import { ROUTES, lessonUrl, practiceUrl } from '@/lib/routes';
 import { Link, Navigate } from '@/lib/router';
 import { BookOpen, CalendarDays, Check, Compass, Flame, ListOrdered, RotateCcw, Sparkles } from 'lucide-react';
 import { Card, PageTitle } from '@/components/ui';
-import { courses, lessonUrl } from '@/data/questMock';
+import { courses, } from '@/data/questMock';
 import { ArtistHeader } from '@/components/quest/ArtistCredit';
 import { groupByArtist } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
@@ -25,14 +26,13 @@ function StatChips({ stats }: { stats: { count: number; last: number } }) {
     </>;
 }
 
-const practiceUrl = (moduleId: string, lessonId: string) => `/practice/${moduleId}?exercise=${lessonId}`;
 
 /** Mi plan: los módulos del nivel elegido, en orden, como guía. Cambiar de nivel es libre. */
 export default function PlanPage() {
     const account = useAccount();
     const progress = useProgress();
-    if (!account) return <Navigate to="/login" replace/>;
-    if (!account.level) return <Navigate to="/login" replace/>;
+    if (!account) return <Navigate to={ROUTES.login} replace/>;
+    if (!account.level) return <Navigate to={ROUTES.login} replace/>;
     const level = account.level;
     const blocks = planFor(level);
     const recommendations = courses.find(course => course.id === 'recommendations' && course.available);
@@ -58,7 +58,7 @@ export default function PlanPage() {
 
     return <>
         <PageTitle eyebrow="MI PLAN" title={`Plan ${levelLabel(level)}`} text="Una guía de lo que te conviene practicar según tu nivel. Tu nivel lo cambias en Mi cuenta.">
-            <Link to="/guide" className="text-sm font-bold text-accent hover:underline">¿Cómo funciona? →</Link>
+            <Link to={ROUTES.guide} className="text-sm font-bold text-accent hover:underline">¿Cómo funciona? →</Link>
         </PageTitle>
 
         {/* Cómo usar el plan: es una guía, no una malla curricular. */}
@@ -101,7 +101,7 @@ export default function PlanPage() {
                     {item.bar !== undefined && <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full', item.bar >= 1 ? 'bg-success' : 'bg-linear-90 from-brand to-gold')} style={{ width: `${item.bar * 100}%` }}/></span>}
                 </div>)}
             </dl>
-            <p className="relative border-t border-line px-5 py-3 text-xs text-muted md:px-7">{practiced >= goal ? '¡Cumpliste tu ritmo esta semana! Lo que practiques de más, suma igual.' : `Te ${goal - practiced === 1 ? 'falta 1 día' : `faltan ${goal - practiced} días`} para cumplir tu ritmo. Recomendado: al menos media hora cada día.`} <Link to="/account" className="text-accent hover:underline">Cambiar ritmo</Link></p>
+            <p className="relative border-t border-line px-5 py-3 text-xs text-muted md:px-7">{practiced >= goal ? '¡Cumpliste tu ritmo esta semana! Lo que practiques de más, suma igual.' : `Te ${goal - practiced === 1 ? 'falta 1 día' : `faltan ${goal - practiced} días`} para cumplir tu ritmo. Recomendado: al menos media hora cada día.`} <Link to={ROUTES.account} className="text-accent hover:underline">Cambiar ritmo</Link></p>
         </section>
 
         {today?.finished && upgrade && <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 border-brand/40">
@@ -110,7 +110,7 @@ export default function PlanPage() {
                 <p className="mt-1 text-sm text-muted">¿Te sientes listo para {levelLabel(upgrade)}? Tú decides.</p>
             </div>
             <div className="flex gap-2">
-                <Link to="/account" className="grid min-h-10 place-items-center rounded-md bg-brand px-4 text-sm font-bold text-white">Cambiar mi nivel</Link>
+                <Link to={ROUTES.account} className="grid min-h-10 place-items-center rounded-md bg-brand px-4 text-sm font-bold text-white">Cambiar mi nivel</Link>
                 <span className="grid min-h-10 place-items-center px-3 text-sm text-muted">o sigue repasando</span>
             </div>
         </Card>}

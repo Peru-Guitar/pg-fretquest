@@ -1,3 +1,4 @@
+import { moduleUrl } from '@/lib/routes';
 import { Link } from '@/lib/router';
 import { ArrowRight, Guitar, Star } from 'lucide-react';
 import { courses } from '@/data/questMock';
@@ -50,7 +51,7 @@ export function CourseCard({ course }: { course: typeof courses[number] }) {
         </div>
     </>;
     return course.available
-        ? <Link to={`/modules/${course.id}`} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_6px_25px_#e0662f16]">{content}</Link>
+        ? <Link to={moduleUrl(course.id)} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_6px_25px_#e0662f16]">{content}</Link>
         : <article aria-label={`${course.title}: próximamente`} className="overflow-hidden rounded-lg border border-line bg-card opacity-60">{content}</article>;
 }
 

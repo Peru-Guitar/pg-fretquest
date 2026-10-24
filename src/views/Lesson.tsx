@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES, lessonUrl, moduleIdFromSlug } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, useParams } from '@/lib/router';
 import { GuitarArt } from '@/components/quest/QuestUI';
@@ -8,10 +9,10 @@ import { ArtistHeader } from '@/components/quest/ArtistCredit';
 import { groupByArtist } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { BackLink, Badge, Card, DetailLayout, Eyebrow, PageTitle, Tags, TipCard } from '@/components/ui';
-import { courses, lessonUrl } from '@/data/questMock';
+import { courses, } from '@/data/questMock';
 
 export default function LessonPage() {
-    const { moduleId: lessonId } = useParams();
+    const lessonId = moduleIdFromSlug(useParams().modulo);
     const course = courses.find(item => item.id === lessonId) ?? courses[0];
     const readings = course.lessons.filter(lesson => lesson.type === 'reading').length;
     const practices = course.lessonCount - readings;
@@ -21,7 +22,7 @@ export default function LessonPage() {
     const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && lesson.artist);
 
     return <>
-        <BackLink to="/train">Ejercicios</BackLink>
+        <BackLink to={ROUTES.exercises}>Ejercicios</BackLink>
         <PageTitle eyebrow={course.category} title={course.title} text={course.description}/>
         <DetailLayout aside={<>
             <Card>

@@ -1,3 +1,4 @@
+import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Clock3, Trophy, X } from 'lucide-react';
@@ -89,7 +90,7 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                     </div>
                     {rating !== null && <p className="mt-3 text-sm text-success">¡Gracias! Sé honesto contigo: así sabrás cuándo subir la velocidad.</p>}
 
-                    {!signedIn && <p className="mt-4 text-xs text-muted">Practicaste sin sesión: no se registró. <Link to="/login" onClick={onClose} className="text-accent hover:underline">Entra</Link> para guardar tu progreso.</p>}
+                    {!signedIn && <p className="mt-4 text-xs text-muted">Practicaste sin sesión: no se registró. <Link to={ROUTES.login} onClick={onClose} className="text-accent hover:underline">Entra</Link> para guardar tu progreso.</p>}
                     <Button onClick={onClose} className="mt-6 min-w-40">Cerrar</Button>
                 </div>
             </div>

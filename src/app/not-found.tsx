@@ -1,6 +1,7 @@
-import { Navigate } from "@/lib/router";
+import { Suspense } from "react";
+import { LegacyRedirect } from "@/components/LegacyRedirect";
 
-// Cualquier ruta desconocida vuelve al inicio (también es la 404.html de GitHub Pages).
+// También es la 404.html de GitHub Pages: redirige los enlaces antiguos a sus rutas nuevas.
 export default function NotFound() {
-  return <Navigate to="/" replace/>;
+  return <Suspense><LegacyRedirect/></Suspense>;
 }

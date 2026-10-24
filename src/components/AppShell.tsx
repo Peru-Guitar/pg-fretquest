@@ -1,14 +1,15 @@
 'use client';
 
+import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, NavLink, useLocation } from '@/lib/router';
+import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
 import { BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
 import { useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
 import { cn } from '@/lib/cn';
 
-const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: '/plan', label: 'Mi plan', icon: ListChecks }, { to: '/train', label: 'Ejercicios', icon: BookOpen }, { to: '/community', label: 'Comunidad', icon: Users }, { to: '/tools', label: 'Herramientas', icon: Wrench }];
+const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
 const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-brand';
@@ -20,11 +21,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     const { pathname } = useLocation();
     const account = useAccount();
     // Sin sesión no hay plan: se practica igual, pero sin registrar progreso.
-    const links = account ? primaryLinks : primaryLinks.filter(link => link.to !== '/plan');
+    // «Mi plan» solo con sesión; mientras no se sabe (antes de hidratar) se reserva su hueco, invisible.
+    const hydrated = useHydrated();
+    const links = !hydrated || account ? primaryLinks : primaryLinks.filter(link => link.to !== ROUTES.plan);
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
-    const isActive = (to: string, active: boolean) => active || (to === '/train' && (pathname.startsWith('/lessons') || pathname.startsWith('/modules')));
+    const isActive = (to: string, active: boolean) => active || (to === ROUTES.exercises && pathname.startsWith(`${ROUTES.exercises}/`));
     const navigation = (items: typeof primaryLinks, variant: typeof sidebarLink) => items.map(({ to, label, icon: Icon }) =>
-        <NavLink key={to} end={to === '/'} to={to} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, variant.base, isActive(to, active) && cn(linkActive, variant.active))}>
+        <NavLink key={to} end={to === '/'} to={to} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, variant.base, isActive(to, active) && cn(linkActive, variant.active), !hydrated && to === ROUTES.plan && 'invisible')}>
             <Icon size={19}/><span>{label}</span>
         </NavLink>);
 
@@ -47,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
             {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
             <nav aria-label="Ayuda" className="mt-auto mb-3">
-                <NavLink to="/guide" onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
+                <NavLink to={ROUTES.guide} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
                 <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <MessageCircle size={19}/><span>PG Skool</span>
                 </a>

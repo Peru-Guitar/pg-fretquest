@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES } from '@/lib/routes';
 import { Link } from '@/lib/router';
 import { CalendarCheck, Compass, Gauge, Heart, ListChecks, Music, Play, Sparkles, Users } from 'lucide-react';
 import { Card, PageTitle } from '@/components/ui';
@@ -7,7 +8,7 @@ import { Card, PageTitle } from '@/components/ui';
 /** Guía «Cómo funciona»: cómo usar Fret Quest y cómo entrenar. Textos cortos, una tarjeta por tema. */
 const SECTIONS = [
     {
-        icon: ListChecks, title: 'Tu plan', to: '/plan', link: 'Ir a mi plan',
+        icon: ListChecks, title: 'Tu plan', to: ROUTES.plan, link: 'Ir a mi plan',
         points: [
             'Es una guía según tu nivel, no una malla curricular: nada se bloquea ni se aprueba.',
             'Empieza por Recomendaciones: son lecturas cortas sobre cómo practicar. Márcalas como leídas.',
@@ -16,7 +17,7 @@ const SECTIONS = [
         ],
     },
     {
-        icon: CalendarCheck, title: 'Tu ritmo y tu tiempo', to: '/account', link: 'Cambiar mi ritmo',
+        icon: CalendarCheck, title: 'Tu ritmo y tu tiempo', to: ROUTES.account, link: 'Cambiar mi ritmo',
         points: [
             'Eliges cuántos días por semana quieres practicar (de 2 a 6) y cuánto tiempo cada día (15, 30 o 45 min).',
             'Un día cuenta para tu ritmo cuando completas tu tiempo diario, sumando todos los ejercicios.',
@@ -25,7 +26,7 @@ const SECTIONS = [
         ],
     },
     {
-        icon: Play, title: 'Cómo practicar un ejercicio', to: '/train', link: 'Ver ejercicios',
+        icon: Play, title: 'Cómo practicar un ejercicio', to: ROUTES.exercises, link: 'Ver ejercicios',
         points: [
             'Lee el objetivo y los pasos antes de tocar. Si quieres, pulsa «Escuchar ejercicio» para oírlo primero.',
             'Elige la velocidad (BPM) y las rondas. Pulsa Empezar: hay una cuenta de entrada antes de cada ronda.',
@@ -43,7 +44,7 @@ const SECTIONS = [
         ],
     },
     {
-        icon: Users, title: 'Comunidad', to: '/community', link: 'Ver la comunidad',
+        icon: Users, title: 'Comunidad', to: ROUTES.community, link: 'Ver la comunidad',
         points: [
             'Ves cuántos guitarristas entrenan esta semana y el ranking de los que más practican.',
             'El ranking es semanal: se reinicia cada lunes, así que siempre puedes llegar arriba.',

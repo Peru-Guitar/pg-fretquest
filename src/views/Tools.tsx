@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES } from '@/lib/routes';
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from '@/lib/router';
 import { ArrowRight, Gauge, Mic, MicOff, Minus, Music2, Pause, Play, Plus, Square } from 'lucide-react';
@@ -17,8 +18,8 @@ import { GUITAR_STRINGS, centsBetween, nearestString } from '@/lib/audio/pitch';
  * `image`: cabecera de la tarjeta en public/images/tools/, con el mismo alto que CourseCard (h-44).
  */
 const tools: { to: string; icon: ReactNode; title: string; text: string; category: string; image?: string }[] = [
-    { to: '/tools/tuner', icon: <Music2/>, title: 'Afinador', category: 'AFINACIÓN', text: 'Afinación estándar E A D G B e a 440 Hz. Afina antes de cada sesión.', image: '/images/tools/tuner.webp' },
-    { to: '/tools/metronome', icon: <Gauge/>, title: 'Metrónomo', category: 'RITMO', text: 'Un pulso constante de 30 a 300 BPM para entrenar con control.', image: '/images/tools/metronome.webp' },
+    { to: ROUTES.tuner, icon: <Music2/>, title: 'Afinador', category: 'AFINACIÓN', text: 'Afinación estándar E A D G B e a 440 Hz. Afina antes de cada sesión.', image: '/images/tools/tuner.webp' },
+    { to: ROUTES.metronome, icon: <Gauge/>, title: 'Metrónomo', category: 'RITMO', text: 'Un pulso constante de 30 a 300 BPM para entrenar con control.', image: '/images/tools/metronome.webp' },
 ];
 
 export default function ToolsPage() {
@@ -44,7 +45,7 @@ export default function ToolsPage() {
 
 function ToolLayout({ title, text, tip, children, badge = 'DEMOSTRACIÓN VISUAL · SIN AUDIO' }: { title: string; text: string; tip: string; children: ReactNode; badge?: string | null }) {
     return <>
-        <BackLink to="/tools">Herramientas</BackLink>
+        <BackLink to={ROUTES.tools}>Herramientas</BackLink>
         <PageTitle eyebrow="HERRAMIENTAS" title={title} text={text}/>
         <Card className="mx-auto w-full max-w-280 px-6 py-10 text-center md:px-16 md:py-16">
             {badge && <Badge>{badge}</Badge>}

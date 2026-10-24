@@ -1,6 +1,7 @@
 'use client';
 
-import { Link } from '@/lib/router';
+import { ROUTES, practiceUrl } from '@/lib/routes';
+import { Link, useHydrated } from '@/lib/router';
 import { Activity, Crown, Flame, Guitar, Loader2, LogIn, Users } from 'lucide-react';
 import { Card, Caption, PageTitle, SectionTitle } from '@/components/ui';
 import { courses, type Difficulty, type PracticeLesson } from '@/data/questMock';
@@ -41,15 +42,17 @@ function RankRow({ row, place }: { row: RankEntry; place: number }) {
 
 export default function CommunityPage() {
     const account = useAccount();
+    const hydrated = useHydrated();
     const { data, error } = useCommunity(account !== null);
 
+    if (!hydrated) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (!account) return <>
         <PageTitle eyebrow="COMUNIDAD" title="No practicas solo." text="Así se está moviendo la comunidad de Fret Quest esta semana."/>
         <Card className="flex flex-col items-center gap-4 py-12 text-center">
             <Users size={36} className="text-accent"/>
             <h2 className="text-2xl">Entra para ver la comunidad</h2>
             <p className="max-w-md text-sm text-muted">El ranking de la semana y la actividad de todos solo se ven con tu cuenta.</p>
-            <Link to="/login" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_26px_#e0662f55]"><LogIn size={18}/>Entrar</Link>
+            <Link to={ROUTES.login} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_26px_#e0662f55]"><LogIn size={18}/>Entrar</Link>
         </Card>
     </>;
     if (error) return <Card><p className="text-sm text-muted">No se pudo cargar la comunidad. Inténtalo de nuevo en un momento.</p></Card>;
@@ -104,7 +107,7 @@ export default function CommunityPage() {
             <p className="text-sm text-fg-soft">{mine > 0
                 ? <>Esta semana <b className="text-fg">sumaste {mine} de las {WEEK.practices.toLocaleString('es')}</b> prácticas de la comunidad. ¡Gracias!</>
                 : <>Todavía no sumaste prácticas esta semana. <b className="text-fg">La comunidad lleva {WEEK.practices.toLocaleString('es')}</b>: súmate.</>}</p>
-            {mine === 0 && <Link to="/plan" className="text-sm font-bold text-accent hover:underline">Ir a mi plan →</Link>}
+            {mine === 0 && <Link to={ROUTES.plan} className="text-sm font-bold text-accent hover:underline">Ir a mi plan →</Link>}
         </Card>}
 
         <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
@@ -141,7 +144,7 @@ export default function CommunityPage() {
                 const found = lessonsById.get(id);
                 if (!found) return null;
                 return <li key={id}>
-                    <Link to={`/practice/${found.moduleId}?exercise=${id}`} className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-white/3">
+                    <Link to={practiceUrl(found.moduleId, id)} className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-white/3">
                         <span className="w-6 font-mono text-accent">{index + 1}</span>
                         <Guitar size={17} className="text-accent-strong"/>
                         <span className="min-w-0 flex-1 font-bold">{found.lesson.title}</span>

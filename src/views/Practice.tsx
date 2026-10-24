@@ -1,5 +1,6 @@
 'use client';
 
+import { lessonIdFromSlug, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, practiceStudies } from '@/data/practiceStudies';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -70,27 +71,29 @@ function Remaining({ until }: { until: number }) {
 }
 
 export default function PracticePage() {
-    const { exerciseId } = useParams();
-    const [params] = useSearchParams();
+    // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
+    const { modulo, leccion } = useParams();
+    const exerciseId = moduleIdFromSlug(modulo);
     const course = courses.find(item => item.id === exerciseId);
     if (course && !course.available) return <ComingSoon title={course.title}/>;
-    return <PracticeView key={`${exerciseId}:${params.get('exercise') ?? params.get('lesson')}`} />;
+    return <PracticeView key={`${modulo}:${leccion}`} />;
 }
 
 function PracticeView() {
-    const { exerciseId } = useParams();
+    const { modulo, leccion } = useParams();
+    const exerciseId = moduleIdFromSlug(modulo);
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const hasPractice = (course: typeof courses[number]) => course.lessons.some(lesson => lesson.type === 'practice');
     const activeModule = courses.find(course => course.id === exerciseId && hasPractice(course)) ?? courses.find(course => course.id === 'fingering')!;
-    const routine = routines.find(item => item.id === searchParams.get("routine"));
+    const routine = routines.find(item => item.id === searchParams.get("rutina"));
     const practiceLessons = activeModule.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice');
-    const activeExercise = practiceLessons.find(lesson => lesson.id === (searchParams.get("exercise") ?? searchParams.get("lesson"))) ?? practiceLessons[0];
+    const activeExercise = practiceLessons.find(lesson => lesson.id === lessonIdFromSlug(activeModule.id, leccion)) ?? practiceLessons[0];
     const study = practiceStudies[activeExercise.id];
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
-    const session = searchParams.has('session') ? planSession : null;
+    const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
     const sessionRef = useRef(session);
     useEffect(() => { sessionRef.current = session; }, [session]);
@@ -113,7 +116,7 @@ function PracticeView() {
         offset += section.pattern.length;
     }
     const tabColumns = { gridTemplateColumns: `25px repeat(${perRow}, 1fr)` };
-    const [mode, setMode] = useState<Mode>(() => searchParams.has('session') ? 'practice' : 'goal');
+    const [mode, setMode] = useState<Mode>(() => searchParams.has('sesion') ? 'practice' : 'goal');
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
     const [round, setRound] = useState(1);
@@ -211,7 +214,7 @@ function PracticeView() {
         if (!nextInPlan || !sessionRef.current) return;
         stop();
         setPlanSession({ ...sessionRef.current, autostart: true });
-        navigate(`/practice/${nextInPlan.moduleId}?exercise=${nextInPlan.lesson.id}&session`);
+        navigate(practiceUrl(nextInPlan.moduleId, nextInPlan.lesson.id, 'sesion'));
     };
 
     const stopRef = useRef(stop);
@@ -221,7 +224,7 @@ function PracticeView() {
     // Al abrir una lección de la sesión, arranca sola. Se difiere un tick y se cancela en la limpieza:
     // así, si React monta dos veces (StrictMode en desarrollo), solo arranca el montaje que se queda.
     useEffect(() => {
-        if (!searchParams.has('session') || !getPlanSession()?.autostart) return;
+        if (!searchParams.has('sesion') || !getPlanSession()?.autostart) return;
         const id = setTimeout(() => {
             const current = getPlanSession();
             if (!current?.autostart) return;
@@ -294,7 +297,7 @@ function PracticeView() {
     </div>;
 
     return <>
-        <BackLink to={`/modules/${activeModule.id}`}>{activeModule.title}</BackLink>
+        <BackLink to={moduleUrl(activeModule.id)}>{activeModule.title}</BackLink>
         <PageTitle eyebrow={activeModule.category} title={activeExercise.title} text={activeExercise.description}>
             {routine && <Badge>RUTINA · {routine.title.toUpperCase()}</Badge>}
         </PageTitle>
