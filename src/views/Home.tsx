@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
-import { Check, LogIn, Play, Target } from 'lucide-react';
+import { ArrowRight, Check, LogIn, Play, Target } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
@@ -80,14 +80,14 @@ export default function HomePage() {
   </div>
 
   <SectionTitle title="Últimas lecciones agregadas" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
-  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{latestLessons(12).map(({ lesson, moduleId, moduleTitle }) =>
-   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="flex flex-col rounded-lg border border-brand/25 bg-linear-135 from-brand/15 via-card to-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60 hover:from-brand/25">
-    <div className="mb-2 flex items-center justify-between gap-2">
-     <p className="truncate text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
-     <DifficultySignal difficulty={lesson.difficulty} className="shrink-0"/>
+  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{latestLessons(8).map(({ lesson, moduleId, moduleTitle }) =>
+   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="group flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/50 hover:bg-raised">
+    <div className="flex items-center justify-between gap-2">
+     <p className="truncate text-3xs tracking-[0.15em] text-muted">{moduleTitle.toUpperCase()}</p>
+     <DifficultySignal difficulty={lesson.difficulty}/>
     </div>
-    <h3 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
-    <span className="mt-3 block text-2xs text-muted">{levelLabel(lesson.difficulty)}</span>
+    <h3 className="mt-1.5 flex-1 text-sm leading-snug font-bold text-balance transition group-hover:text-accent md:text-base">{lesson.title}</h3>
+    <div className="mt-4 flex items-center justify-between gap-2 border-t border-line pt-3 text-2xs text-muted">{levelLabel(lesson.difficulty)}<span className="flex items-center gap-1 text-link transition-all group-hover:gap-1.5">Ver<ArrowRight size={13}/></span></div>
    </Link>)}
   </div>
 
