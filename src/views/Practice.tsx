@@ -399,7 +399,14 @@ function PracticeView({ mode }: { mode: Mode }) {
                                 {bar.notes.map((note, index) => {
                                     const noteIndex = bar.start + index;
                                     const playing = step === noteIndex;
-                                    return <span key={index} className={cn('z-10 justify-self-center px-1 text-base', note.string === row + 1 ? (playing ? 'rounded-[5px] bg-linear-135 from-brand to-brand-strong text-white shadow-[0_0_22px_#e0662f4a]' : 'bg-sunken text-fg-soft') : 'invisible')}>{note.fret}</span>;
+                                    // Ligado con la nota anterior de la misma cuerda (en la misma fila): arco para hammer-on/pull-off, línea para slide.
+                                    const previous = bar.notes[index - 1];
+                                    const tie = note.string === row + 1 && previous?.string === note.string ? picks[noteIndex] : undefined;
+                                    return <span key={index} className="relative grid justify-items-center">
+                                        {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
+                                        {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
+                                        <span className={cn('z-10 px-1 text-base', note.string === row + 1 ? (playing ? 'rounded-[5px] bg-linear-135 from-brand to-brand-strong text-white shadow-[0_0_22px_#e0662f4a]' : 'bg-sunken text-fg-soft') : 'invisible')}>{note.fret}</span>
+                                    </span>;
                                 })}
                             </div>)}
                         </div>)}
