@@ -87,7 +87,7 @@ export default function HomePage() {
      <DifficultySignal difficulty={lesson.difficulty} className="shrink-0"/>
     </div>
     <h3 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
-    <span className="mt-3 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+    <span className="mt-3 block text-2xs text-muted">{levelLabel(lesson.difficulty)}</span>
    </Link>)}
   </div>
 
@@ -103,7 +103,7 @@ export default function HomePage() {
     <div className="relative grid grid-cols-2 gap-3 lg:grid-cols-4">{module.lessons.map(lesson =>
      <Link key={lesson.id} to={practiceUrl(module.moduleId, lesson.id)} className="flex flex-col rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-white/10">
       <h4 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h4>
-      <span className="mt-3 block text-2xs text-fg-soft">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+      <span className="mt-3 block text-2xs text-fg-soft">{levelLabel(lesson.difficulty)}</span>
      </Link>)}
     </div>
    </section>)}
