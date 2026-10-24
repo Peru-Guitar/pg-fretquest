@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from '@/lib/router';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { ArrowRight, LogIn, Loader2 } from 'lucide-react';
 import { Button, Card, Eyebrow, PageTitle } from '@/components/ui';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { DEFAULT_RHYTHM, DEFAULT_SESSION_MINUTES, LEVELS, levelLabel, setLevel, setSessionMinutes, setWeeklyGoal, signIn, useAccount } from '@/lib/account';
@@ -73,6 +73,8 @@ export default function LoginPage() {
     // Paso aparte del cuestionario: el ritmo semanal.
     // Con nivel ya guardado se salta el cuestionario: al plan, o al ritmo si aún no lo eligió.
     // `?repetir` (desde Mi cuenta) vuelve a hacer el cuestionario.
+    // Cuenta nueva en este navegador: esperar a Firestore antes de decidir si hace falta el cuestionario.
+    if (account.synced === false && !account.level) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (account.level && !retake && account.weeklyGoal && !choosingRhythm) return <Navigate to="/plan" replace/>;
     const showRhythm = choosingRhythm || (!!account.level && !retake);
 
