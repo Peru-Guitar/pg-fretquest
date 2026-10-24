@@ -8,8 +8,8 @@ import { createLocalStore } from "@/lib/localStore";
 import { addDays, weekStart } from "@/lib/domain/report";
 
 /**
- * Cuenta: el login es REAL (Google, Firebase Auth); los datos de la cuenta todavía viven en localStorage.
- * Con Firestore, este mismo objeto será el documento `users/{uid}`.
+ * Cuenta: login con Google (Firebase Auth) y datos en Firestore (`users/{uid}`): nombre, ciudad, país, guitarra,
+ * nivel, ritmo, duración de la sesión y última práctica. El navegador guarda una copia para cargar rápido.
  */
 export type Account = {
   /** De Firebase Auth / Google: solo lectura. */
@@ -60,7 +60,8 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const level = LEVELS.includes(data.level) ? data.level as Difficulty : account.level;
     const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
     const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
-    store.set({ ...account, level, weeklyGoal, sessionMinutes, city: data.city ?? account.city, country: data.country ?? account.country, synced: true });
+    const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
+    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {
     // Sin conexión: se sigue con lo guardado en el navegador.
     const account = store.get();
@@ -71,7 +72,7 @@ export const updateProfile = (changes: Pick<Account, "name" | "city" | "country"
   const account = store.get();
   if (!account) return;
   store.set({ ...account, ...changes });
-  void setDoc(doc(db, "users", account.uid), { name: changes.name, city: changes.city ?? "", country: changes.country ?? "" }, { merge: true }).catch(() => { /* queda local */ });
+  void setDoc(doc(db, "users", account.uid), { name: changes.name, city: changes.city ?? "", country: changes.country ?? "", guitar: changes.guitar ?? "" }, { merge: true }).catch(() => { /* queda local */ });
 };
 export const setLevel = (level: Difficulty) => {
   const account = store.get();
@@ -145,6 +146,8 @@ export function recordPractice(lessonId: string) {
   const practices = account.practices ?? [];
   const counted = practices.some(practice => practice.lessonId === lessonId && practice.date === date);
   store.set({ ...account, lastPractice: { lessonId, date }, practices: counted ? practices : [...practices, { lessonId, date }] });
+  // La última práctica mueve el plan: se guarda en Firestore para verla desde cualquier dispositivo.
+  void setDoc(doc(db, "users", account.uid), { lastPractice: { lessonId, date } }, { merge: true }).catch(() => { /* queda local */ });
 }
 
 /** Un módulo del plan: el módulo con las lecciones de práctica de ese nivel. */
