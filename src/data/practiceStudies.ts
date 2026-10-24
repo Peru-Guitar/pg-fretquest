@@ -214,7 +214,33 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
     };
 };
 
+// Escala mayor de C desde la quinta cuerda (curso de erpskool): cada parte sale de C, sube una cuerda más que la anterior y regresa.
+const run = (string: number, frets: number[]): PatternNote[] => frets.map(fret => ({ string, fret }));
+const C_IONIAN_UP = [...run(5, [3, 5, 7]), ...run(4, [3, 5, 7]), ...run(3, [4, 5, 7]), ...run(2, [5, 6, 8]), ...run(1, [5, 7, 8])];
+
 export const practiceStudies: Record<string, PracticeStudy> = {
+    'scales-01': {
+        description: 'La escala de C mayor, primer modo de la escala mayor (modo jónico), con un patrón que recorre el mástil de cuerda en cuerda desde C en el traste 3 de la quinta cuerda.',
+        notation: 'Escala mayor de C (C D E F G A B) · Corcheas · Púa alternada',
+        goal: 'Conocer las posiciones de la escala de C mayor, reconocerlas en el mástil y mejorar el picking.',
+        steps: [
+            'Antes del patrón, toca la escala completa: del traste 3 de la quinta cuerda (C) al traste 8 de la primera, otra vez en C.',
+            'El patrón tiene cuatro partes. Cada una sale de C, sube una cuerda más que la anterior y regresa hasta el traste 5 de la quinta cuerda.',
+            'En la cuarta parte sube hasta la primera cuerda, regresa por todas las notas hasta la sexta, vuelve a subir (5 y 7) y termina en C, en el traste 3 de la quinta cuerda.',
+            'Al subir, mantén apoyados los dedos que ya pisaste; al bajar, levántalos uno a uno para que suene la nota anterior.',
+            'Toca con púa alternada y silencia con la mano las cuerdas que ya no usas.',
+        ],
+        mistakes: ['Levantar los dedos al subir: se pierde el contacto con el mástil.', 'Dejar sonar las cuerdas que ya tocaste.', 'Correr antes de que el patrón se sienta fluido.'],
+        criterion: 'Toca las cuatro partes de corrido, lento y sin pausas. Sube el BPM solo cuando todas las notas suenen limpias y parejas.',
+        figure: 'corcheas',
+        bpm: 60,
+        ...withSections([
+            { title: 'Hasta la cuarta cuerda', pattern: [...C_IONIAN_UP.slice(0, 6), ...run(4, [5, 3]), ...run(5, [7, 5])] },
+            { title: 'Hasta la tercera cuerda', pattern: [...C_IONIAN_UP.slice(0, 9), ...run(3, [5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5])] },
+            { title: 'Hasta la segunda cuerda', pattern: [...C_IONIAN_UP.slice(0, 12), ...run(2, [6, 5]), ...run(3, [7, 5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5])] },
+            { title: 'Hasta la primera cuerda y de vuelta', pattern: [...C_IONIAN_UP, ...run(1, [7, 5]), ...run(2, [8, 6, 5]), ...run(3, [7, 5, 4]), ...run(4, [7, 5, 3]), ...run(5, [7, 5, 3]), ...run(6, [7, 5, 3, 5, 7]), ...run(5, [3])] },
+        ]),
+    },
     'fingering-01': {
         description: 'Cromático clásico 1–2–3–4 en todas las cuerdas, de ida y de vuelta, en cuatro posiciones del mástil: trastes 1, 5, 7 y 12.',
         goal: 'Soltar los dedos. Cada posición se siente distinta: abajo los trastes están más separados y arriba más juntos, así que la mano tiene que adaptarse a cada zona.',
