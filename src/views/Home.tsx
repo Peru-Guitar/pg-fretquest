@@ -7,6 +7,7 @@ import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
 import { useLastExercise } from '@/lib/progress';
+import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
@@ -83,7 +84,7 @@ export default function HomePage() {
    <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
     <div className="mb-2 flex items-center justify-between gap-2">
      <p className="truncate text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
-     <span className="shrink-0 rounded-full bg-brand/20 px-2 py-0.5 text-3xs font-bold text-accent">NUEVO</span>
+     <DifficultySignal difficulty={lesson.difficulty} className="shrink-0"/>
     </div>
     <h3 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
     <span className="mt-3 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
