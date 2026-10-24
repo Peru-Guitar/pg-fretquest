@@ -6,7 +6,7 @@ import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practic
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
-import { courses, tempos, type PracticeLesson } from '@/data/questMock';
+import { courses, tempos, type Difficulty, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
 import { BackLink, Button, Caption, Card, Eyebrow, LinkButton, PageTitle } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -25,7 +25,8 @@ const now = () => Date.now();
 /** Marca de ataque sobre cada nota de la tablatura. */
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Púa hacia abajo' }, up: { mark: 'V', title: 'Púa hacia arriba' }, hammer: { mark: 'h', title: 'Hammer-on (sin púa)', legato: true }, pull: { mark: 'p', title: 'Pull-off (sin púa)', legato: true }, slide: { mark: 's', title: 'Slide (sin púa)', legato: true } };
 // Rondas por práctica; siempre empieza en 1.
-const ROUND_OPTIONS = [1, 3, 5, 7, 10];
+/** Rondas disponibles según la dificultad: cuanto más difícil, menos repeticiones (experto: una sola, sin selector). */
+const ROUND_OPTIONS: Record<Difficulty, number[]> = { base: [1, 3, 5, 7, 10], intermedio: [1, 3, 5], avanzado: [1, 3], experto: [1] };
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -299,9 +300,10 @@ function PracticeView({ mode }: { mode: Mode }) {
         </select>
     </label>;
 
-    const roundsGroup = <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
+    const roundOptions = ROUND_OPTIONS[activeExercise.difficulty];
+    const roundsGroup = roundOptions.length > 1 && <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
         <div className="flex overflow-hidden rounded-md border border-line-strong">
-            {ROUND_OPTIONS.map(option => {
+            {roundOptions.map(option => {
                 const selected = rounds === option;
                 return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} onClick={() => setRounds(option)}
                     className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-brand text-white' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
