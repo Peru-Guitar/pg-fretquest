@@ -1,11 +1,12 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
 import { Check, LogIn, Play, Target } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, type PracticeLesson } from '@/data/questMock';
-import { useCompletedExercises, useLastExercise } from '@/lib/progress';
+import { useLastExercise } from '@/lib/progress';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
@@ -22,11 +23,16 @@ export default function HomePage() {
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
- // Lecciones de tu nivel (sin nivel: las de base) que aún te faltan, alternando módulos para variar.
- const completed = useCompletedExercises();
+ // 12 ejercicios al azar de los módulos de tu nivel (sin nivel: base). Se barajan tras hidratar para no chocar con el HTML estático.
  const level = hydrated ? account?.level ?? null : null;
- const pending = planFor(level ?? 'base').map(block => block.lessons.filter(lesson => !completed.has(lesson.id)).map(lesson => ({ lesson, moduleId: block.moduleId, moduleTitle: block.title })));
- const levelLessons = Array.from({ length: Math.max(0, ...pending.map(list => list.length)) }, (_, index) => pending.flatMap(list => list[index] ?? [])).flat().slice(0, 12);
+ const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
+ const levelLessons = useMemo(() => {
+  let state = seed;
+  const random = () => (state = (state * 48271) % 2147483647) / 2147483647;
+  const all = planFor(level ?? 'base').flatMap(block => block.lessons.map(lesson => ({ lesson, moduleId: block.moduleId, moduleTitle: block.title })));
+  if (hydrated) for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+  return all.slice(0, 12);
+ }, [level, hydrated, seed]);
  return <>
   <div className="mb-6 flex items-start justify-between gap-4 md:mb-7 lg:items-center">
    <div>
