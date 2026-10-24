@@ -21,6 +21,8 @@ export type Account = {
   country?: string;
   guitar?: string;
   level: Difficulty | null;
+  /** Ya se leyó `users/{uid}` de Firestore en esta sesión: hasta entonces no se sabe si tiene nivel y ritmo. */
+  synced?: boolean;
   /** Ritmo: días por semana que quiere practicar (se puede practicar cualquier día; es una meta). */
   weeklyGoal?: number;
   /** Duración de la sesión del plan: 15, 30 o 45 min. Un día cuenta para el ritmo si completas una sesión. */
@@ -49,7 +51,7 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
   watchProgress(user?.uid ?? null);
   if (!user) { store.set(null); return; }
   const current = store.get();
-  if (current?.uid !== user.uid) store.set({ uid: user.uid, email: user.email ?? "", name: user.displayName ?? "Guitarrista", level: null, lastPractice: null });
+  if (current?.uid !== user.uid) store.set({ uid: user.uid, email: user.email ?? "", name: user.displayName ?? "Guitarrista", level: null, lastPractice: null, synced: false });
   // En Firestore (`users/{uid}`) se persisten el nivel (la lógica para calcularlo está en el código), la ciudad y el país.
   getDoc(doc(db, "users", user.uid)).then(snapshot => {
     const data = snapshot.data() ?? {};
@@ -58,8 +60,12 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const level = LEVELS.includes(data.level) ? data.level as Difficulty : account.level;
     const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
     const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
-    store.set({ ...account, level, weeklyGoal, sessionMinutes, city: data.city ?? account.city, country: data.country ?? account.country });
-  }).catch(() => { /* sin conexión: queda el nivel local */ });
+    store.set({ ...account, level, weeklyGoal, sessionMinutes, city: data.city ?? account.city, country: data.country ?? account.country, synced: true });
+  }).catch(() => {
+    // Sin conexión: se sigue con lo guardado en el navegador.
+    const account = store.get();
+    if (account?.uid === user.uid) store.set({ ...account, synced: true });
+  });
 });
 export const updateProfile = (changes: Pick<Account, "name" | "city" | "country" | "guitar">) => {
   const account = store.get();
