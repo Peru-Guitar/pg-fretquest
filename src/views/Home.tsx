@@ -23,15 +23,17 @@ export default function HomePage() {
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
- // 12 ejercicios al azar de los módulos de tu nivel (sin nivel: base). Se barajan tras hidratar para no chocar con el HTML estático.
+ // Por cada módulo de tu nivel (sin nivel: base), 4 ejercicios al azar. Se barajan tras hidratar para no chocar con el HTML estático.
  const level = hydrated ? account?.level ?? null : null;
  const [seed] = useState(() => 1 + Math.floor(Math.random() * 2147483646));
- const levelLessons = useMemo(() => {
-  let state = seed;
-  const random = () => (state = (state * 48271) % 2147483647) / 2147483647;
-  const all = planFor(level ?? 'base').flatMap(block => block.lessons.map(lesson => ({ lesson, moduleId: block.moduleId, moduleTitle: block.title, image: courses.find(course => course.id === block.moduleId)!.image })));
-  if (hydrated) for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
-  return all.slice(0, 12);
+ const levelModules = useMemo(() => {
+  const rng = { state: seed };
+  const random = () => (rng.state = (rng.state * 48271) % 2147483647) / 2147483647;
+  return planFor(level ?? 'base').map(block => {
+   const lessons = [...block.lessons];
+   if (hydrated) for (let i = lessons.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [lessons[i], lessons[j]] = [lessons[j], lessons[i]]; }
+   return { ...block, image: courses.find(course => course.id === block.moduleId)!.image, lessons: lessons.slice(0, 4) };
+  });
  }, [level, hydrated, seed]);
  return <>
   <div className="mb-6 flex items-start justify-between gap-4 md:mb-7 lg:items-center">
@@ -76,16 +78,21 @@ export default function HomePage() {
   </div>
 
   <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
-  <div className="mb-7.5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{levelLessons.map(({ lesson, moduleId, moduleTitle, image }) =>
-   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="group relative flex min-h-36 flex-col justify-end overflow-hidden rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
-    <img src={image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
-    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#19181733_0%,#191817cc_55%,#191817f5_100%)]"/>
-    <div className="relative">
-     <p className="text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
-     <h3 className="mt-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
-     <span className="mt-1 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+  <div className="mb-7.5 space-y-6">{levelModules.map(module =>
+   <section key={module.moduleId}>
+    <Link to={moduleUrl(module.moduleId)} className="group relative mb-3 flex h-20 items-center justify-between overflow-hidden rounded-lg border border-line px-5 transition hover:border-accent/60">
+     <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
+     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#191817f5_0%,#191817cc_45%,#19181760_100%)]"/>
+     <h3 className="relative text-lg font-bold md:text-xl">{module.title}</h3>
+     <span className="relative text-xs text-accent">Ver módulo →</span>
+    </Link>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{module.lessons.map(lesson =>
+     <Link key={lesson.id} to={practiceUrl(module.moduleId, lesson.id)} className="flex flex-col rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
+      <h4 className="flex-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h4>
+      <span className="mt-3 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
+     </Link>)}
     </div>
-   </Link>)}
+   </section>)}
   </div>
 
 
