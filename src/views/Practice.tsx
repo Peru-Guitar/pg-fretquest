@@ -272,7 +272,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     useEffect(() => {
         const element = headerRef.current;
         if (!element) return;
-        const observer = new IntersectionObserver(([entry]) => setHeaderHidden(!entry.isIntersecting));
+        const observer = new IntersectionObserver(([entry]) => setHeaderHidden(!entry.isIntersecting), { rootMargin: "-64px 0px 0px 0px" });
         observer.observe(element);
         return () => observer.disconnect();
     }, [mode]);
