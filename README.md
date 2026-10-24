@@ -16,7 +16,7 @@ El contenido siguiente describe los módulos conservados y puede mencionar funci
 
 Ruta de guitarra eléctrica **de principiante a avanzado**: 8 niveles y 72 lecciones en el orden en que se aprende la técnica. Cada lección tiene ejercicios con tablatura reproducible (play, tempo, dirección de púa) y un temporizador de práctica. Todo está abierto: se puede practicar cualquier lección en cualquier orden.
 
-> **SPA sin servidor** (Vite + React Router). No hay cuentas: el registro de práctica, el nombre y el temporizador en curso se guardan en el navegador (`localStorage`: `fretquest.sessions`, `fretquest.profile`, `fretquest.activeSession`, `fretquest.openLevels`, `fretquest.tabSize`).
+> **Next.js con exportación estática** (GitHub Pages). Cada página pública (inicio, ejercicios, módulos, lecciones, guía, herramientas) sale como HTML con su contenido, su `description` y su `og:image` (o la imagen por defecto), más `sitemap.xml` y `robots.txt`. Login con Google (Firebase Auth) y progreso en Firestore (`firestore.rules`); lo que necesita navegador (Firebase, audio, `localStorage`) se ejecuta en el cliente.
 
 - **Mi ruta** (`/`): «Tu próxima práctica» (o «Reanudar sesión») y la ruta como lista vertical por niveles desplegables.
 - **Mi progreso** (`/report`): minutos, racha, progreso por nivel, calendario e historial.
@@ -30,12 +30,12 @@ Cada ejercicio tiene dos modos: **Practicar** (libre, sin registro) e **Iniciar 
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # genera dist/ (sitio estático)
+npm run dev        # http://localhost:3000
+npm run build      # genera out/ (sitio estático, una página HTML por ruta)
 npm test           # vitest
 ```
 
-Al publicar `dist/`, configura el hosting para que cualquier ruta sirva `index.html` (fallback de SPA).
+GitHub Actions publica `out/` en GitHub Pages al hacer push a `main`. Las reglas e índices de Firestore se publican aparte: `npx firebase-tools deploy --only firestore:rules,firestore:indexes`.
 
 ## Contenido
 
@@ -46,10 +46,10 @@ Tablatura: seis líneas (`e B G D A E`) en texto. Los dígitos son notas; letras
 ## Estructura
 
 ```
-index.html            entrada de Vite
 src/
-  main.tsx            rutas: / (inicio), /report, /lessons/:lessonId, /practice/:exerciseId (ficha del ejercicio)
-  pages/              Home, Report, Lesson, Exercise
+  app/                rutas de Next.js: cada page.tsx define sus meta (lib/seo.ts) y muestra su vista
+  views/              las pantallas (componentes cliente)
+  lib/router.tsx      Link, NavLink, Navigate, useParams… sobre la navegación de Next
   components/         AppShell, TabPlayer, ui
   lib/
     domain/           catálogo, progreso, reporte y parser de tablatura (lógica pura, con pruebas)

@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { ArrowRight, Guitar, Star } from 'lucide-react';
 import { courses } from '@/data/questMock';
 import { cn } from '@/lib/cn';
