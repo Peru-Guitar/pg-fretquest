@@ -13,7 +13,7 @@ import { cn } from '@/lib/cn';
 import { buttonClass } from '@/components/ui/buttonClass';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
-import { markExerciseHeard, setLastExercise, useHeardExercises } from '@/lib/progress';
+import { setLastExercise } from '@/lib/progress';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
@@ -84,11 +84,11 @@ export default function PracticePage() {
 
 type StartOption = { key: 'listen' | 'practice'; icon: ReactNode; label: string; description: string; onClick: () => void };
 
-/** Botón dividido: la acción principal a la izquierda y, en el desplegable, cada opción con lo que hará. */
-function StartMenu({ options, main }: { options: StartOption[]; main: StartOption['key'] }) {
+/** Botón dividido: la primera opción a la izquierda y, en el desplegable, cada opción con lo que hará. */
+function StartMenu({ options }: { options: StartOption[] }) {
     const [open, setOpen] = useState(false);
     const root = useRef<HTMLDivElement>(null);
-    const primary = options.find(option => option.key === main) ?? options[0];
+    const primary = options[0];
 
     // Se cierra al hacer clic fuera o con Escape.
     useEffect(() => {
@@ -131,7 +131,6 @@ function PracticeView() {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
-    const heardExercises = useHeardExercises();
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
     const sessionRef = useRef(session);
@@ -209,7 +208,7 @@ function PracticeView() {
             onCount: value => { setCount(value); setPulse(beat => beat + 1); },
             onStep: index => { setPhase('playing'); setStep(index); },
             onEnd: () => {
-                if (listen) { markExerciseHeard(activeExercise.id); stop(); return; }
+                if (listen) { stop(); return; }
                 const current = sessionRef.current;
                 if (current) {
                     // En sesión: rondas sin fin hasta que se acabe el tiempo; la ronda en curso siempre termina.
@@ -316,9 +315,8 @@ function PracticeView() {
         window.addEventListener('resize', measure);
         return () => window.removeEventListener('resize', measure);
     }, [showBar]);
-    // Primero se escucha el ejercicio; ya escuchado (o practicado), practicar pasa a ser la acción principal.
-    const familiar = heardExercises.includes(activeExercise.id) || !!account?.practices?.some(practice => practice.lessonId === activeExercise.id);
-    const startChoices = <StartMenu main={familiar ? 'practice' : 'listen'} options={[
+    // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
+    const startChoices = <StartMenu options={[
         { key: 'listen', icon: <Headphones size={16}/>, label: 'Escuchar ejercicio', description: 'El ejercicio lo podrás escuchar para practicarlo luego', onClick: () => start(true) },
         { key: 'practice', icon: <Play size={16} fill="currentColor"/>, label: 'Practicar', description: 'El ejercicio comenzará en modo práctica registrando tu progreso', onClick: () => start(false) },
     ]}/>;
