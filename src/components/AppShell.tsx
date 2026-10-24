@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { BookOpen, House, Menu, Wrench, X } from 'lucide-react';
+import { BookOpen, House, Menu, MessageCircle, Wrench, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: '/train', label: 'Entrenar', icon: BookOpen }, { to: '/tools', label: 'Herramientas', icon: Wrench }];
@@ -36,9 +36,11 @@ export function AppShell() {
             <p className="mx-3.5 mt-3 mb-3 text-3xs tracking-[0.2em] text-subtle">TU ENTRENAMIENTO</p>
             <nav aria-label="Principal">
                 {navigation(primaryLinks, sidebarLink)}
+                <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
+                    <MessageCircle size={19}/><span>PG Skool</span>
+                </a>
             </nav>
             <div className="mt-auto flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
-                <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">PG Skool · Comunidad de práctica →</a>
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>
                 <p className="text-3xs text-muted">Un producto de <a href="https://peruguitar.com" className="text-accent hover:underline">PeruGuitar</a></p>
                 <span className="font-mono text-2xs">Versión {__APP_VERSION__}</span>
