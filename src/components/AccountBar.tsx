@@ -1,5 +1,6 @@
+import { ROUTES } from '@/lib/routes';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from '@/lib/router';
+import { Link, useHydrated } from '@/lib/router';
 import { ChevronDown, LogIn, LogOut, UserRound } from 'lucide-react';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { DEFAULT_RHYTHM, levelLabel, signOut, useAccount } from '@/lib/account';
@@ -12,6 +13,7 @@ import { completedDaysThisWeek, useProgress } from '@/lib/progressDb';
  */
 export function AccountBar() {
     const account = useAccount();
+    const hydrated = useHydrated();
     const progress = useProgress();
     const [open, setOpen] = useState(false);
     const root = useRef<HTMLDivElement>(null);
@@ -24,7 +26,9 @@ export function AccountBar() {
         return () => { window.removeEventListener('pointerdown', onPointer); window.removeEventListener('keydown', onKey); };
     }, [open]);
 
-    if (!account) return <Link to="/login" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-5 text-sm font-bold text-white shadow-[0_6px_20px_#e0662f44] transition hover:-translate-y-0.5 hover:shadow-[0_8px_26px_#e0662f66]"><LogIn size={17}/>Entrar</Link>;
+    // Hasta saber si hay sesión (HTML estático e hidratación), un hueco neutro: ni «Entrar» ni el nombre.
+    if (!hydrated) return <span aria-hidden className="flex items-center gap-2.5"><span className="hidden h-2 w-44 rounded-full bg-white/6 sm:block lg:w-56"/><span className="size-9 rounded-full bg-white/8"/></span>;
+    if (!account) return <Link to={ROUTES.login} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-5 text-sm font-bold text-white shadow-[0_6px_20px_#e0662f44] transition hover:-translate-y-0.5 hover:shadow-[0_8px_26px_#e0662f66]"><LogIn size={17}/>Entrar</Link>;
 
     // Meta de la semana: días con la sesión completada / ritmo elegido.
     const goal = account.weeklyGoal ?? DEFAULT_RHYTHM;
@@ -33,7 +37,7 @@ export function AccountBar() {
     const initials = account.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
 
     return <div className="flex items-center gap-4 md:gap-6">
-        <Link to="/plan" title="Tu semana" className="hidden w-44 flex-col gap-1.5 sm:flex lg:w-56">
+        <Link to={ROUTES.plan} title="Tu semana" className="hidden w-44 flex-col gap-1.5 sm:flex lg:w-56">
             <span className="flex items-center justify-between text-2xs">
                 <span className="font-bold text-fg-soft">Tu semana</span>
                 <span className={cn('font-mono font-bold', reached ? 'text-success' : 'text-fg')}>{reached ? '¡Cumplida! ' : ''}{done}/{goal} días</span>
@@ -54,7 +58,7 @@ export function AccountBar() {
                     <p className="text-2xs font-bold text-fg-soft">Tu semana · {done}/{goal} días</p>
                     <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full', reached ? 'bg-success' : 'bg-brand')} style={{ width: `${Math.min(100, done / goal * 100)}%` }}/></span>
                 </div>
-                <Link to="/account" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><UserRound size={17}/>Mi cuenta</Link>
+                <Link to={ROUTES.account} role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><UserRound size={17}/>Mi cuenta</Link>
                 <button type="button" role="menuitem" onClick={() => { setOpen(false); void signOut(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><LogOut size={17}/>Cerrar sesión</button>
             </div>}
         </div>

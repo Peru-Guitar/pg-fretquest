@@ -1,7 +1,8 @@
 'use client';
 
+import { ROUTES } from '@/lib/routes';
 import { useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from '@/lib/router';
+import { Navigate, useNavigate, useSearchParams, useHydrated } from '@/lib/router';
 import { ArrowRight, LogIn, Loader2 } from 'lucide-react';
 import { Button, Card, Eyebrow, PageTitle } from '@/components/ui';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
@@ -41,6 +42,7 @@ function suggestLevel(answers: number[]): Difficulty {
 /** Maqueta del alta: login simulado → autoevaluación → nivel sugerido (se puede cambiar). */
 export default function LoginPage() {
     const account = useAccount();
+    const hydrated = useHydrated();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const retake = searchParams.has('repetir');
@@ -56,6 +58,7 @@ export default function LoginPage() {
     const current = QUESTIONS[answers.length];
     const level = picked ?? (answered ? suggested : null);
 
+    if (!hydrated) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (!account) return <div className="grid min-h-[calc(100dvh-12rem)] place-items-center">
         <Card className="relative w-full max-w-3xl overflow-hidden px-6 py-14 text-center md:px-16 md:py-20">
             <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 size-80 -translate-x-1/2 rounded-full bg-brand/20 blur-3xl"/>
@@ -75,7 +78,7 @@ export default function LoginPage() {
     // `?repetir` (desde Mi cuenta) vuelve a hacer el cuestionario.
     // Cuenta nueva en este navegador: esperar a Firestore antes de decidir si hace falta el cuestionario.
     if (account.synced === false && !account.level) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
-    if (account.level && !retake && account.weeklyGoal && !choosingRhythm) return <Navigate to="/plan" replace/>;
+    if (account.level && !retake && account.weeklyGoal && !choosingRhythm) return <Navigate to={ROUTES.plan} replace/>;
     const showRhythm = choosingRhythm || (!!account.level && !retake);
 
     // Pasos del alta: 1 cuestionario · 2 nivel · 3 ritmo. Mismo ancho y cabecera que el resto de páginas.
@@ -95,7 +98,7 @@ export default function LoginPage() {
             <h2 className="mt-9 text-xl">¿Cuánto dura cada sesión?</h2>
             <p className="mt-1 mb-4 text-sm text-muted">En la sesión repites los ejercicios de tu plan hasta completar el tiempo. Si completas tu sesión, ese día cuenta para tu ritmo; si no, no pasa nada.</p>
             <SessionPicker value={sessionMinutes} onChange={setSessionLength}/>
-            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyGoal(rhythm); setSessionMinutes(sessionMinutes); navigate('/plan'); }}>Ver mi plan <ArrowRight size={18}/></Button>
+            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyGoal(rhythm); setSessionMinutes(sessionMinutes); navigate(ROUTES.plan); }}>Ver mi plan <ArrowRight size={18}/></Button>
         </Card>
     </>;
 
@@ -130,7 +133,7 @@ export default function LoginPage() {
                 <span className="text-sm text-muted">{LEVEL_TEXT[option]}</span>
                 {option === suggested && <span className="rounded-full bg-brand/20 px-2.5 py-0.5 text-3xs font-black tracking-wider text-accent">SUGERIDO</span>}
             </button>)}</div>
-            <Button className="mt-8 min-h-13 px-8 text-base" disabled={!level} onClick={() => { if (level) { setLevel(level); if (account.weeklyGoal) navigate('/plan'); else setChoosingRhythm(true); } }}>Continuar <ArrowRight size={18}/></Button>
+            <Button className="mt-8 min-h-13 px-8 text-base" disabled={!level} onClick={() => { if (level) { setLevel(level); if (account.weeklyGoal) navigate(ROUTES.plan); else setChoosingRhythm(true); } }}>Continuar <ArrowRight size={18}/></Button>
         </Card>}
     </>;
 }

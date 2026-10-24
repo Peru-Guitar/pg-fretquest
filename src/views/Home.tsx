@@ -1,7 +1,8 @@
 'use client';
 
+import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
 import { Check, LogIn, Play, Target } from 'lucide-react';
-import { Link } from '@/lib/router';
+import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, routines, type PracticeLesson } from '@/data/questMock';
 import { useLastExercise } from '@/lib/progress';
@@ -10,6 +11,8 @@ import { suggestion, useAccount } from '@/lib/account';
 export default function HomePage() {
  // Con sesión: el último ejercicio practicado; si aún no hay ninguno, el que sigue en su plan. Sin sesión: el último abierto.
  const account = useAccount();
+ // Lo que depende de la sesión espera a la hidratación (en el HTML estático aún no se sabe quién eres).
+ const hydrated = useHydrated();
  const plan = account ? suggestion(account) : null;
  const opened = useLastExercise();
  const practicedId = account?.lastPractice?.lessonId;
@@ -30,7 +33,7 @@ export default function HomePage() {
   </div>
 
   {/* Sin sesión: invitación destacada a entrar (plan según tu nivel + progreso guardado). */}
-  {!account && <section className="relative mb-5 overflow-hidden rounded-xl border border-brand/50 bg-linear-120 from-brand/25 via-brand/8 to-transparent p-5 md:p-6">
+  {hydrated && !account && <section className="relative mb-5 overflow-hidden rounded-xl border border-brand/50 bg-linear-120 from-brand/25 via-brand/8 to-transparent p-5 md:p-6">
    <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-brand/30 blur-3xl"/>
    <div className="relative flex flex-wrap items-center justify-between gap-5">
     <div className="max-w-2xl">
@@ -39,7 +42,7 @@ export default function HomePage() {
       {['Plan según tu nivel', 'Tu progreso guardado', 'Tu lugar en la comunidad'].map(item => <li key={item} className="flex items-center gap-1.5"><Check size={15} className="text-success"/>{item}</li>)}
      </ul>
     </div>
-    <Link to="/login" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_30px_#e0662f55] transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
+    <Link to={ROUTES.login} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-135 from-brand to-brand-strong px-6 font-bold text-white shadow-[0_8px_30px_#e0662f55] transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
    </div>
   </section>}
 
@@ -53,17 +56,17 @@ export default function HomePage() {
      <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{lastLesson.description}</p>
      <div className="mt-6 mb-4.5"/>
      <div className="flex flex-wrap items-center gap-3">
-      <LinkButton to={`/practice/${currentModule.id}?exercise=${lastLesson.id}`}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>
-      {practicedModule && plan && plan.next.lesson.id !== lastLesson.id && <LinkButton to={`/practice/${plan.next.moduleId}?exercise=${plan.next.lesson.id}`} variant="secondary">Sigue en tu plan: {plan.next.lesson.title}</LinkButton>}
+      <LinkButton to={practiceUrl(currentModule.id, lastLesson.id)}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>
+      {practicedModule && plan && plan.next.lesson.id !== lastLesson.id && <LinkButton to={practiceUrl(plan.next.moduleId, plan.next.lesson.id)} variant="secondary">Sigue en tu plan: {plan.next.lesson.title}</LinkButton>}
      </div>
-     {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to="/login" className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
+     {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div>
    </section>
   </div>
 
-  <SectionTitle title="¿Qué necesitas entrenar hoy?" to="/train" label="Ver todos los ejercicios" className="mt-7 mb-4"/>
+  <SectionTitle title="¿Qué necesitas entrenar hoy?" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
   <div className="mb-7.5 grid gap-3 md:grid-cols-3 xl:gap-4.5">{routines.map((routine, index) =>
-   <Link key={routine.id} to={routine.id === 'focus' ? '/train' : `/practice/${routine.moduleId}?routine=${routine.id}`} className="flex flex-col items-start rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
+   <Link key={routine.id} to={routine.id === 'focus' ? ROUTES.exercises : practiceUrl(routine.moduleId, undefined, `rutina=${routine.id}`)} className="flex flex-col items-start rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
     <Eyebrow>{String(index + 1).padStart(2, '0')} · {routine.duration}</Eyebrow>
     <h2 className="mt-3 text-[1.3125rem] md:text-[1.0625rem] xl:text-xl">{routine.title}</h2>
     <p className="mt-3 mb-5 flex-1 text-sm leading-relaxed text-muted">{routine.description}</p>
@@ -80,7 +83,7 @@ export default function HomePage() {
     <h2 className="my-1.5 text-[1.0625rem] xs:text-lg xl:text-[1.3125rem]">La velocidad llega con el control.</h2>
     <p className="text-xs leading-relaxed text-muted">Repite patrones cómodos, observa la limpieza y descansa entre series.</p>
    </div>
-   <LinkButton to="/modules/fingering" variant="secondary" className="max-md:w-full md:max-lg:ml-19 lg:ml-auto">Ver digitación y coordinación</LinkButton>
+   <LinkButton to={moduleUrl('fingering')} variant="secondary" className="max-md:w-full md:max-lg:ml-19 lg:ml-auto">Ver digitación y coordinación</LinkButton>
   </section>
  </>;
 }

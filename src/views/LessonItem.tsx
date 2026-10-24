@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, Navigate, useParams } from '@/lib/router';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -10,23 +11,25 @@ import { BackLink, Button, Card, LinkButton, PageTitle } from '@/components/ui';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { practiceStudies } from '@/data/practiceStudies';
-import { courses, lessonUrl } from '@/data/questMock';
+import { courses, } from '@/data/questMock';
 
 /** Ruta única de lección: las de lectura se muestran aquí; las de práctica abren la sala de práctica. */
 export default function LessonItemPage() {
-    const { moduleId, lessonId } = useParams();
+    const { modulo, leccion } = useParams();
+    const moduleId = moduleIdFromSlug(modulo);
+    const lessonId = lessonIdFromSlug(moduleId, leccion);
     const account = useAccount();
     const progress = useProgress();
     const course = courses.find(item => item.id === moduleId);
     const index = course?.lessons.findIndex(item => item.id === lessonId) ?? -1;
-    if (!course || index < 0) return <Navigate to="/train" replace/>;
+    if (!course || index < 0) return <Navigate to={ROUTES.exercises} replace/>;
     if (!course.available) return <ComingSoon title={course.title}/>;
     const lesson = course.lessons[index];
     // Ejercicio: su contenido en la página (SEO y vista previa al compartir) y el botón para practicarlo.
     if (lesson.type === 'practice') {
         const study = practiceStudies[lesson.id];
         return <>
-            <BackLink to={`/modules/${course.id}`}>{course.title}</BackLink>
+            <BackLink to={moduleUrl(course.id)}>{course.title}</BackLink>
             <PageTitle eyebrow={`${course.category} · EJERCICIO`} title={lesson.title} text={lesson.description}>
                 <DifficultySignal difficulty={lesson.difficulty} className="h-5"/>
             </PageTitle>
@@ -40,7 +43,7 @@ export default function LessonItemPage() {
                     <h2 className="mt-8 mb-3 text-lg md:text-xl">Errores comunes</h2>
                     <ul className="list-disc space-y-2 pl-5 text-base leading-relaxed text-fg-soft">{study.mistakes.map(mistake => <li key={mistake}>{mistake}</li>)}</ul>
                 </>}
-                <LinkButton to={`/practice/${course.id}?exercise=${lesson.id}`} className="mt-9">Empezar a practicar</LinkButton>
+                <LinkButton to={practiceUrl(course.id, lesson.id)} className="mt-9">Empezar a practicar</LinkButton>
             </Card>
         </>;
     }
@@ -49,7 +52,7 @@ export default function LessonItemPage() {
     const next = course.lessons[index + 1];
 
     return <>
-        <BackLink to={`/modules/${course.id}`}>{course.title}</BackLink>
+        <BackLink to={moduleUrl(course.id)}>{course.title}</BackLink>
         <PageTitle eyebrow={`${course.category} · LECTURA`} title={lesson.title} text={lesson.summary}/>
         <Card as="section" className="md:px-10 md:py-9 xl:px-12">
             <article className="flex flex-col gap-8">
@@ -75,7 +78,7 @@ export default function LessonItemPage() {
         <nav className="mt-6 border-t border-line pt-6 flex justify-between gap-4 text-sm" aria-label="Lecciones del módulo">
             {prev ? <Link to={lessonUrl(course.id, prev.id)} className="flex items-center gap-2 text-muted hover:text-fg"><ArrowLeft size={16}/>{prev.title}</Link> : <span/>}
             {next ? <Link to={lessonUrl(course.id, next.id)} className="flex items-center gap-2 text-right text-accent">{next.title}<ArrowRight size={16}/></Link>
-                : <Link to={`/modules/${course.id}`} className="flex items-center gap-2 text-accent">Volver al módulo<ArrowRight size={16}/></Link>}
+                : <Link to={moduleUrl(course.id)} className="flex items-center gap-2 text-accent">Volver al módulo<ArrowRight size={16}/></Link>}
         </nav>
     </>;
 }
