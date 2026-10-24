@@ -62,6 +62,7 @@ Usa de 3 a 5 `points`. Toma como modelo `recommendations-01`.
 - Usa los helpers del archivo: `line(cuerda, dedos)` (dedo 1 = traste 5) y `across(dedos, cuerdas)`. Si el patrón no está en quinta posición, escribe los `{ string, fret }` directamente o define un helper como `neoclassicalCell`.
 - La púa se muestra alternada (⊓ V) siempre. Si el ejercicio usa legato o sweep, dilo en `steps`.
 - Si el usuario da el patrón en tablatura, transcríbelo exactamente y muéstraselo de vuelta en texto para que lo confirme. No "corrijas" sus notas. Si algo parece un error, pregunta.
+- **Rondas:** la app calcula sola cuántas rondas se pueden elegir (`MAX_ROUNDS` y `ROUNDS_BUDGET_SECONDS` en `src/views/Practice.tsx`). El máximo es el menor entre el tope por `difficulty` (base 10, intermedio 5, avanzado 3, experto 1) y las rondas que caben en 90 s: `notas ÷ notas por pulso (figure) ÷ bpm × 60` es lo que dura una ronda. El selector se ve siempre, y las opciones que pasan del máximo salen desactivadas. Al elegir `difficulty`, `figure`, `bpm` y el largo del patrón, avisa al usuario cuántas rondas quedarán disponibles. Ejemplo: Becker, 260 notas en semicorcheas a 80 BPM, dura ~49 s por ronda, así que solo permite 1.
 - Las variantes que propongas tú deben salir del patrón del usuario (otra cuerda, otra digitación, mitad del recorrido). Indícalas como propuesta.
 
 ## 4. Estilo del texto
