@@ -32,6 +32,7 @@ const MODULE_SLUGS: Record<string, string> = {
   legato: "legato",
   "sweep-picking": "sweep-picking",
   tapping: "tapping",
+  pentatonic: "pentatonica",
   "licks-phrasing": "estudios",
 };
 
@@ -39,14 +40,16 @@ const MODULE_SLUGS: Record<string, string> = {
 export const slugify = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
   .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-// Slugs de lección a partir del título; si dos lecciones de un módulo se llamaran igual, se numeran.
+// Slugs de lección a partir del título. Regla: título y slug son únicos en toda la app (lo comprueba
+// tests/slugs.test.ts); la numeración es solo una red de seguridad.
 const lessonSlugs = new Map<string, string>();
 const lessonsBySlug = new Map<string, string>();
 for (const course of courses) {
   const used = new Set<string>();
   for (const lesson of course.lessons) {
-    let slug = slugify(lesson.title) || lesson.id;
-    for (let n = 2; used.has(slug); n++) slug = `${slugify(lesson.title)}-${n}`;
+    const base = slugify(lesson.title);
+    let slug = base || lesson.id;
+    for (let n = 2; used.has(slug); n++) slug = `${base}-${n}`;
     used.add(slug);
     lessonSlugs.set(lesson.id, slug);
     lessonsBySlug.set(`${course.id}/${slug}`, lesson.id);
@@ -79,3 +82,6 @@ export const practiceUrl = (moduleId: string, lessonId?: string, query?: string)
   const lesson = lessonId ?? courses.find(course => course.id === moduleId)?.lessons.find(item => item.type === "practice")?.id;
   return `${lesson ? lessonUrl(moduleId, lesson) : moduleUrl(moduleId)}${query ? `?${query}` : ""}`;
 };
+/** Sala de práctica del ejercicio (`…/ejercicio`); la página de la lección queda para su objetivo. */
+export const exerciseUrl = (moduleId: string, lessonId: string, query?: string) =>
+  `${lessonUrl(moduleId, lessonId)}/ejercicio${query ? `?${query}` : ""}`;

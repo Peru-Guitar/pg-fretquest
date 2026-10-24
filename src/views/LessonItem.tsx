@@ -8,11 +8,11 @@ import { useAccount } from '@/lib/account';
 import { setReadingDone, useProgress } from '@/lib/progressDb';
 import { timeAgo } from '@/lib/timeAgo';
 import { BackLink, Button, Card, PageTitle } from '@/components/ui';
-import PracticePage from '@/views/Practice';
+import PracticePage, { type Mode } from '@/views/Practice';
 import { courses, } from '@/data/questMock';
 
-/** Ruta única de lección: las de lectura se muestran aquí; las de práctica abren la sala de práctica. */
-export default function LessonItemPage() {
+/** Página de lección: las de lectura se muestran aquí; las de práctica, su Objetivo (o la sala, con `view="practice"`). */
+export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
     const { modulo, leccion } = useParams();
     const moduleId = moduleIdFromSlug(modulo);
     const lessonId = lessonIdFromSlug(moduleId, leccion);
@@ -23,8 +23,8 @@ export default function LessonItemPage() {
     if (!course || index < 0) return <Navigate to={ROUTES.exercises} replace/>;
     if (!course.available) return <ComingSoon title={course.title}/>;
     const lesson = course.lessons[index];
-    // Ejercicio: la página es directamente su sala de práctica (objetivo, tablatura, metrónomo).
-    if (lesson.type === 'practice') return <PracticePage/>;
+    // Ejercicio: Objetivo en la página de la lección; tablatura y metrónomo en `…/ejercicio`.
+    if (lesson.type === 'practice') return <PracticePage mode={view}/>;
     const readAt = progress.readings[lesson.id]?.readAt?.toMillis();
     const prev = course.lessons[index - 1];
     const next = course.lessons[index + 1];
