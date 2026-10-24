@@ -46,7 +46,7 @@ type Mode = 'goal' | 'practice';
 type Phase = 'idle' | 'loading' | 'countdown' | 'playing';
 
 const modeInfo = {
-    goal: { label: 'Objetivo', text: 'Lee de qué trata el ejercicio antes de tocar.', icon: Target },
+    goal: { label: 'Introducción', text: 'Lee de qué trata el ejercicio antes de tocar.', icon: Target },
     practice: { label: 'Ejercicio', text: 'Práctica libre: escúchalo, cambia la velocidad y para cuando quieras.', icon: BookOpen },
 };
 
