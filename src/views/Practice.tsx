@@ -294,7 +294,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
         <StartChoice primary onClick={() => start(true)} icon={<Headphones size={16}/>} label="Escuchar ejercicio" description="Escucha primero el ejercicio"/>
-        <StartChoice primary={false} onClick={() => start(false)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Comienza a practicar registrando tu progreso"/>
+        <StartChoice primary={false} onClick={() => start(false)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Registra tu progreso"/>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
