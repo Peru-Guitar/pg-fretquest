@@ -37,3 +37,11 @@ const lastExercise = createLocalStore<{ moduleId: string; exerciseId: string } |
 export const useLastExercise = lastExercise.use;
 export const setLastExercise = lastExercise.set;
 
+
+/** Ejercicios ya escuchados: a partir de ahí «Practicar» pasa a ser la acción principal. */
+const heardExercises = createLocalStore<string[]>("fretquest.heardExercises", []);
+export const useHeardExercises = heardExercises.use;
+export function markExerciseHeard(id: string) {
+  const current = heardExercises.get();
+  if (!current.includes(id)) heardExercises.set([...current, id]);
+}

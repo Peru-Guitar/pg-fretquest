@@ -28,8 +28,8 @@ const SECTIONS = [
     {
         icon: Play, title: 'Cómo practicar un ejercicio', to: ROUTES.exercises, link: 'Ver ejercicios',
         points: [
-            'Lee el objetivo y los pasos antes de tocar. Si quieres, pulsa «Escuchar ejercicio» para oírlo primero.',
-            'Elige la velocidad (BPM) y las rondas. Pulsa Empezar: hay una cuenta de entrada antes de cada ronda.',
+            'Lee el objetivo y los pasos antes de tocar. La primera vez, pulsa «Escuchar ejercicio» para oírlo antes de tocar.',
+            'Elige la velocidad (BPM) y las rondas. Pulsa Practicar: hay una cuenta de entrada antes de cada ronda.',
             'Puedes cambiar el BPM mientras tocas. Esc detiene la práctica.',
             'Al completar todas las rondas sale el resumen y, con tu cuenta, se registra tu práctica.',
         ],
