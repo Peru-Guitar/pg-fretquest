@@ -1,5 +1,5 @@
 import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link } from "@/lib/router";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { buttonClass, type ButtonSize, type ButtonVariant } from "./buttonClass";

@@ -43,6 +43,7 @@ export function createLocalStore<T>(key: string, fallback: T) {
     };
   }
 
-  const use = () => useSyncExternalStore(subscribe, get);
+  // En el HTML estático (y al hidratar) se usa el valor por defecto; el guardado llega justo después.
+  const use = () => useSyncExternalStore(subscribe, get, () => fallback);
   return { get, set, use };
 }

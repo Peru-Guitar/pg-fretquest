@@ -43,7 +43,8 @@ export const signOut = () => firebaseSignOut(auth);
 
 // Sesión de Firebase → cuenta. Si es otro usuario (o la primera vez), se crea con el nombre de Google;
 // a partir de ahí el nombre es del usuario (lo edita en Mi cuenta).
-onAuthStateChanged(auth, user => {
+// Solo en el navegador: al generar el HTML estático no hay sesión que escuchar.
+if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
   // Progreso en vivo (días de la semana y resúmenes por lección) solo con sesión.
   watchProgress(user?.uid ?? null);
   if (!user) { store.set(null); return; }

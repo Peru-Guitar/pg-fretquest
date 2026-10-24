@@ -128,7 +128,7 @@ export function watchProgress(uid: string | null) {
 }
 
 export const getProgress = () => progress;
-export const useProgress = () => useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, getProgress);
+export const useProgress = () => useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, getProgress, () => empty);
 
 /** Lo de hoy: segundos practicados, si ya se completó la sesión y qué lecciones se tocaron. */
 export const todayOf = (current: Progress) => current.days[localDateKey()] ?? null;

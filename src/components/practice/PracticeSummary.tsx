@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Clock3, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/cn';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { useAccount } from '@/lib/account';
 
 const RATINGS = [

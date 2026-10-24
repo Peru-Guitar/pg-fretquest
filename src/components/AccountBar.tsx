@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { ChevronDown, LogIn, LogOut, UserRound } from 'lucide-react';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { DEFAULT_RHYTHM, levelLabel, signOut, useAccount } from '@/lib/account';

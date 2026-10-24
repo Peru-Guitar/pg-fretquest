@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { ChevronDown, Settings, UserRound, Zap } from 'lucide-react';
 import { player } from '@/data/questMock';
 import { Avatar } from '@/components/ui';

@@ -6,3 +6,5 @@ coverage
 *.log
 .env*
 .next
+out
+next-env.d.ts
