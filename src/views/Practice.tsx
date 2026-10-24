@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, routines, tempos, type PracticeLesson } from '@/data/questMock';
-import { ArrowRight, BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
 import { BackLink, Badge, Button, Caption, Card, Eyebrow, PageTitle, Tags } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { buttonClass } from '@/components/ui/buttonClass';
@@ -82,15 +82,39 @@ export default function PracticePage() {
     return <PracticeView key={`${modulo}:${leccion}`} />;
 }
 
-/** Botón de inicio con una línea que explica qué pasará al pulsarlo. */
-function StartChoice({ primary, onClick, icon, label, description }: { primary: boolean; onClick: () => void; icon: ReactNode; label: string; description: string }) {
-    return <button onClick={onClick} className={cn(buttonClass(primary ? 'primary' : 'secondary'), 'min-w-0 flex-1 justify-start whitespace-normal py-2.5 text-left xs:flex-none')}>
-        {icon}
-        <span className="flex flex-col">
-            <span>{label}</span>
-            <span className={cn('text-xs font-normal', primary ? 'text-white/80' : 'text-muted')}>{description}</span>
-        </span>
-    </button>;
+type StartOption = { key: 'listen' | 'practice'; icon: ReactNode; label: string; description: string; onClick: () => void };
+
+/** Botón dividido: la acción principal a la izquierda y, en el desplegable, cada opción con lo que hará. */
+function StartMenu({ options, main }: { options: StartOption[]; main: StartOption['key'] }) {
+    const [open, setOpen] = useState(false);
+    const root = useRef<HTMLDivElement>(null);
+    const primary = options.find(option => option.key === main) ?? options[0];
+
+    // Se cierra al hacer clic fuera o con Escape.
+    useEffect(() => {
+        if (!open) return;
+        const onPointer = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
+        window.addEventListener('pointerdown', onPointer);
+        window.addEventListener('keydown', onKey);
+        return () => { window.removeEventListener('pointerdown', onPointer); window.removeEventListener('keydown', onKey); };
+    }, [open]);
+
+    return <div ref={root} className="relative flex">
+        <button type="button" onClick={primary.onClick} className={cn(buttonClass(), 'min-w-40 rounded-r-none')}>{primary.icon}{primary.label}</button>
+        <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className={cn(buttonClass(), 'rounded-l-none border-l-white/25 px-2.5')}>
+            <ChevronDown size={16} className={cn('transition', open && 'rotate-180')}/>
+        </button>
+        {open && <div role="menu" className="absolute top-full left-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-raised p-2 shadow-[0_20px_60px_#0008]">
+            {options.map(option => <button key={option.key} type="button" role="menuitem" onClick={() => { setOpen(false); option.onClick(); }} className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left hover:bg-white/5">
+                <span className="mt-0.5 text-fg-soft">{option.icon}</span>
+                <span className="flex flex-col">
+                    <b className="text-sm text-fg">{option.label}</b>
+                    <span className="text-xs text-muted">{option.description}</span>
+                </span>
+            </button>)}
+        </div>}
+    </div>;
 }
 
 function PracticeView() {
@@ -292,11 +316,12 @@ function PracticeView() {
         window.addEventListener('resize', measure);
         return () => window.removeEventListener('resize', measure);
     }, [showBar]);
-    // Primero se escucha el ejercicio; ya escuchado (o practicado), practicar pasa a ser lo principal.
+    // Primero se escucha el ejercicio; ya escuchado (o practicado), practicar pasa a ser la acción principal.
     const familiar = heardExercises.includes(activeExercise.id) || !!account?.practices?.some(practice => practice.lessonId === activeExercise.id);
-    const listenChoice = <StartChoice key="listen" primary={!familiar} onClick={() => start(true)} icon={<Headphones size={16}/>} label="Escuchar ejercicio" description="Escúchalo para practicarlo luego"/>;
-    const practiceChoice = <StartChoice key="practice" primary={familiar} onClick={() => start(false)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Comienza en modo práctica y registra tu progreso"/>;
-    const startChoices = familiar ? [practiceChoice, listenChoice] : [listenChoice, practiceChoice];
+    const startChoices = <StartMenu main={familiar ? 'practice' : 'listen'} options={[
+        { key: 'listen', icon: <Headphones size={16}/>, label: 'Escuchar ejercicio', description: 'El ejercicio lo podrás escuchar para practicarlo luego', onClick: () => start(true) },
+        { key: 'practice', icon: <Play size={16} fill="currentColor"/>, label: 'Practicar', description: 'El ejercicio comenzará en modo práctica registrando tu progreso', onClick: () => start(false) },
+    ]}/>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
     const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
