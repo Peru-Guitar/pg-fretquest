@@ -115,14 +115,18 @@ function PracticeView({ mode }: { mode: Mode }) {
     const figure = study?.figure ?? 'negras';
     const perRow = study?.perRow ?? 16;
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
-    const bars: { notes: PatternNote[]; start: number; part?: { number: number; title: string } }[] = [];
+    // Si la última fila de una parte quedaría con menos de media fila, las notas se reparten en filas parejas (35 → 12, 12, 11).
+    const bars: { notes: PatternNote[]; start: number; columns: number; part?: { number: number; title: string } }[] = [];
     let offset = 0;
     for (const [sectionIndex, section] of (study?.sections ?? [{ title: undefined, pattern }]).entries()) {
-        for (let at = 0; at < section.pattern.length; at += perRow)
-            bars.push({ notes: section.pattern.slice(at, at + perRow), start: offset + at, part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
+        const length = section.pattern.length;
+        const rest = length % perRow;
+        const size = length > perRow && rest > 0 && rest < perRow / 2 ? Math.ceil(length / Math.ceil(length / perRow)) : perRow;
+        for (let at = 0; at < length; at += size)
+            bars.push({ notes: section.pattern.slice(at, at + size), start: offset + at, columns: Math.min(size, length), part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
         offset += section.pattern.length;
     }
-    // Cada fila reparte sus notas en todo el ancho: una fila corta (fin de parte) no deja hueco a la derecha.
+    // Las filas de una parte comparten columnas; una parte más corta que una fila ocupa todo el ancho.
     const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
@@ -391,8 +395,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                                 <span aria-hidden className="h-px flex-1 bg-line-strong"/>
                             </h3>}
                             {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off (según el estudio, `pickingOf`). */}
-                            <div style={tabColumns(bar.notes.length)} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} title={stroke.title} className={cn(stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}</span>; })}</div>
-                            {strings.map((name, row) => <div key={name} style={tabColumns(bar.notes.length)} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
+                            <div style={tabColumns(bar.columns)} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} title={stroke.title} className={cn(stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}</span>; })}</div>
+                            {strings.map((name, row) => <div key={name} style={tabColumns(bar.columns)} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
                                 <b className="text-sm text-muted">{name}</b>
                                 {bar.notes.map((note, index) => {
                                     const noteIndex = bar.start + index;
