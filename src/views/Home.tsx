@@ -22,13 +22,13 @@ export default function HomePage() {
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
- // Módulos de tu nivel (sin nivel: los de base), con la siguiente lección que te falta en cada uno.
+ // Lecciones de tu nivel (sin nivel: las de base) que aún te faltan, en el orden del plan.
  const completed = useCompletedExercises();
  const level = hydrated ? account?.level ?? null : null;
- const levelModules = planFor(level ?? 'base').slice(0, 3).map(block => {
-  const done = block.lessons.filter(lesson => completed.has(lesson.id)).length;
-  return { ...block, image: courses.find(course => course.id === block.moduleId)!.image, done, next: block.lessons.find(lesson => !completed.has(lesson.id)) ?? block.lessons[0] };
- });
+ const levelLessons = planFor(level ?? 'base')
+  .flatMap(block => block.lessons.map(lesson => ({ lesson, moduleId: block.moduleId, moduleTitle: block.title, image: courses.find(course => course.id === block.moduleId)!.image })))
+  .filter(item => !completed.has(item.lesson.id))
+  .slice(0, 12);
  return <>
   <div className="mb-6 flex items-start justify-between gap-4 md:mb-7 lg:items-center">
    <div>
@@ -71,17 +71,15 @@ export default function HomePage() {
    </section>
   </div>
 
-  <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Módulos para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
-  <div className="mb-7.5 grid gap-3 md:grid-cols-3 xl:gap-4.5">{levelModules.map(module =>
-   <Link key={module.moduleId} to={practiceUrl(module.moduleId, module.next.id)} className="group relative flex min-h-56 flex-col items-start justify-end overflow-hidden rounded-xl border border-line bg-card p-6 transition hover:-translate-y-0.5 hover:border-accent/60 md:p-5 xl:p-6.5">
-    <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
-    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#19181740_0%,#191817cc_55%,#191817f5_100%)]"/>
-    <div className="relative w-full">
-     <Eyebrow>{module.lessons.length} {module.lessons.length === 1 ? 'LECCIÓN' : 'LECCIONES'} PARA TI</Eyebrow>
-     <h2 className="mt-2 text-[1.3125rem] md:text-[1.0625rem] xl:text-xl">{module.title}</h2>
-     <p className="mt-2 mb-4 text-sm leading-relaxed text-fg-soft">Sigue: {module.next.title}</p>
-     <div className="h-1 w-full overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(module.done / module.lessons.length * 100)}%` }}/></div>
-     <span className="mt-1.5 block text-2xs text-muted">{module.done} de {module.lessons.length}</span>
+  <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
+  <div className="mb-7.5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{levelLessons.map(({ lesson, moduleId, moduleTitle, image }) =>
+   <Link key={lesson.id} to={practiceUrl(moduleId, lesson.id)} className="group relative flex min-h-36 flex-col justify-end overflow-hidden rounded-lg border border-line bg-card p-4 transition hover:-translate-y-0.5 hover:border-accent/60">
+    <img src={image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#19181733_0%,#191817cc_55%,#191817f5_100%)]"/>
+    <div className="relative">
+     <p className="text-3xs tracking-[0.15em] text-accent">{moduleTitle.toUpperCase()}</p>
+     <h3 className="mt-1 text-sm leading-snug font-bold md:text-base">{lesson.title}</h3>
+     <span className="mt-1 block text-2xs text-muted">{lesson.minutes} min · {levelLabel(lesson.difficulty)}</span>
     </div>
    </Link>)}
   </div>
