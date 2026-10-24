@@ -4,8 +4,8 @@ import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
-import { BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
-import { useAccount } from '@/lib/account';
+import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
+import { isAdmin, useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
 import { cn } from '@/lib/cn';
 
@@ -24,6 +24,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     // «Mi plan» solo con sesión; mientras no se sabe (antes de hidratar) se reserva su hueco, invisible.
     const hydrated = useHydrated();
     const links = !hydrated || account ? primaryLinks : primaryLinks.filter(link => link.to !== ROUTES.plan);
+    // Analytics: solo con rol admin, y solo en el menú lateral (no en la barra móvil).
+    const admin = isAdmin(account);
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
     const isActive = (to: string, active: boolean) => active || (to === ROUTES.exercises && pathname.startsWith(`${ROUTES.exercises}/`));
     const navigation = (items: typeof primaryLinks, variant: typeof sidebarLink) => items.map(({ to, label, icon: Icon }) =>
@@ -47,6 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="mx-3.5 mt-3 mb-3 text-3xs tracking-[0.2em] text-subtle">TU ENTRENAMIENTO</p>
             <nav aria-label="Principal">
                 {navigation(links, sidebarLink)}
+                {admin && navigation([{ to: ROUTES.analytics, label: 'Analytics', icon: BarChart3 }], sidebarLink)}
             </nav>
             {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
             <nav aria-label="Ayuda" className="mt-auto mb-3">

@@ -21,6 +21,8 @@ export type Account = {
   country?: string;
   guitar?: string;
   level: Difficulty | null;
+  /** Rol dado desde la consola (`users/{uid}.role`): 'admin' ve Analytics. */
+  role?: string;
   /** Ya se leyó `users/{uid}` de Firestore en esta sesión: hasta entonces no se sabe si tiene nivel y ritmo. */
   synced?: boolean;
   /** Ritmo: días por semana que quiere practicar (se puede practicar cualquier día; es una meta). */
@@ -61,7 +63,7 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
     const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
     const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
-    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
+    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {
     // Sin conexión: se sigue con lo guardado en el navegador.
     const account = store.get();
@@ -125,6 +127,8 @@ export const daysPracticedThisWeek = (account: Account | null) => {
   const week = thisWeek();
   return new Set((account?.practices ?? []).map(practice => practice.date).filter(date => week.includes(date))).size;
 };
+
+export const isAdmin = (account: Account | null) => account?.role === "admin";
 
 export const LEVELS: Difficulty[] = ["base", "intermedio", "avanzado", "experto"];
 export const levelLabel = (level: Difficulty) => DIFFICULTY[level].label;
