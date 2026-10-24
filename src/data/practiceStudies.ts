@@ -491,7 +491,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'licks-phrasing-gilbert-01': {
         description: 'Un lick de Paul Gilbert en string skipping: arpegios en la tercera cuerda que saltan a la primera, en seis figuras que bajan de posición desde el traste 10 hasta el 1, con hammer-ons y pull-offs en cada cuerda.',
-        notation: 'Sextillos: una figura por fila · String skipping: púa al cambiar de cuerda, ligado en la misma cuerda',
+        notation: 'Tresillos: una figura por fila · String skipping: púa al cambiar de cuerda, ligado en la misma cuerda',
         goal: 'Saltar de la tercera a la primera cuerda sin que suene la segunda y sin perder el pulso. Es un reto: lo difícil es mantener la precisión en cada salto y que todas las notas suenen parejas. Ve practicándolo a tu ritmo, empieza con un BPM bajo y súbelo solo cuando cada figura salga limpia.',
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
@@ -503,10 +503,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         mistakes: ['Que suene la segunda cuerda al saltar: apágala con la palma o con los dedos libres.', 'Atacar con púa las notas ligadas: los hammer-ons y pull-offs deben sonar igual de fuerte.', 'Mover todo el brazo en cada salto en vez de solo la muñeca.', 'Acelerar en la primera cuerda y frenar al volver a la tercera.'],
         criterion: 'Toca las seis figuras sin pausas y sin que suene la segunda cuerda. Sube el BPM cuando los saltos suenen igual que las notas en la misma cuerda.',
         perRow: 18,
-        figure: 'sextillos',
+        figure: 'tresillos',
         picking: 'legato',
         artist: 'paul-gilbert',
-        bpm: 60,
+        bpm: 100,
         ...withSections(gilbertFigures.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-vinnie-01': {
