@@ -38,7 +38,7 @@ const SECTIONS = [
         icon: Music, title: 'Leer la tablatura',
         points: [
             'Cada línea es una cuerda: arriba la primera (e, la más aguda) y abajo la sexta (E, la más grave). El número es el traste.',
-            '⊓ es púa hacia abajo y V, púa hacia arriba. En la mayoría de ejercicios la púa alterna; en los arpegios es económica: hacia abajo al subir de cuerda y hacia arriba al bajar.',
+            '⊓ es púa hacia abajo y V, púa hacia arriba. En la mayoría de ejercicios la púa alterna. En los arpegios la púa solo ataca al cambiar de cuerda, y en la misma cuerda se liga: h es hammer-on y p, pull-off.',
             'Los ejercicios largos se dividen en partes numeradas, por ejemplo una por posición del mástil.',
             'La figura rítmica (negras, corcheas, sextillos…) dice cuántas notas caben en cada clic. El metrónomo siempre marca el pulso.',
         ],
