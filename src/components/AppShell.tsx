@@ -38,6 +38,7 @@ export function AppShell() {
                 {navigation(primaryLinks, sidebarLink)}
             </nav>
             <div className="mt-auto flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
+                <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">PG Skool · Comunidad de práctica →</a>
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>
                 <p className="text-3xs text-muted">Un producto de <a href="https://peruguitar.com" className="text-accent hover:underline">PeruGuitar</a></p>
                 <span className="font-mono text-2xs">Versión {__APP_VERSION__}</span>
