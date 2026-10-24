@@ -3,16 +3,17 @@
 import { lessonIdFromSlug, moduleIdFromSlug, moduleUrl, practiceUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, routines, tempos, type PracticeLesson } from '@/data/questMock';
 import { ArrowRight, BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
 import { BackLink, Badge, Button, Caption, Card, Eyebrow, PageTitle, Tags } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
-import { setLastExercise } from '@/lib/progress';
+import { markExerciseHeard, setLastExercise, useHeardExercises } from '@/lib/progress';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
@@ -22,7 +23,7 @@ import { DifficultySignal } from '@/components/quest/DifficultySignal';
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
 /** Marca de ataque sobre cada nota de la tablatura. */
-const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Púa hacia abajo' }, up: { mark: 'V', title: 'Púa hacia arriba' }, hammer: { mark: 'h', title: 'Hammer-on (sin púa)', legato: true }, pull: { mark: 'p', title: 'Pull-off (sin púa)', legato: true } };
+const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Púa hacia abajo' }, up: { mark: 'V', title: 'Púa hacia arriba' }, hammer: { mark: 'h', title: 'Hammer-on (sin púa)', legato: true }, pull: { mark: 'p', title: 'Pull-off (sin púa)', legato: true }, slide: { mark: 's', title: 'Slide (sin púa)', legato: true } };
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
@@ -81,6 +82,17 @@ export default function PracticePage() {
     return <PracticeView key={`${modulo}:${leccion}`} />;
 }
 
+/** Botón de inicio con una línea que explica qué pasará al pulsarlo. */
+function StartChoice({ primary, onClick, icon, label, description }: { primary: boolean; onClick: () => void; icon: ReactNode; label: string; description: string }) {
+    return <button onClick={onClick} className={cn(buttonClass(primary ? 'primary' : 'secondary'), 'min-w-0 flex-1 justify-start whitespace-normal py-2.5 text-left xs:flex-none')}>
+        {icon}
+        <span className="flex flex-col">
+            <span>{label}</span>
+            <span className={cn('text-xs font-normal', primary ? 'text-white/80' : 'text-muted')}>{description}</span>
+        </span>
+    </button>;
+}
+
 function PracticeView() {
     const { modulo, leccion } = useParams();
     const exerciseId = moduleIdFromSlug(modulo);
@@ -95,6 +107,7 @@ function PracticeView() {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
+    const heardExercises = useHeardExercises();
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
     const sessionRef = useRef(session);
@@ -172,7 +185,7 @@ function PracticeView() {
             onCount: value => { setCount(value); setPulse(beat => beat + 1); },
             onStep: index => { setPhase('playing'); setStep(index); },
             onEnd: () => {
-                if (listen) { stop(); return; }
+                if (listen) { markExerciseHeard(activeExercise.id); stop(); return; }
                 const current = sessionRef.current;
                 if (current) {
                     // En sesión: rondas sin fin hasta que se acabe el tiempo; la ronda en curso siempre termina.
@@ -279,6 +292,11 @@ function PracticeView() {
         window.addEventListener('resize', measure);
         return () => window.removeEventListener('resize', measure);
     }, [showBar]);
+    // Primero se escucha el ejercicio; ya escuchado (o practicado), practicar pasa a ser lo principal.
+    const familiar = heardExercises.includes(activeExercise.id) || !!account?.practices?.some(practice => practice.lessonId === activeExercise.id);
+    const listenChoice = <StartChoice key="listen" primary={!familiar} onClick={() => start(true)} icon={<Headphones size={16}/>} label="Escuchar ejercicio" description="Escúchalo para practicarlo luego"/>;
+    const practiceChoice = <StartChoice key="practice" primary={familiar} onClick={() => start(false)} icon={<Play size={16} fill="currentColor"/>} label="Practicar" description="Comienza en modo práctica y registra tu progreso"/>;
+    const startChoices = familiar ? [practiceChoice, listenChoice] : [listenChoice, practiceChoice];
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
     const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
@@ -358,8 +376,7 @@ function PracticeView() {
                 <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3 xl:px-5.5">
                     {phase === 'idle'
                         ? <>
-                            <Button onClick={() => start(false)} className="min-w-40"><Play size={17} fill="currentColor"/>Empezar</Button>
-                            <Button variant="secondary" onClick={() => start(true)}><Headphones size={16}/>Escuchar ejercicio</Button>
+                            {startChoices}
                         </>
                         : phase === 'loading'
                             ? <Button disabled className="min-w-40"><Loader2 size={17} className="animate-spin"/>Cargando sonido…</Button>
