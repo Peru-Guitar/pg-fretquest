@@ -9,7 +9,7 @@ import { localDateKey, readCommunityDays, weekStartKey, type DayDoc } from "@/li
  * y se agrupan aquí. El resultado se guarda 1 hora en el navegador, por semana; al registrar una práctica
  * propia se invalida para que te veas al momento.
  */
-export type RankEntry = { uid: string; name: string; total: number; active: number };
+export type RankEntry = { uid: string; name: string; total: number; seconds: number; active: number };
 export type Community = {
   at: number;
   people: number;
@@ -26,7 +26,7 @@ export type Community = {
 };
 
 const CACHE_MS = 60 * 60 * 1000;
-const cacheKey = () => `fretquest.community.${weekStartKey()}`;
+const cacheKey = () => `fretquest.community.v2.${weekStartKey()}`;
 
 export function invalidateCommunity() {
   try { localStorage.removeItem(cacheKey()); } catch { /* sin almacenamiento */ }
@@ -38,7 +38,7 @@ export function computeCommunity(days: (DayDoc & { uid: string })[], sinceLaunch
   const monday = weekStartKey();
   const week = Array.from({ length: 7 }, (_, index) => { const [y, m, d] = monday.split("-").map(Number); return localDateKey(new Date(y, m - 1, d + index)); });
   const today = localDateKey();
-  const byUser = new Map<string, { name: string; level: Difficulty | null; latest: string; total: number; active: number }>();
+  const byUser = new Map<string, { name: string; level: Difficulty | null; latest: string; total: number; seconds: number; active: number }>();
   const byDay = week.map(() => 0);
   const lessons = new Map<string, number>();
   for (const day of days) {
@@ -46,10 +46,11 @@ export function computeCommunity(days: (DayDoc & { uid: string })[], sinceLaunch
     const index = week.indexOf(day.date);
     if (index >= 0) byDay[index] += attempts;
     for (const [lessonId, lesson] of Object.entries(day.lessons ?? {})) lessons.set(lessonId, (lessons.get(lessonId) ?? 0) + (lesson.attempts ?? 0));
-    const user = byUser.get(day.uid) ?? { name: day.name, level: day.level, latest: "", total: 0, active: 0 };
+    const user = byUser.get(day.uid) ?? { name: day.name, level: day.level, latest: "", total: 0, seconds: 0, active: 0 };
     // El nombre y el nivel, los del día más reciente (por si cambió a mitad de semana).
     if (day.date >= user.latest) { user.latest = day.date; user.name = day.name; user.level = day.level; }
     user.total += attempts;
+    user.seconds += day.seconds ?? 0;
     user.active += 1;
     byUser.set(day.uid, user);
   }
@@ -65,9 +66,9 @@ export function computeCommunity(days: (DayDoc & { uid: string })[], sinceLaunch
     byDay,
     byLevel: Object.fromEntries(Object.entries(levelCount).map(([level, count]) => [level, Math.round(count / withLevel * 100)])) as Record<Difficulty, number>,
     topLessons: [...lessons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([lessonId, attempts]) => ({ lessonId, attempts })),
-    // Por prácticas de la semana; en empate, por días distintos.
-    ranking: users.map(([uid, user]) => ({ uid, name: user.name, total: user.total, active: user.active }))
-      .sort((a, b) => b.total - a.total || b.active - a.active || a.name.localeCompare(b.name)),
+    // Por tiempo practicado en la semana, sin importar el nivel; en empate, por días distintos.
+    ranking: users.map(([uid, user]) => ({ uid, name: user.name, total: user.total, seconds: user.seconds, active: user.active }))
+      .sort((a, b) => b.seconds - a.seconds || b.active - a.active || a.name.localeCompare(b.name)),
     sinceLaunch,
   };
 }

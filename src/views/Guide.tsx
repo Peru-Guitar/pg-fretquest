@@ -46,7 +46,7 @@ const SECTIONS = [
     {
         icon: Users, title: 'Comunidad', to: ROUTES.community, link: 'Ver la comunidad',
         points: [
-            'Ves cuántos guitarristas entrenan esta semana y el ranking de los que más practican.',
+            'Ves cuántos guitarristas entrenan esta semana y el ranking de los que más horas practican.',
             'El ranking es semanal: se reinicia cada lunes, así que siempre puedes llegar arriba.',
             'Solo cuentan las prácticas completadas con tu cuenta.',
         ],
