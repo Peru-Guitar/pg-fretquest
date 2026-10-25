@@ -8,6 +8,7 @@ import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle
 import { isAdmin, useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
 import { SupportButton } from '@/components/SupportButton';
+import { VersionInfo } from '@/components/VersionInfo';
 import { cn } from '@/lib/cn';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
@@ -62,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>
                 <p className="text-3xs text-muted">Un producto de <a href="https://peruguitar.com" className="text-accent hover:underline">PeruGuitar</a></p>
-                <span className="font-mono text-2xs">Versión {process.env.NEXT_PUBLIC_APP_VERSION}</span>
+                <VersionInfo/>
             </div>
         </aside>
 

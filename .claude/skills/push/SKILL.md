@@ -35,6 +35,10 @@ Espera la confirmación (el usuario puede elegir otro tipo).
 ## 3. Al confirmar
 
 1. Actualiza `"version"` en `package.json` y `package-lock.json` con `npm version <tipo> --no-git-tag-version`. La app muestra esa versión sola (`NEXT_PUBLIC_APP_VERSION`).
-2. Corre la build (`npm run build`) y los tests (`npx vitest run`). Si fallan, para y avisa.
-3. Haz commit (incluye el cambio de versión). No agregues archivos sin seguimiento que no sean parte del cambio.
-4. `git push` como **último paso, separado**, nunca encadenado con el commit: el usuario puede escribir "espera" a último momento.
+2. Agrega la versión a las **Novedades** (`src/data/changelog.ts`), arriba de todo: `version`, `date` (hoy, `AAAA-MM-DD`) y `notes`.
+   - Notas **muy breves**, una por mejora, en palabras del alumno ("Nueva lección de Michael Romeo."), sin detalles técnicos.
+   - **Nunca datos sensibles**: nada de claves, correos, URLs internas, nombres de archivos o servicios, ni datos de alumnos.
+   - Si no hay nada visible para el alumno, una sola nota genérica ("Mejoras y arreglos.").
+3. Corre la build (`npm run build`) y los tests (`npx vitest run`). Si fallan, para y avisa.
+4. Haz commit (incluye el cambio de versión y las novedades). No agregues archivos sin seguimiento que no sean parte del cambio.
+5. `git push` como **último paso, separado**, nunca encadenado con el commit: el usuario puede escribir "espera" a último momento.

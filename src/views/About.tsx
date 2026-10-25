@@ -2,6 +2,7 @@
 
 import { AtSign, Guitar, Mail, MessageCircle } from 'lucide-react';
 import { Card, Caption, PageTitle } from '@/components/ui';
+import { VersionInfo } from '@/components/VersionInfo';
 
 // Datos de contacto de ejemplo: reemplazar por los reales.
 const contacts = [
@@ -19,7 +20,7 @@ export default function AboutPage() {
                 <h2 className="mb-3">Entrena. Mejora. Repite.</h2>
                 <p className="text-base leading-relaxed text-fg-soft">Fret Quest nace para ayudar a guitarristas con experiencia a mantener y mejorar su técnica con constancia: un catálogo de ejercicios por técnica, práctica con metrónomo y un registro honesto del tiempo que dedicas cada día.</p>
                 <p className="mt-4 text-base leading-relaxed text-fg-soft">Creemos que el progreso en la guitarra no viene de sesiones largas y esporádicas, sino de practicar un poco cada día, con atención y sin prisa por la velocidad.</p>
-                <Caption className="mt-6">Versión {process.env.NEXT_PUBLIC_APP_VERSION}</Caption>
+                <VersionInfo className="mt-6 text-subtle"/>
             </Card>
             <Card>
                 <h2 className="mb-4 text-lg">Contacto</h2>
