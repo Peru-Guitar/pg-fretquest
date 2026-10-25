@@ -85,7 +85,7 @@ export default function HomePage() {
      </div>
      {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div></div>
-    <CommunityPulse className="relative z-10 rounded-none border-x-0 border-b-0 border-white/10 bg-black/40 backdrop-blur-sm"/>
+    <CommunityPulse embedded/>
    </section>
   </div>
 
