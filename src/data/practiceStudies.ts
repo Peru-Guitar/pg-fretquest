@@ -531,7 +531,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'licks-phrasing-romeo-01': {
         description: 'Una secuencia de Michael Romeo en Em con tapping y string skipping: figuras de tres notas que saltan entre la primera y la tercera cuerda, sobre Em, C y D.',
-        notation: 'Em · Sextillos: dos figuras de tres notas por pulso · Tapping (T) + legato · String skipping',
+        notation: 'Em · Tresillos: una figura de tres notas por pulso · Tapping (T) + legato · String skipping',
         goal: 'Que el tapping y las notas ligadas suenen igual de fuerte mientras saltas de la tercera a la primera cuerda, sin que suene la segunda. Es un reto de resistencia: son ocho compases seguidos. Empieza con un BPM bajo y súbelo solo cuando todo salga limpio.',
         steps: [
             'Escucha el ejercicio primero para tener el sonido en la cabeza.',
@@ -545,10 +545,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         mistakes: ['Que suene la segunda cuerda o las cuerdas al aire: apágalas con la palma y los dedos libres de ambas manos.', 'Que el tapping suene mucho más fuerte que las notas ligadas.', 'Tapear sin sacar el dedo hacia un lado (pull-off): la nota siguiente no suena.', 'Perder el pulso en los cambios de compás.'],
         criterion: 'Toca los ocho compases sin pausas y sin que suene la segunda cuerda. Sube el BPM cuando cada salto suene igual que las notas en la misma cuerda.',
         perRow: 12,
-        figure: 'sextillos',
+        figure: 'tresillos',
         picking: 'tapping',
         artist: 'michael-romeo',
-        bpm: 70,
+        bpm: 80,
         ...withSections(romeoBars.map((pattern, index) => ({ title: `Compás ${index + 1}`, pattern }))),
     },
     'licks-phrasing-vinnie-01': {
