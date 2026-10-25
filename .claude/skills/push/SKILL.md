@@ -37,7 +37,8 @@ Espera la confirmación (el usuario puede elegir otro tipo).
 1. Actualiza `"version"` en `package.json` y `package-lock.json` con `npm version <tipo> --no-git-tag-version`. La app muestra esa versión sola (`NEXT_PUBLIC_APP_VERSION`).
 2. Agrega la versión a las **Novedades** (`src/data/changelog.ts`), arriba de todo: `version`, `date` (hoy, `AAAA-MM-DD`) y `notes`.
    - Notas **muy breves**, una por mejora, en palabras del alumno ("Nueva lección de Michael Romeo."), sin detalles técnicos.
-   - **Nunca datos sensibles**: nada de claves, correos, URLs internas, nombres de archivos o servicios, ni datos de alumnos.
+   - **Nunca información técnica ni de seguridad**: nada de claves, correos, URLs internas, nombres de archivos o servicios, ni datos de alumnos. Una nota nunca debe revelar qué estaba expuesto o cómo se podía aprovechar un fallo.
+   - Los arreglos de seguridad se describen de forma **superficial**, por lo que el alumno ve: "Se corrigió un error con el nombre de usuario.", nunca "Antes se exponían las contraseñas.".
    - Si no hay nada visible para el alumno, una sola nota genérica ("Mejoras y arreglos.").
 3. Corre la build (`npm run build`) y los tests (`npx vitest run`). Si fallan, para y avisa.
 4. Haz commit (incluye el cambio de versión y las novedades). No agregues archivos sin seguimiento que no sean parte del cambio.
