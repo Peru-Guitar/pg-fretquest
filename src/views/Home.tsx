@@ -8,6 +8,7 @@ import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
 import { useLastExercise } from '@/lib/progress';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
+import { CommunityPulse } from '@/components/CommunityPulse';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
@@ -76,6 +77,7 @@ export default function HomePage() {
      {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
     </div>
    </section>
+   <CommunityPulse/>
   </div>
 
   <SectionTitle title="Últimas lecciones agregadas" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
