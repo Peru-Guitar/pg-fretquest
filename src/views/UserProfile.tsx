@@ -15,13 +15,11 @@ import { DAYS, time } from '@/views/Analytics';
 
 /**
  * Perfil de un usuario, desde Comunidad o Analytics: `/perfil?uid=…`. Con sesión iniciada.
- * Todos ven su historial de práctica; solo el admin ve sus datos privados (ciudad, guitarra, meta) y cada intento
- * con su hora exacta. Se cachea 1 hora por usuario (ver `lib/profile`).
+ * Todos ven su historial de práctica; solo el admin ve sus datos privados (ciudad, guitarra, meta).
+ * Se cachea 1 hora por usuario (ver `lib/profile`).
  */
 const dateLabel = (key?: string) => key ? new Date(`${key}T12:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-const at = (ms: number) => new Date(ms).toLocaleString('es', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-const RECENT = 10;
 const imageOf = new Map(courses.map(course => [course.id, course.image]));
 
 /** Lecciones agrupadas por módulo, el de más tiempo primero (las lecciones ya vienen ordenadas por tiempo). */
@@ -88,7 +86,6 @@ export default function UserProfilePage() {
     const todayIndex = (new Date().getDay() + 6) % 7;
     const thisWeek = data.week.reduce((sum, minutes) => sum + minutes, 0);
     const modules = groupByModule(data.lessons);
-    const recent = data.recent.slice(0, RECENT);
     return <>
         {back}
         <Header profile={data} onRefresh={refresh}/>
@@ -114,9 +111,9 @@ export default function UserProfilePage() {
 
         <Card className="mb-5">
             <SectionTitle title="Módulos" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Ábrelo para ver cada lección: BPM máximo y el último, frente al sugerido.</p>
+            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Cada lección con su BPM máximo y el último, frente al sugerido.</p>
             {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="flex flex-col gap-2">{modules.map(module => <li key={module.id}>
-                <details className="group rounded-xl border border-line-soft">
+                <details open className="group rounded-xl border border-line-soft">
                     <summary className="flex cursor-pointer list-none items-center gap-3 p-2 pr-4">
                         {module.image ? <img src={module.image} alt="" width={96} height={64} loading="lazy" decoding="async" className="h-12 w-18 shrink-0 rounded-lg bg-sunken object-cover"/> : <span className="h-12 w-18 shrink-0 rounded-lg bg-sunken"/>}
                         <div className="min-w-0 flex-1">
@@ -145,22 +142,5 @@ export default function UserProfilePage() {
             </li>)}</ul>}
         </Card>
 
-        {admin && <Card>
-            <SectionTitle title="Últimos intentos" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Los {recent.length} más recientes, con su hora exacta.</p>
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-120 text-left text-xs">
-                    <thead className="text-2xs text-subtle"><tr><th className="py-2 font-semibold">Cuándo</th><th className="font-semibold">Lección</th><th className="text-right font-semibold">Duración</th><th className="text-right font-semibold">BPM</th><th className="text-right font-semibold">Rondas</th></tr></thead>
-                    <tbody>{recent.map(attempt => <tr key={`${attempt.at}-${attempt.lessonId}`} className="border-t border-line-soft text-fg-soft">
-                        <td className="py-2 whitespace-nowrap text-muted">{at(attempt.at)}</td>
-                        <td className="max-w-60 truncate pr-3">{attempt.title}</td>
-                        <td className="text-right tabular-nums">{time(attempt.seconds)}</td>
-                        <td className="text-right tabular-nums">{attempt.bpm}</td>
-                        <td className="text-right tabular-nums">{attempt.rounds}</td>
-                    </tr>)}</tbody>
-                </table>
-            </div>
-            <p className="mt-3 text-3xs text-subtle">Datos de hace {timeAgo(data.at).replace(/^hace /, '')} · «Actualizar» los vuelve a leer.</p>
-        </Card>}
     </>;
 }
