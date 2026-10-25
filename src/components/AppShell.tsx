@@ -7,6 +7,7 @@ import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
 import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
 import { isAdmin, useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
+import { SupportButton } from '@/components/SupportButton';
 import { cn } from '@/lib/cn';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
@@ -56,6 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <a href="https://chat.whatsapp.com/BqVeyGhXMGO2XkdD424Z7o?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <MessageCircle size={19}/><span>PG Skool</span>
                 </a>
+                <SupportButton className={cn(linkBase, sidebarLink.base, 'w-full')}/>
             </nav>
             <div className="flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>
