@@ -18,6 +18,7 @@ export const ROUTES = {
   tuner: "/herramientas/afinador",
   metronome: "/herramientas/metronomo",
   about: "/acerca-de",
+  changelog: "/novedades",
   analytics: "/analytics",
   userProfile: "/perfil",
 };
