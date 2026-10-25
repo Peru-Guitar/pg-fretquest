@@ -125,7 +125,7 @@ export default function UserProfilePage() {
                     </summary>
                     <ul className="px-4 pb-1">{module.lessons.map(lesson => {
                         const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
-                        return <li key={lesson.id} className="grid gap-1 border-t border-line-soft py-2.5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] md:items-center md:gap-6">
+                        return <li key={lesson.id} className="grid gap-1 border-t border-line-soft py-2.5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_5rem] md:items-center md:gap-6">
                             <div className="min-w-0">
                                 <p className="truncate text-xs font-bold text-fg-soft">{lesson.title}</p>
                                 <p className="truncate text-2xs text-muted">{lesson.days} {lesson.days === 1 ? 'día' : 'días'} · {lesson.attempts} {lesson.attempts === 1 ? 'intento' : 'intentos'}</p>
