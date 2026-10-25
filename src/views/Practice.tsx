@@ -24,7 +24,7 @@ import { DifficultySignal } from '@/components/quest/DifficultySignal';
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
 /** Marca de ataque sobre cada nota de la tablatura. */
-const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true } };
+const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
 /** Rondas máximas según la dificultad: cuanto más difícil, menos repeticiones. */
@@ -403,7 +403,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                                 <span className="font-serif text-lg font-normal text-fg italic">{bar.part.title}</span>
                                 <span aria-hidden className="h-px flex-1 bg-line-strong"/>
                             </h3>}
-                            {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off (según el estudio, `pickingOf`). */}
+                            {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off · T tapping (según el estudio, `pickingOf`). */}
                             <div style={tabColumns(bar.columns)} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} tabIndex={0} aria-label={stroke.title} className={cn('group relative cursor-help outline-none', stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}
                                 <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded-md border border-line-strong bg-card px-2 py-1 font-sans text-xs whitespace-nowrap text-fg not-italic opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">{stroke.title}</span>
                             </span>; })}</div>

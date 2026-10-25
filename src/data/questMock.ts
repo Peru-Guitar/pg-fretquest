@@ -1066,6 +1066,12 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggio
  skills: ['Posiciones', 'Secuencias', 'Púa alternada'],
  lessons: [1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-0${position}`, title: `Posición ${position} · desde ${PENTATONIC_G_START[position - 1]}`, category: 'Grupos de tres cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson)).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-sweep-0${position}`, title: `Posición ${position} · Patrón extendido con Sweep`, category: 'Patrones extendidos con Sweep', type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))),
 });
+// Primera del módulo: la más reciente.
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-romeo-01', title: 'Tresillos en string skipping sobre Em',
+ type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  id: 'licks-phrasing-yngwie-01', title: 'Patrón de Sextillos Neoclásicos',
  type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
@@ -1103,6 +1109,7 @@ Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
 const ADDED: Record<string, string> = {
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
+ 'licks-phrasing-romeo-01': '2026-10-25',
  'licks-phrasing-yngwie-02': '2026-10-24',
  'licks-phrasing-gilbert-01': '2026-10-24',
  'licks-phrasing-vinnie-01': '2026-10-24',
