@@ -452,7 +452,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         notation: 'Metrónomo en negras · Púa alternada continua',
         goal: 'Que todas las notas suenen parejas y sin acentos raros mientras la mano cambia de cuerda y de posición.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Sigue la tablatura: cada grupo de notas se repite dos veces antes de pasar al siguiente.',
             'Usa púa alternada en todo el lick, menos en el arpegio final: ahí la púa barre las cuerdas (⊓ al subir, V al bajar) y en la primera cuerda se liga con hammer-on y pull-off (h y p).',
             'Mantén la mano relajada en los cambios de posición; deja que el brazo la lleve.',
@@ -472,7 +471,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         notation: 'Em armónica · Semicorcheas: un grupo de cuatro notas por pulso · Púa alternada continua',
         goal: 'Desplazar la mano a lo largo de la cuerda sin perder el pulso: cada grupo empieza dos trastes más abajo que el anterior.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada grupo es nota, salto arriba, paso abajo y la nota otra vez (19–22–20–19). El siguiente empieza en la nota de abajo de la escala.',
             'Todo va en la primera cuerda: la mano baja por el mástil en cada grupo, guiada por el brazo.',
             'El D# (traste 11) es la sensible de la escala armónica: resuelve en el 12.',
@@ -491,9 +489,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     'licks-phrasing-becker-01': {
         description: 'Un estudio de Jason Becker: arpegios en sweep sobre tres cuerdas, con pull-off en la primera cuerda, que suben por el mástil y bajan al final hasta la sexta cuerda.',
         notation: 'Semicorcheas: un compás por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
-        goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición. Es un reto: lo difícil es mantener la precisión y que todas las notas suenen parejas, sobre todo en los cambios de posición. Ve practicándolo a tu ritmo, empieza con un BPM bajo y súbelo solo cuando cada compás salga limpio.',
+        goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición, con todas las notas parejas.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada figura empieza en la primera cuerda con un pull-off (p) y barre la segunda y la tercera: la púa cae hacia abajo al bajar a las cuerdas graves y hacia arriba al volver.',
             'Practica cada compás por separado hasta que suene parejo y luego únelos de dos en dos.',
             'En los cambios de posición (compases 5, 6, 13 y 14) deja que el brazo lleve la mano; no estires los dedos.',
@@ -512,9 +509,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     'licks-phrasing-gilbert-01': {
         description: 'Un lick de Paul Gilbert en string skipping: arpegios en la tercera cuerda que saltan a la primera, en seis figuras que bajan de posición desde el traste 10 hasta el 1, con hammer-ons y pull-offs en cada cuerda.',
         notation: 'Semicorcheas: una figura por fila · String skipping: púa al cambiar de cuerda, ligado en la misma cuerda',
-        goal: 'Saltar de la tercera a la primera cuerda sin que suene la segunda y sin perder el pulso. Es un reto: lo difícil es mantener la precisión en cada salto y que todas las notas suenen parejas. Ve practicándolo a tu ritmo, empieza con un BPM bajo y súbelo solo cuando cada figura salga limpia.',
+        goal: 'Saltar de la tercera a la primera cuerda sin que suene la segunda y sin perder el pulso, con los saltos tan parejos como las notas en la misma cuerda.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada figura sube tres notas en la tercera cuerda, salta a la primera y vuelve: la púa pasa por encima de la segunda cuerda sin tocarla.',
             'Púa solo al cambiar de cuerda; en la misma cuerda las notas van ligadas: hammer-on (h) al subir de traste y pull-off (p) al bajar.',
             'Practica cada figura por separado y luego únelas: en cada una la mano baja a la posición siguiente.',
@@ -532,9 +528,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     'licks-phrasing-romeo-01': {
         description: 'Una secuencia de Michael Romeo en Em con tapping y string skipping: figuras de tres notas que saltan entre la primera y la tercera cuerda, sobre Em, C y D.',
         notation: 'Em · Sextillos: dos figuras de tres notas por pulso · Tapping (T) + legato · String skipping',
-        goal: 'Que el tapping y las notas ligadas suenen igual de fuerte mientras saltas de la tercera a la primera cuerda, sin que suene la segunda. Es un reto de resistencia: son ocho compases seguidos. Empieza con un BPM bajo y súbelo solo cuando todo salga limpio.',
+        goal: 'Coordinar el tapping con el legato de la mano izquierda mientras saltas entre la tercera y la primera cuerda, con todas las notas al mismo volumen y sin que suene la segunda.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada compás repite dos veces la misma figura: baja tres notas en la primera cuerda, salta a la tercera, baja hasta el 9 y vuelve a subir.',
             'Lo que cambia es la nota más aguda de la tercera cuerda: 16 (B) en Em, 17 (C) en los compases 3 y 4, y 14 (A) con la primera cuerda en 14–12–10 en los compases 5 y 6, sobre D.',
             'Fíjate en el final de cada compás: a veces vuelve con 12–14 y a veces con 10–12 para preparar el compás siguiente.',
@@ -556,7 +551,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         notation: 'Am natural · Sextillos: dos cuerdas por pulso · Púa alternada continua',
         goal: 'Bajar la escala con púa alternada continua y cambiar de posición sin que se note un corte en el sonido.',
         steps: [
-            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
             'Cada cuerda tiene tres notas que bajan (13–12–10 en la primera). Cada dos cuerdas es un sextillo: un pulso.',
             'Después de la cuarta cuerda vuelves a la tercera dos trastes más abajo (10–9–7): ahí la mano baja a la posición siguiente.',
             'Púa alternada continua, empezando con ⊓. La última nota, el 5 de la sexta cuerda, es la resolución: una negra, un pulso entero.',

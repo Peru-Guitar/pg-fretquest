@@ -136,7 +136,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
     const [round, setRound] = useState(1);
-    const [rounds, setRounds] = useState(1);
+    const suggestedRounds = activeExercise.rounds ?? 1;
+    const [rounds, setRounds] = useState(suggestedRounds);
     const [finished, setFinished] = useState<{ rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
     const startedAt = useRef(0);
     const [startedAtView, setStartedAtView] = useState(0);
@@ -146,7 +147,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     if (roundsFor !== activeExercise.id) {
         setRoundsFor(activeExercise.id);
         setBpm(study?.bpm ?? 100);
-        setRounds(1);
+        setRounds(suggestedRounds);
         setFinished(null);
     }
     const roundsRef = useRef(rounds);
@@ -340,14 +341,21 @@ function PracticeView({ mode }: { mode: Mode }) {
 
 
         {mode === 'goal' && <Card>
-            <h2 className="mb-3">Objetivo técnico</h2>
+            <h2 className="mb-3">Objetivo</h2>
             <p className="text-sm leading-relaxed text-muted">{activeExercise.goal}</p>
             {study ? <div className="mt-6 space-y-5 text-sm leading-relaxed text-muted">
+                <h2 className="text-fg">Recomendaciones</h2>
                 <div><h3 className="mb-2 text-fg">Cómo tocarlo</h3><ol className="list-decimal space-y-2 pl-5">{study.steps.map(text => <li key={text}>{text}</li>)}</ol></div>
                 <div><h3 className="mb-2 text-fg">Errores comunes</h3><ul className="list-disc space-y-2 pl-5">{study.mistakes.map(text => <li key={text}>{text}</li>)}</ul></div>
                 <div><h3 className="mb-2 text-fg">Cuándo avanzar</h3><p>{study.criterion}</p></div>
             </div> : <p className="mt-3 text-sm leading-relaxed text-muted">Esta lección usa un patrón cromático de ejemplo.</p>}
-            <div className="mt-6 grid gap-4.5 xs:grid-cols-3 xl:gap-6">{[['01', 'Suelta la tensión', 'Relaja hombros y muñeca. Deja que el movimiento sea pequeño.'], ['02', 'Observa el movimiento', 'Reduce los gestos innecesarios y conserva una ejecución cómoda.'], ['03', 'Prioriza la claridad', 'Toca despacio. La velocidad llegará con la confianza.']].map(([number, title, text]) =>
+            {/* Igual en todas las lecciones: cómo se practica en Fret Quest y cuándo se guarda el progreso. */}
+            <h2 className="mt-8 mb-4">Cómo practicar</h2>
+            <div className="grid gap-4.5 xs:grid-cols-3 xl:gap-6">{[
+                ['01', 'Escúchalo y apréndelo', 'Primero escucha el ejercicio y practícalo hasta que lo tengas.'],
+                ['02', 'Practica con lo sugerido', `Cuando lo domines, te sugerimos ${study?.bpm ?? 100} BPM y ${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}. También puedes empezar más lento: igual registras tu progreso.`],
+                ['03', 'Completa las rondas', 'Tu progreso solo se guarda al completar todas las rondas, con tu sesión iniciada.'],
+            ].map(([number, title, text]) =>
                 <div key={number} className="border-t border-line pt-4 xs:border-0 xs:pt-0">
                     <span className="text-accent">{number}</span>
                     <h3 className="ml-3 inline text-md xs:my-2 xs:ml-0 xs:block">{title}</h3>
