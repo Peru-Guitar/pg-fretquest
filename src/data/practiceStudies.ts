@@ -26,8 +26,10 @@ export type PracticeStudy = {
      * Cómo se atacan las notas: `alternate` (por defecto) alterna ⊓ V nota a nota;
      * `legato` (arpegios) usa púa solo al cambiar de cuerda (⊓ hacia la aguda, V hacia la grave)
      * y liga en la misma cuerda: hammer-on al subir de traste, pull-off al bajar.
+     * `tapping`: sin púa; las notas con `tap` van con la mano derecha (T) y el resto se liga
+     * (pull-off al bajar, hammer-on al subir o al cambiar de cuerda).
      */
-    picking?: 'alternate' | 'legato';
+    picking?: 'alternate' | 'legato' | 'tapping';
     /** Desde esta nota (índice del patrón) se usa la técnica de arpegio (`legato`), p. ej. un sweep al final de un lick. */
     legatoFrom?: number;
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
@@ -303,6 +305,24 @@ const GILBERT_FIGURES = [
 const gilbertFigures = GILBERT_FIGURES.map(figure => figure.split(' ').map((note): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
 gilbertFigures[gilbertFigures.length - 1].at(-1)!.beats = 1;
 
+/** Michael Romeo: secuencia de tresillos con tapping en Em saltando entre la tercera y la primera cuerda. Cada compás son dos vueltas de la misma figura. */
+const romeoBar = (top: string, low: number, end: string) => {
+    const half = `${top} ${low}/3 12/3 11/3 9/3 11/3 12/3 ${low}/3`;
+    return `${half} 12/1 14/1 ${half} ${end}`;
+};
+const ROMEO_BARS = [
+    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
+    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
+    romeoBar('15/1 14/1 12/1', 17, '12/1 14/1'),
+    romeoBar('15/1 14/1 12/1', 17, '10/1 12/1'),
+    romeoBar('14/1 12/1 10/1', 14, '10/1 12/1').replace('14/3 12/1 14/1', '14/3 10/1 12/1'),
+    romeoBar('14/1 12/1 10/1', 14, '12/1 14/1').replace('14/3 12/1 14/1', '14/3 10/1 12/1'),
+    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
+    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
+];
+// La primera nota de cada grupo de tres va con tapping.
+const romeoBars = ROMEO_BARS.map(bar => bar.split(' ').map((note, index): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret, tap: index % 3 === 0 }; }));
+
 export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(SCALE_MODES.map(mode => [mode.id, modeStudy(mode)])),
     'fingering-01': {
@@ -509,6 +529,28 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         bpm: 100,
         ...withSections(gilbertFigures.map(pattern => ({ title: '', pattern }))),
     },
+    'licks-phrasing-romeo-01': {
+        description: 'Una secuencia de Michael Romeo en Em con tapping y string skipping: figuras de tres notas que saltan entre la primera y la tercera cuerda, sobre Em, C y D.',
+        notation: 'Em · Sextillos: dos figuras de tres notas por pulso · Tapping (T) + legato · String skipping',
+        goal: 'Que el tapping y las notas ligadas suenen igual de fuerte mientras saltas de la tercera a la primera cuerda, sin que suene la segunda. Es un reto de resistencia: son ocho compases seguidos. Empieza con un BPM bajo y súbelo solo cuando todo salga limpio.',
+        steps: [
+            'Escucha el ejercicio primero para tener el sonido en la cabeza.',
+            'Cada compás repite dos veces la misma figura: baja tres notas en la primera cuerda, salta a la tercera, baja hasta el 9 y vuelve a subir.',
+            'Lo que cambia es la nota más aguda de la tercera cuerda: 16 (B) en Em, 17 (C) en los compases 3 y 4, y 14 (A) con la primera cuerda en 14–12–10 en los compases 5 y 6, sobre D.',
+            'Fíjate en el final de cada compás: a veces vuelve con 12–14 y a veces con 10–12 para preparar el compás siguiente.',
+            'Sin púa: la primera nota de cada grupo (T) va con tapping de la mano derecha; las otras dos se ligan con pull-off o hammer-on de la izquierda.',
+            'Al cambiar de cuerda sin tapping, la nota entra con un hammer-on desde la nada: pisa firme para que suene.',
+            'Practica primero un compás y luego encadénalos.',
+        ],
+        mistakes: ['Que suene la segunda cuerda o las cuerdas al aire: apágalas con la palma y los dedos libres de ambas manos.', 'Que el tapping suene mucho más fuerte que las notas ligadas.', 'Tapear sin sacar el dedo hacia un lado (pull-off): la nota siguiente no suena.', 'Perder el pulso en los cambios de compás.'],
+        criterion: 'Toca los ocho compases sin pausas y sin que suene la segunda cuerda. Sube el BPM cuando cada salto suene igual que las notas en la misma cuerda.',
+        perRow: 12,
+        figure: 'sextillos',
+        picking: 'tapping',
+        artist: 'michael-romeo',
+        bpm: 70,
+        ...withSections(romeoBars.map((pattern, index) => ({ title: `Compás ${index + 1}`, pattern }))),
+    },
     'licks-phrasing-vinnie-01': {
         description: 'Un lick de Vinnie Moore en Am: la escala baja con tres notas por cuerda, cambia de posición a mitad de camino y resuelve en A.',
         notation: 'Am natural · Sextillos: dos cuerdas por pulso · Púa alternada continua',
@@ -552,11 +594,16 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, pentatonicSweepStudy(position)])),
 };
 
-/** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h) o pull-off (p). */
-export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide';
+/** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h), pull-off (p) o tapping (T). */
+export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide' | 'tap';
 
 /** Ataque de cada nota del patrón según la técnica del estudio. */
 export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate', legatoFrom = Infinity): Stroke[] {
+    if (picking === 'tapping') return pattern.map((note, index) => {
+        const previous = pattern[index - 1];
+        if (note.tap) return 'tap';
+        return previous && previous.string === note.string && note.fret < previous.fret ? 'pull' : 'hammer';
+    });
     if (picking === 'alternate' && legatoFrom === Infinity) return pattern.map((note, index) => note.slide ? 'slide' : index % 2 === 0 ? 'down' : 'up');
     // Arpegios: la púa solo ataca al cambiar de cuerda, siguiendo el movimiento (⊓ hacia la aguda, V hacia la grave);
     // en la misma cuerda se liga: hammer-on si el traste sube, pull-off si baja. Cuerda 1 = la más aguda.

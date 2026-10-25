@@ -10,7 +10,7 @@ import { clickAt, getTone, playAt, silence } from "./guitar";
  * `slide`: se llega deslizando el dedo desde la nota anterior en la misma cuerda, sin púa.
  * `beats`: duración en pulsos cuando no es la figura del estudio (p. ej. 1 = negra para la nota final).
  */
-export type PatternNote = { string: number; fret: number; slide?: boolean; beats?: number };
+export type PatternNote = { string: number; fret: number; slide?: boolean; /** Nota con tapping (mano derecha). */ tap?: boolean; beats?: number };
 
 type RoundOptions = {
   /** Toca la guitarra de guía (Práctica). En Progreso solo suena el metrónomo. */

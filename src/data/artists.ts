@@ -9,6 +9,7 @@ export const artists: Record<string, Artist> = {
   'yngwie-malmsteen': { id: 'yngwie-malmsteen', name: 'Yngwie Malmsteen', note: 'Guitarrista sueco, referente del metal neoclásico y del sweep picking.' },
   'jason-becker': { id: 'jason-becker', name: 'Jason Becker', note: 'Guitarrista estadounidense del shred neoclásico, famoso por su sweep picking y sus arpegios.' },
   'paul-gilbert': { id: 'paul-gilbert', name: 'Paul Gilbert', note: 'Guitarrista estadounidense de Racer X y Mr. Big, referente de la púa alternada y del string skipping.' },
+  'michael-romeo': { id: 'michael-romeo', name: 'Michael Romeo', note: 'Guitarrista estadounidense de Symphony X, referente del metal progresivo neoclásico y de la púa alternada.' },
   'vinnie-moore': { id: 'vinnie-moore', name: 'Vinnie Moore', note: 'Guitarrista estadounidense del shred neoclásico, conocido por su púa alternada precisa.' },
 };
 
