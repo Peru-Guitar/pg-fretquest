@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, ChevronDown, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, RefreshCw, Repeat, Target } from 'lucide-react';
+import { CalendarDays, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, RefreshCw, Repeat, Target } from 'lucide-react';
 import { BackLink, Button, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
 import { useHydrated, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
@@ -112,33 +112,26 @@ export default function UserProfilePage() {
         <Card className="mb-5">
             <SectionTitle title="Módulos" className="mb-1"/>
             <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Cada lección con su BPM máximo y el último, frente al sugerido.</p>
-            {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="flex flex-col gap-2">{modules.map(module => <li key={module.id}>
-                <details open className="group rounded-xl border border-line-soft">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 p-2 pr-4">
-                        {module.image ? <img src={module.image} alt="" width={96} height={64} loading="lazy" decoding="async" className="h-12 w-18 shrink-0 rounded-lg bg-sunken object-cover"/> : <span className="h-12 w-18 shrink-0 rounded-lg bg-sunken"/>}
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-fg-soft">{module.title}</p>
-                            <p className="truncate text-2xs text-muted">{module.lessons.length} {module.lessons.length === 1 ? 'lección' : 'lecciones'} · {module.attempts} {module.attempts === 1 ? 'intento' : 'intentos'}{module.lastAt > 0 && ` · ${timeAgo(module.lastAt)}`}</p>
-                        </div>
-                        <b className="text-sm tabular-nums text-fg">{time(module.seconds)}</b>
-                        <ChevronDown size={16} className="shrink-0 text-muted transition-transform group-open:rotate-180"/>
-                    </summary>
-                    <ul className="px-4 pb-1">{module.lessons.map(lesson => {
-                        const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
-                        return <li key={lesson.id} className="grid gap-1 border-t border-line-soft py-2.5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_5rem] md:items-center md:gap-6">
-                            <div className="min-w-0">
-                                <p className="truncate text-xs font-bold text-fg-soft">{lesson.title}</p>
-                                <p className="truncate text-2xs text-muted">{lesson.days} {lesson.days === 1 ? 'día' : 'días'} · {lesson.attempts} {lesson.attempts === 1 ? 'intento' : 'intentos'}</p>
-                            </div>
-                            <p className="flex items-center gap-1.5 text-2xs text-muted">
-                                <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
-                                <span>máx <b className={cn('tabular-nums', reached ? 'text-success' : 'text-fg-soft')}>{lesson.bpmMax || '—'}</b> · último <b className="tabular-nums text-fg-soft">{lesson.bpmLast || '—'}</b></span>
-                                {lesson.target && <span className="text-subtle">/ {lesson.target.min}–{lesson.target.max}</span>}
-                            </p>
-                            <p className="text-xs tabular-nums text-fg-soft md:text-right">{time(lesson.seconds)}</p>
-                        </li>;
-                    })}</ul>
-                </details>
+            {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{modules.map(module => <li key={module.id} className="flex flex-col overflow-hidden rounded-xl border border-line-soft">
+                {module.image ? <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-28 w-full bg-sunken object-cover"/> : <span className="h-28 w-full bg-sunken"/>}
+                <div className="flex items-start gap-3 px-4 pt-3 pb-2">
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-fg-soft">{module.title}</p>
+                        <p className="truncate text-2xs text-muted">{module.lessons.length} {module.lessons.length === 1 ? 'lección' : 'lecciones'} · {module.attempts} {module.attempts === 1 ? 'intento' : 'intentos'}{module.lastAt > 0 && ` · ${timeAgo(module.lastAt)}`}</p>
+                    </div>
+                    <b className="text-sm tabular-nums text-fg">{time(module.seconds)}</b>
+                </div>
+                <ul className="px-4 pb-1">{module.lessons.map(lesson => {
+                    const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
+                    return <li key={lesson.id} className="border-t border-line-soft py-2">
+                        <p className="flex items-baseline gap-2"><span className="min-w-0 flex-1 truncate text-xs font-bold text-fg-soft">{lesson.title}</span><span className="text-2xs tabular-nums text-muted">{time(lesson.seconds)}</span></p>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted">
+                            <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
+                            <span>máx <b className={cn('tabular-nums', reached ? 'text-success' : 'text-fg-soft')}>{lesson.bpmMax || '—'}</b> · último <b className="tabular-nums text-fg-soft">{lesson.bpmLast || '—'}</b></span>
+                            {lesson.target && <span className="text-subtle">/ {lesson.target.min}–{lesson.target.max}</span>}
+                        </p>
+                    </li>;
+                })}</ul>
             </li>)}</ul>}
         </Card>
 
