@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
             <nav aria-label="Ayuda" className="mt-auto mb-3">
                 <NavLink to={ROUTES.guide} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
-                <a href="https://chat.whatsapp.com/HRB1OA3qiK3CwHjDMBmTJu?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
+                <a href="https://chat.whatsapp.com/BqVeyGhXMGO2XkdD424Z7o?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <MessageCircle size={19}/><span>PG Skool</span>
                 </a>
             </nav>
