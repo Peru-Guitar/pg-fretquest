@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type Difficulty, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, Gauge, Headphones, Loader2, Play, Repeat, SkipForward, Square, Target } from 'lucide-react';
+import { BookOpen, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, SkipForward, Square, Target, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
@@ -340,30 +340,53 @@ function PracticeView({ mode }: { mode: Mode }) {
         <Caption className="mt-3 mb-6">{modeInfo[mode].text}</Caption>
 
 
-        {mode === 'goal' && <Card>
-            <h2 className="mb-3">Objetivo</h2>
-            <p className="text-sm leading-relaxed text-muted">{activeExercise.goal}</p>
-            {study ? <div className="mt-6 space-y-5 text-sm leading-relaxed text-muted">
-                <h2 className="text-fg">Recomendaciones</h2>
-                <div><h3 className="mb-2 text-fg">Cómo tocarlo</h3><ol className="list-decimal space-y-2 pl-5">{study.steps.map(text => <li key={text}>{text}</li>)}</ol></div>
-                <div><h3 className="mb-2 text-fg">Errores comunes</h3><ul className="list-disc space-y-2 pl-5">{study.mistakes.map(text => <li key={text}>{text}</li>)}</ul></div>
-                <div><h3 className="mb-2 text-fg">Cuándo avanzar</h3><p>{study.criterion}</p></div>
-            </div> : <p className="mt-3 text-sm leading-relaxed text-muted">Esta lección usa un patrón cromático de ejemplo.</p>}
+        {mode === 'goal' && <div className="flex flex-col gap-4">
+            {/* Objetivo: una frase destacada y los datos clave en fichas. */}
+            <section className="rounded-2xl border border-accent/30 bg-[linear-gradient(120deg,#232323,#151515)] p-5.5 xl:p-6.5">
+                <span className="flex items-center gap-2 text-3xs font-bold tracking-[0.2em] text-accent"><Target size={15}/>OBJETIVO</span>
+                <p className="mt-3 max-w-3xl text-lg leading-snug font-bold text-balance text-fg md:text-xl">{activeExercise.goal}</p>
+                <div className="mt-5 flex flex-wrap gap-2 text-xs">{[
+                    [Gauge, `${study?.bpm ?? 100} BPM sugeridos`],
+                    [Repeat, `${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}`],
+                    [Music, FIGURES[figure].label.split(' · ')[0]],
+                ].map(([Icon, text]) => { const ChipIcon = Icon as typeof Gauge; return <span key={text as string} className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-white/3 px-3 py-1.5 text-fg-soft"><ChipIcon size={14} className="text-accent"/>{text as string}</span>; })}
+                </div>
+            </section>
+
+            {study ? <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                    <h2 className="mb-4 text-md">Cómo tocarlo</h2>
+                    <ol className="space-y-3">{study.steps.map((text, index) => <li key={text} className="flex gap-3 text-sm leading-relaxed text-fg-soft">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent/15 font-mono text-2xs font-bold text-accent">{index + 1}</span>{text}
+                    </li>)}</ol>
+                </Card>
+                <div className="flex flex-col gap-4">
+                    <Card>
+                        <h2 className="mb-4 text-md">Evita</h2>
+                        <ul className="space-y-2.5">{study.mistakes.map(text => <li key={text} className="flex gap-2.5 text-sm leading-relaxed text-fg-soft"><X size={16} className="mt-0.5 shrink-0 text-danger"/>{text}</li>)}</ul>
+                    </Card>
+                    <div className="flex gap-3 rounded-2xl border border-success/30 bg-success/5 p-5.5">
+                        <CircleCheck size={20} className="shrink-0 text-success"/>
+                        <div><h2 className="mb-1 text-md">Avanza cuando</h2><p className="text-sm leading-relaxed text-fg-soft">{study.criterion}</p></div>
+                    </div>
+                </div>
+            </div> : <Card><p className="text-sm text-muted">Esta lección usa un patrón cromático de ejemplo.</p></Card>}
+
             {/* Igual en todas las lecciones: cómo se practica en Fret Quest y cuándo se guarda el progreso. */}
-            <h2 className="mt-8 mb-4">Cómo practicar</h2>
-            <div className="grid gap-4.5 xs:grid-cols-3 xl:gap-6">{[
-                ['01', 'Escúchalo y apréndelo', 'Primero escucha el ejercicio y practícalo hasta que lo tengas.'],
-                ['02', 'Practica con lo sugerido', `Cuando lo domines, te sugerimos ${study?.bpm ?? 100} BPM y ${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}. También puedes empezar más lento: igual registras tu progreso.`],
-                ['03', 'Completa las rondas', 'Tu progreso solo se guarda al completar todas las rondas, con tu sesión iniciada.'],
-            ].map(([number, title, text]) =>
-                <div key={number} className="border-t border-line pt-4 xs:border-0 xs:pt-0">
-                    <span className="text-accent">{number}</span>
-                    <h3 className="ml-3 inline text-md xs:my-2 xs:ml-0 xs:block">{title}</h3>
-                    <p className="mt-2 text-xs leading-relaxed text-muted xs:mt-0">{text}</p>
-                </div>)}
-            </div>
-            <LinkButton className="mt-8" to={exerciseUrl(activeModule.id, activeExercise.id, search)}>Ir al ejercicio</LinkButton>
-        </Card>}
+            <Card>
+                <h2 className="mb-5 text-md">Cómo practicar</h2>
+                <ol className="grid gap-5 md:grid-cols-3">{[
+                    [Headphones, 'Escúchalo y apréndelo', 'Escucha el ejercicio y practícalo hasta tenerlo.'],
+                    [Gauge, 'Practica con lo sugerido', `Ya dominado, ve a ${study?.bpm ?? 100} BPM · ${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}. O empieza más lento: también cuenta.`],
+                    [Save, 'Completa las rondas', 'Tu progreso se guarda solo al terminar todas las rondas, con sesión iniciada.'],
+                ].map(([Icon, title, text], index) => { const StepIcon = Icon as typeof Gauge; return <li key={title as string} className="flex gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-raised text-accent"><StepIcon size={19}/></span>
+                    <div><p className="text-2xs font-mono text-muted">PASO {index + 1}</p><h3 className="text-sm font-bold">{title as string}</h3><p className="mt-1 text-xs leading-relaxed text-muted">{text as string}</p></div>
+                </li>; })}</ol>
+            </Card>
+
+            <LinkButton className="self-start" to={exerciseUrl(activeModule.id, activeExercise.id, search)}><Play size={17} fill="currentColor"/>Ir al ejercicio</LinkButton>
+        </div>}
 
         {mode !== 'goal' && <div className="flex flex-col gap-6">
             <section ref={sectionRef} className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-card">
