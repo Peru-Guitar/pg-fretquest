@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { ROUTES, moduleUrl, practiceUrl } from '@/lib/routes';
-import { ArrowRight, Check, LogIn, Play } from 'lucide-react';
+import { ArrowRight, Check, Clock, LogIn, Play, Trophy } from 'lucide-react';
 import { Link, useHydrated } from '@/lib/router';
 import { Badge, Eyebrow, LinkButton, SectionTitle } from '@/components/ui';
 import { courses, latestLessons, type PracticeLesson } from '@/data/questMock';
 import { useLastExercise } from '@/lib/progress';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { CommunityPulse } from '@/components/CommunityPulse';
+import { useCommunity } from '@/lib/community';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
 export default function HomePage() {
@@ -17,6 +18,9 @@ export default function HomePage() {
  // Lo que depende de la sesión espera a la hidratación (en el HTML estático aún no se sabe quién eres).
  const hydrated = useHydrated();
  const plan = account ? suggestion(account) : null;
+ const { data: community } = useCommunity(account !== null);
+ const place = account && community ? community.ranking.findIndex(row => row.uid === account.uid) : -1;
+ const weekMinutes = place >= 0 ? Math.floor(community!.ranking[place].seconds / 60) : 0;
  const opened = useLastExercise();
  const practicedId = account?.lastPractice?.lessonId;
  const practicedModule = practicedId ? courses.find(course => course.lessons.some(lesson => lesson.id === practicedId)) : undefined;
@@ -66,7 +70,12 @@ export default function HomePage() {
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#151515f5_0%,#151515e6_38%,#15151580_65%,#15151520_100%)] max-xs:bg-[#151515cc]"/>
     <div className="relative z-10 w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
-     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{practicedModule ? 'TU ÚLTIMO EJERCICIO' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
+     {/* Con sesión: tu semana primero y, debajo, la lección para hoy. */}
+     {account && community && <p className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-soft">
+      <span className="flex items-center gap-1.5"><Clock size={16} className="text-accent"/>Esta semana vas <b className="text-fg tabular-nums">{weekMinutes >= 60 ? `${Math.floor(weekMinutes / 60)} h ${weekMinutes % 60} min` : `${weekMinutes} min`}</b></span>
+      {place >= 0 && <Link to={ROUTES.community} className="flex items-center gap-1.5 hover:text-fg"><Trophy size={16} className="text-accent"/>Puesto <b className="text-accent">{place + 1}.º</b></Link>}
+     </p>}
+     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{account ? 'PRACTICA ESTO HOY' : practicedModule ? 'TU ÚLTIMO EJERCICIO' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
      <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">{lastLesson.title}</h2>
      <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{lastLesson.description}</p>
      <div className="mt-6 mb-4.5"/>
