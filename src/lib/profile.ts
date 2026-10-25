@@ -11,7 +11,6 @@ import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
  * «Actualizar» lo vuelve a leer.
  */
 export type ProfileLesson = { id: string; title: string; module: string; moduleId: string; days: number; attempts: number; seconds: number; bpmMax: number; bpmLast: number; target?: { min: number; max: number }; lastAt: number };
-export type ProfileAttempt = { at: number; lessonId: string; title: string; seconds: number; bpm: number; rounds: number };
 export type UserProfile = {
   at: number;
   uid: string;
@@ -26,8 +25,6 @@ export type UserProfile = {
   /** Últimas 8 semanas, de la más antigua a la actual. */
   weeks: { start: string; minutes: number }[];
   lessons: ProfileLesson[];
-  /** Últimos 30 intentos, del más reciente al más antiguo. */
-  recent: ProfileAttempt[];
 };
 
 const CACHE_MS = 60 * 60 * 1000;
@@ -45,7 +42,6 @@ async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
   const weekKeys = Array.from({ length: 7 }, (_, index) => addDays(monday, index));
   const week = Array<number>(7).fill(0);
   const lessons = new Map<string, ProfileLesson>();
-  const recent: ProfileAttempt[] = [];
   for (const day of days) {
     const minutes = (day.seconds ?? 0) / 60;
     const slot = weeks.reduce((found, item, index) => day.date >= item.start ? index : found, -1);
@@ -64,7 +60,6 @@ async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
         const at = attempt.startedAt.toMillis();
         row.bpmMax = Math.max(row.bpmMax, attempt.bpm ?? 0);
         if (at >= row.lastAt) { row.lastAt = at; row.bpmLast = attempt.bpm ?? 0; }
-        recent.push({ at, lessonId, title: row.title, seconds: attempt.seconds ?? 0, bpm: attempt.bpm ?? 0, rounds: attempt.rounds ?? 0 });
       }
     }
   }
@@ -81,7 +76,6 @@ async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
     week: week.map(Math.round),
     weeks: weeks.map(item => ({ ...item, minutes: Math.round(item.minutes) })),
     lessons: [...lessons.values()].sort((a, b) => b.seconds - a.seconds),
-    recent: recent.sort((a, b) => b.at - a.at).slice(0, 30),
   };
 }
 
