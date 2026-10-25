@@ -1,10 +1,11 @@
 'use client';
 
-import { CalendarDays, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, RefreshCw, Repeat, Target } from 'lucide-react';
+import { CalendarDays, ChevronDown, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, RefreshCw, Repeat, Target } from 'lucide-react';
 import { BackLink, Button, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
 import { useHydrated, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
-import { useUserProfile, type UserProfile } from '@/lib/profile';
+import { useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
+import { courses } from '@/data/questMock';
 import { initials, toneOf } from '@/lib/avatar';
 import { ROUTES } from '@/lib/routes';
 import { timeAgo } from '@/lib/timeAgo';
@@ -19,6 +20,21 @@ import { DAYS, time } from '@/views/Analytics';
  */
 const dateLabel = (key?: string) => key ? new Date(`${key}T12:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const at = (ms: number) => new Date(ms).toLocaleString('es', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+const RECENT = 10;
+const imageOf = new Map(courses.map(course => [course.id, course.image]));
+
+/** Lecciones agrupadas por módulo, el de más tiempo primero (las lecciones ya vienen ordenadas por tiempo). */
+function groupByModule(lessons: ProfileLesson[]) {
+    const modules = new Map<string, { id: string; title: string; image?: string; seconds: number; attempts: number; lastAt: number; lessons: ProfileLesson[] }>();
+    for (const lesson of lessons) {
+        const id = lesson.moduleId || lesson.module;
+        const row = modules.get(id) ?? modules.set(id, { id, title: lesson.module, image: imageOf.get(lesson.moduleId), seconds: 0, attempts: 0, lastAt: 0, lessons: [] }).get(id)!;
+        row.seconds += lesson.seconds; row.attempts += lesson.attempts; row.lastAt = Math.max(row.lastAt, lesson.lastAt);
+        row.lessons.push(lesson);
+    }
+    return [...modules.values()].sort((a, b) => b.seconds - a.seconds);
+}
 
 /** Barras verticales de un solo color, con tooltip por barra y la cifra de la más alta. */
 function Columns({ rows, highlight }: { rows: { label: string; tip: string; minutes: number }[]; highlight: number }) {
@@ -71,6 +87,8 @@ export default function UserProfilePage() {
 
     const todayIndex = (new Date().getDay() + 6) % 7;
     const thisWeek = data.week.reduce((sum, minutes) => sum + minutes, 0);
+    const modules = groupByModule(data.lessons);
+    const recent = data.recent.slice(0, RECENT);
     return <>
         {back}
         <Header profile={data} onRefresh={refresh}/>
@@ -95,32 +113,45 @@ export default function UserProfilePage() {
         </div>
 
         <Card className="mb-5">
-            <SectionTitle title="Lecciones" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Todo lo que practicó, por tiempo. BPM máximo y el último, frente al sugerido.</p>
-            {data.lessons.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul>{data.lessons.map(lesson => {
-                const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
-                return <li key={lesson.id} className="grid gap-2 border-t border-line-soft py-3 first:border-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-6">
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-fg-soft">{lesson.title}</p>
-                        <p className="truncate text-2xs text-muted">{lesson.module} · {lesson.days} {lesson.days === 1 ? 'día' : 'días'} · {lesson.attempts} {lesson.attempts === 1 ? 'intento' : 'intentos'}</p>
-                    </div>
-                    <p className="flex items-center gap-1.5 text-2xs text-muted">
-                        <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
-                        <span>máx <b className={cn('tabular-nums', reached ? 'text-success' : 'text-fg-soft')}>{lesson.bpmMax || '—'}</b> · último <b className="tabular-nums text-fg-soft">{lesson.bpmLast || '—'}</b></span>
-                        {lesson.target && <span className="text-subtle">/ {lesson.target.min}–{lesson.target.max}</span>}
-                    </p>
-                    <p className="flex items-baseline gap-1.5 md:justify-end"><b className="text-sm tabular-nums text-fg">{time(lesson.seconds)}</b>{lesson.lastAt > 0 && <span className="text-2xs text-muted">· {timeAgo(lesson.lastAt)}</span>}</p>
-                </li>;
-            })}</ul>}
+            <SectionTitle title="Módulos" className="mb-1"/>
+            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Ábrelo para ver cada lección: BPM máximo y el último, frente al sugerido.</p>
+            {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="flex flex-col gap-2">{modules.map(module => <li key={module.id}>
+                <details className="group rounded-xl border border-line-soft">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 p-2 pr-4">
+                        {module.image ? <img src={module.image} alt="" width={96} height={64} loading="lazy" decoding="async" className="h-12 w-18 shrink-0 rounded-lg bg-sunken object-cover"/> : <span className="h-12 w-18 shrink-0 rounded-lg bg-sunken"/>}
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold text-fg-soft">{module.title}</p>
+                            <p className="truncate text-2xs text-muted">{module.lessons.length} {module.lessons.length === 1 ? 'lección' : 'lecciones'} · {module.attempts} {module.attempts === 1 ? 'intento' : 'intentos'}{module.lastAt > 0 && ` · ${timeAgo(module.lastAt)}`}</p>
+                        </div>
+                        <b className="text-sm tabular-nums text-fg">{time(module.seconds)}</b>
+                        <ChevronDown size={16} className="shrink-0 text-muted transition-transform group-open:rotate-180"/>
+                    </summary>
+                    <ul className="px-4 pb-1">{module.lessons.map(lesson => {
+                        const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
+                        return <li key={lesson.id} className="grid gap-1 border-t border-line-soft py-2.5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] md:items-center md:gap-6">
+                            <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-fg-soft">{lesson.title}</p>
+                                <p className="truncate text-2xs text-muted">{lesson.days} {lesson.days === 1 ? 'día' : 'días'} · {lesson.attempts} {lesson.attempts === 1 ? 'intento' : 'intentos'}</p>
+                            </div>
+                            <p className="flex items-center gap-1.5 text-2xs text-muted">
+                                <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
+                                <span>máx <b className={cn('tabular-nums', reached ? 'text-success' : 'text-fg-soft')}>{lesson.bpmMax || '—'}</b> · último <b className="tabular-nums text-fg-soft">{lesson.bpmLast || '—'}</b></span>
+                                {lesson.target && <span className="text-subtle">/ {lesson.target.min}–{lesson.target.max}</span>}
+                            </p>
+                            <p className="text-xs tabular-nums text-fg-soft md:text-right">{time(lesson.seconds)}</p>
+                        </li>;
+                    })}</ul>
+                </details>
+            </li>)}</ul>}
         </Card>
 
         {admin && <Card>
             <SectionTitle title="Últimos intentos" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Los {data.recent.length} más recientes, con su hora exacta.</p>
+            <p className="mb-3 text-xs text-muted">Los {recent.length} más recientes, con su hora exacta.</p>
             <div className="overflow-x-auto">
                 <table className="w-full min-w-120 text-left text-xs">
                     <thead className="text-2xs text-subtle"><tr><th className="py-2 font-semibold">Cuándo</th><th className="font-semibold">Lección</th><th className="text-right font-semibold">Duración</th><th className="text-right font-semibold">BPM</th><th className="text-right font-semibold">Rondas</th></tr></thead>
-                    <tbody>{data.recent.map(attempt => <tr key={`${attempt.at}-${attempt.lessonId}`} className="border-t border-line-soft text-fg-soft">
+                    <tbody>{recent.map(attempt => <tr key={`${attempt.at}-${attempt.lessonId}`} className="border-t border-line-soft text-fg-soft">
                         <td className="py-2 whitespace-nowrap text-muted">{at(attempt.at)}</td>
                         <td className="max-w-60 truncate pr-3">{attempt.title}</td>
                         <td className="text-right tabular-nums">{time(attempt.seconds)}</td>
