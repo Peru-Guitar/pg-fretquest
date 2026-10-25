@@ -27,7 +27,14 @@ const TOP = 12;
 
 const PODIUM = ['h-24 border-t-2 border-gold bg-white/5 text-gold', 'h-16 border-t-2 border-line-strong bg-white/5 text-fg-soft', 'h-12 border-t-2 border-accent/60 bg-white/5 text-accent'];
 
-type RankEntry = { name: string; tone: string; you: boolean; total: number; active: number };
+type RankEntry = { name: string; tone: string; you: boolean; seconds: number; active: number };
+
+/** Tiempo de la semana: «2 h 15 min», «45 min». */
+const hoursLabel = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    return hours > 0 ? `${hours} h ${minutes % 60} min` : `${minutes} min`;
+};
 
 
 function RankRow({ row, place }: { row: RankEntry; place: number }) {
@@ -35,7 +42,7 @@ function RankRow({ row, place }: { row: RankEntry; place: number }) {
         <span className="w-7 font-mono text-sm text-muted">{place}</span>
         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', row.tone)}>{initials(row.name)}</span>
         <span className={cn('min-w-0 flex-1 truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
-        <span className="text-right text-2xs leading-tight text-muted"><b className="block font-mono text-base text-fg">{row.total}</b>{row.active} días</span>
+        <span className="text-right text-2xs leading-tight text-muted"><b className="block font-mono text-base text-fg">{hoursLabel(row.seconds)}</b>{row.active} días</span>
     </li>;
 }
 
@@ -81,7 +88,7 @@ export default function CommunityPage() {
 
         <Card className="mb-6">
             <SectionTitle title="Ranking de la semana" className="mb-1"/>
-            <Caption>Por prácticas completadas; en empate, por días distintos. Se reinicia cada lunes · actualizado {timeAgo(data.at)}.</Caption>
+            <Caption>Por tiempo practicado en la semana, sin importar el nivel; en empate, por días distintos. Se reinicia cada lunes · actualizado {timeAgo(data.at)}.</Caption>
 
             {/* Podio: 2º · 1º · 3º */}
             <ol className="mt-8 grid grid-cols-3 items-end gap-3 md:gap-5">{[1, 0, 2].map(place => {
@@ -91,7 +98,7 @@ export default function CommunityPage() {
                     {place === 0 && <Crown size={24} className="mb-1 fill-gold text-gold"/>}
                     <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-20 text-xl ring-gold/60' : 'size-16 text-lg ring-line-strong')}>{initials(row.name)}</span>
                     <b className={cn('mt-2.5 max-w-full truncate', row.you ? 'text-accent' : 'text-fg')}>{row.you ? `${row.name} (tú)` : row.name}</b>
-                    <span className="text-xs text-muted"><b className="font-mono text-fg-soft">{row.total}</b> prácticas · {row.active} días</span>
+                    <span className="text-xs text-muted"><b className="font-mono text-fg-soft">{hoursLabel(row.seconds)}</b> · {row.active} días</span>
                     <span className={cn('mt-3 grid w-full place-items-center rounded-t-xl font-mono text-2xl font-black', PODIUM[place])}>{place + 1}</span>
                 </li>;
             })}</ol>
