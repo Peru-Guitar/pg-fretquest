@@ -548,7 +548,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'tresillos',
         picking: 'tapping',
         artist: 'michael-romeo',
-        bpm: 80,
+        bpm: 120,
         ...withSections(romeoBars.map((pattern, index) => ({ title: `Compás ${index + 1}`, pattern }))),
     },
     'licks-phrasing-vinnie-01': {
