@@ -1,37 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Activity, Clock, Loader2, Repeat, Users } from 'lucide-react';
-import { Card, PageTitle, Stat } from '@/components/ui';
-import { useHydrated } from '@/lib/router';
-import { isAdmin, useAccount } from '@/lib/account';
-import { readAnalytics, type AnalyticsData, type ModuleRow, type Ranked } from '@/lib/analytics';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Activity, CalendarCheck, ChevronRight, Clock, Gauge, Loader2, Repeat, Target, Users } from 'lucide-react';
+import { Card, PageTitle, SectionTitle, Stat } from '@/components/ui';
+import { Tip } from '@/components/ui/Tip';
+import { Link, useHydrated } from '@/lib/router';
+import { isAdmin, levelLabel, useAccount } from '@/lib/account';
+import { readAnalytics, type AnalyticsData, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
+import { initials, toneOf } from '@/lib/avatar';
 import { weekStartKey } from '@/lib/progressDb';
+import { userProfileUrl } from '@/lib/routes';
 import { cn } from '@/lib/cn';
 
 /**
  * Analytics: solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
- * Cada módulo con sus lecciones. El módulo da solo cifras (usuarios sobre los activos y tiempo invertido);
- * las barras de cada lección son su parte dentro del módulo: qué lección se llevó más.
+ * Arriba, la semana en cifras; luego cuándo y cuánto se practica, quiénes, y cada módulo con sus lecciones
+ * (tiempo, BPM real frente al sugerido y quiénes la practicaron). Cada cara lleva al perfil del usuario.
  */
-const time = (seconds: number) => seconds < 60 ? `${seconds} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
-/** Módulo y lecciones comparten columnas para que las barras queden alineadas. */
+export const time = (seconds: number) => seconds < 60 ? `${Math.round(seconds)} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
+/** Módulo y lecciones comparten columnas para que las cifras queden alineadas. */
 const COLUMNS = 'grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-8';
+/** Avatares visibles por lección; el resto se resume en «+N». */
+const FACES = 5;
 const share = (part: number, total: number) => total > 0 ? Math.round(part / total * 100) : 0;
+export const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-function Bar({ icon: Icon, label, value, pct, tone }: { icon: typeof Users; label: string; value: string; pct: number; tone: 'users' | 'time' }) {
-    return <div className="min-w-0">
-        <div className="mb-1.5 flex items-center justify-between gap-2 text-2xs text-muted">
-            <span className="flex items-center gap-1.5"><Icon size={13} className={tone === 'users' ? 'text-accent' : 'text-success'}/>{label}</span>
-            <span><b className="text-fg tabular-nums">{value}</b> · {pct}%</span>
-        </div>
-        <div className={'h-1.5 overflow-hidden rounded-full bg-line'} role="progressbar" aria-label={label} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className={cn('h-full rounded-full transition-[width] duration-700 ease-out', tone === 'users' ? 'bg-blue' : 'bg-success')} style={{ width: `${Math.max(pct, 2)}%` }}/>
-        </div>
-    </div>;
-}
-
-/** Dato del módulo: sin barra, solo la cifra. */
+/** Dato del módulo: solo la cifra. */
 function Figure({ icon: Icon, tone, value, label }: { icon: typeof Users; tone: 'users' | 'time'; value: string; label: string }) {
     return <div className="flex items-center gap-3">
         <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', tone === 'users' ? 'bg-blue/12 text-accent' : 'bg-success/12 text-success')}><Icon size={18}/></span>
@@ -39,7 +33,37 @@ function Figure({ icon: Icon, tone, value, label }: { icon: typeof Users; tone: 
     </div>;
 }
 
-function LessonRow({ lesson, place, module }: { lesson: Ranked; place: number; module: ModuleRow }) {
+const FACE = 'group/face relative grid size-8 place-items-center rounded-full text-3xs font-black text-white ring-2 ring-surface transition-transform duration-150 hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:-translate-y-0.5 focus-visible:outline-none';
+
+/** Quiénes practicaron la lección: hasta 5 caras superpuestas (más tiempo primero) y «+N» con el resto. Cada cara abre su perfil. */
+function Faces({ people }: { people: Participant[] }) {
+    const shown = people.slice(0, FACES);
+    const rest = people.slice(FACES);
+    return <ul className="flex items-center -space-x-2">
+        {shown.map(person => <li key={person.uid}>
+            <Link to={userProfileUrl(person.uid)} aria-label={`${person.name}: ${time(person.seconds)}`} className={cn(FACE, toneOf(person.uid))}>
+                {initials(person.name)}
+                <Tip>{person.name} <span className="text-muted">· {time(person.seconds)}</span></Tip>
+            </Link>
+        </li>)}
+        {rest.length > 0 && <li tabIndex={0} aria-label={`${rest.length} más`} className={cn(FACE, 'bg-raised text-fg-soft')}>
+            +{rest.length}
+            <Tip><span className="grid gap-0.5 text-left">{rest.map(person => <span key={person.uid}>{person.name} <span className="text-muted">· {time(person.seconds)}</span></span>)}</span></Tip>
+        </li>}
+    </ul>;
+}
+
+/** BPM real frente al rango sugerido: por debajo del mínimo, la lección quizá se les hace cuesta arriba. */
+function TempoLine({ tempo }: { tempo: Tempo }) {
+    const low = tempo.avg < tempo.min;
+    return <p className="flex items-center gap-1.5 text-2xs text-muted">
+        <Gauge size={12} className={low ? 'text-gold' : 'text-accent'}/>
+        <span><b className={cn('tabular-nums', low ? 'text-gold' : 'text-fg-soft')}>{tempo.avg}</b> BPM prom. · máx <b className="tabular-nums text-fg-soft">{tempo.max}</b></span>
+        <span className="text-subtle">/ sugerido {tempo.min}–{tempo.target}</span>
+    </p>;
+}
+
+function LessonRow({ lesson, place }: { lesson: Ranked; place: number }) {
     return <li className={cn(COLUMNS, 'border-t border-line-soft py-3.5')}>
         <div className="flex min-w-0 items-center gap-3">
             <span className="w-5 shrink-0 font-mono text-xs text-subtle">{place}</span>
@@ -48,14 +72,21 @@ function LessonRow({ lesson, place, module }: { lesson: Ranked; place: number; m
                 <p className="flex items-center gap-1 text-2xs text-muted"><Repeat size={11}/>{lesson.attempts} {lesson.attempts === 1 ? 'intento' : 'intentos'}</p>
             </div>
         </div>
-        <Bar icon={Users} label="Usuarios" value={String(lesson.users)} pct={share(lesson.users, module.users)} tone="users"/>
-        <Bar icon={Clock} label="Tiempo" value={time(lesson.seconds)} pct={share(lesson.seconds, module.seconds)} tone="time"/>
+        {/* Misma sangría que las cifras del módulo (icono de 40 px + hueco), para que todo quede en columna. */}
+        <div className="flex items-center gap-3 md:pl-13">
+            <Faces people={lesson.participants}/>
+            <span className="text-2xs text-muted">{lesson.users} {lesson.users === 1 ? 'persona' : 'personas'}</span>
+        </div>
+        <div className="grid gap-0.5 md:pl-13">
+            <p className="flex items-baseline gap-1.5"><b className="text-base text-fg tabular-nums">{time(lesson.seconds)}</b><span className="text-2xs text-muted">en total</span></p>
+            {lesson.tempo && <TempoLine tempo={lesson.tempo}/>}
+        </div>
     </li>;
 }
 
 function ModuleCard({ module, place, data }: { module: ModuleRow; place: number; data: AnalyticsData }) {
     return <Card className="overflow-hidden">
-        {/* Cabecera en una fila: módulo y sus datos, sin barras (en móvil, apilados). */}
+        {/* Cabecera en una fila: módulo y sus datos (en móvil, apilados). */}
         <div className={cn(COLUMNS, 'pb-5')}>
             <div className="flex min-w-0 items-center gap-4">
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-line bg-raised">
@@ -71,8 +102,73 @@ function ModuleCard({ module, place, data }: { module: ModuleRow; place: number;
             <Figure icon={Clock} tone="time" value={time(module.seconds)} label="invertidos en el módulo"/>
         </div>
         <ul>
-            {module.lessons.map((lesson, index) => <LessonRow key={lesson.id} lesson={lesson} place={index + 1} module={module}/>)}
+            {module.lessons.map((lesson, index) => <LessonRow key={lesson.id} lesson={lesson} place={index + 1}/>)}
         </ul>
+    </Card>;
+}
+
+/** Cuándo se practica: minutos por día y hora (hora del navegador). Un solo tono, más intenso = más minutos. */
+function Heatmap({ heat }: { heat: number[][] }) {
+    const max = Math.max(1, ...heat.flat());
+    const peak = heat.flatMap((row, day) => row.map((minutes, hour) => ({ day, hour, minutes }))).sort((a, b) => b.minutes - a.minutes)[0];
+    return <Card>
+        <SectionTitle title="Horario de práctica" className="mb-1"/>
+        <p className="mb-4 text-xs text-muted">{peak && peak.minutes > 0 ? <>Pico: <b className="text-fg-soft">{DAYS[peak.day]} {peak.hour}:00–{peak.hour + 1}:00</b> · buen momento para publicar o recordar.</> : 'Sin práctica esta semana.'}</p>
+        <div className="overflow-x-auto">
+            <div className="grid min-w-120 grid-cols-[2.25rem_repeat(24,minmax(0,1fr))] gap-0.5">
+                {heat.map((row, day) => <div key={day} className="contents">
+                    <span className="self-center text-3xs text-muted">{DAYS[day]}</span>
+                    {row.map((minutes, hour) => <span key={hour} title={`${DAYS[day]} ${hour}:00 · ${minutes} min`} className="aspect-square rounded-[3px] bg-line-soft" style={minutes > 0 ? { backgroundColor: `color-mix(in oklab, var(--color-blue) ${Math.round(20 + minutes / max * 80)}%, transparent)` } : undefined}/>)}
+                </div>)}
+                <span/>
+                {Array.from({ length: 24 }, (_, hour) => <span key={hour} className="text-center text-4xs text-subtle">{hour % 6 === 0 ? hour : ''}</span>)}
+            </div>
+        </div>
+    </Card>;
+}
+
+/** Reparto en tramos: barras horizontales de un solo color, con la cifra al lado. */
+function Buckets({ title, caption, rows, unit }: { title: string; caption: ReactNode; rows: { label: string; count: number }[]; unit: [string, string] }) {
+    const max = Math.max(1, ...rows.map(row => row.count));
+    return <Card>
+        <SectionTitle title={title} className="mb-1"/>
+        <p className="mb-4 text-xs text-muted">{caption}</p>
+        <ul className="grid gap-2.5">{rows.map(row => <li key={row.label} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 text-xs">
+            <span className="text-muted">{row.label}</span>
+            <span className="h-2 overflow-hidden rounded-full bg-line-soft"><span className="block h-full rounded-full bg-blue" style={{ width: `${row.count / max * 100}%` }}/></span>
+            <span className="w-20 text-right"><b className="tabular-nums text-fg">{row.count}</b> <span className="text-muted">{row.count === 1 ? unit[0] : unit[1]}</span></span>
+        </li>)}</ul>
+    </Card>;
+}
+
+function LevelCard({ data }: { data: AnalyticsData }) {
+    return <Card>
+        <SectionTitle title="Por nivel" className="mb-1"/>
+        <p className="mb-4 text-xs text-muted">Qué practica cada nivel: si a uno le falta contenido, aquí se nota.</p>
+        <ul className="grid gap-3">{data.byLevel.map(row => <li key={row.level ?? 'none'} className="flex items-center gap-3 border-t border-line-soft pt-3 first:border-0 first:pt-0">
+            <span className="w-24 shrink-0 text-sm font-bold text-fg-soft">{row.level ? levelLabel(row.level) : 'Sin nivel'}</span>
+            <span className="min-w-0 flex-1 text-2xs text-muted">{row.top ? <>Lo más practicado: <b className="text-fg-soft">{row.top.title}</b></> : '—'}</span>
+            <span className="shrink-0 text-right text-2xs text-muted"><b className="block text-sm tabular-nums text-fg">{time(row.seconds)}</b>{row.people} {row.people === 1 ? 'persona' : 'personas'}</span>
+        </li>)}</ul>
+    </Card>;
+}
+
+/** Todos los que practicaron esta semana, por tiempo. Cada fila abre su perfil. */
+function PeopleCard({ data }: { data: AnalyticsData }) {
+    return <Card>
+        <SectionTitle title="Quiénes practicaron" className="mb-1"/>
+        <p className="mb-3 text-xs text-muted">Por tiempo esta semana. Toca a alguien para ver su perfil.</p>
+        <ul className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">{data.people.map(person => <li key={person.uid}>
+            <Link to={userProfileUrl(person.uid)} className="group flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/4">
+                <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>
+                <span className="min-w-0 flex-1">
+                    <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{person.name}</b>
+                    <span className="text-2xs text-muted">{person.level ? levelLabel(person.level) : 'Sin nivel'} · {person.days} {person.days === 1 ? 'día' : 'días'} · {person.completed} con meta</span>
+                </span>
+                <b className="shrink-0 text-sm tabular-nums text-fg">{time(person.seconds)}</b>
+                <ChevronRight size={15} className="shrink-0 text-subtle group-hover:text-accent"/>
+            </Link>
+        </li>)}</ul>
     </Card>;
 }
 
@@ -95,11 +191,21 @@ export default function AnalyticsPage() {
     return <>
         <PageTitle eyebrow="ADMIN" title="Analytics" text={`Usuarios y lo más practicado esta semana (desde el lunes ${weekStartKey()}).`}/>
         {error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : <div className="grid gap-5">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
-                <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo practicado"/>
+                <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo practicado" detail={`${data.sessions.avg} min por persona y día`}/>
+                <Stat icon={<Target size={20}/>} value={`${share(data.goal.completed, data.goal.days)}%`} label="Días con la meta cumplida" detail={`${data.goal.completed} de ${data.goal.days} días`}/>
             </div>
+            {data.people.length > 0 && <>
+                <Heatmap heat={data.heat}/>
+                <div className="grid gap-5 lg:grid-cols-2">
+                    <Buckets title="Sesión típica" caption={<>Minutos por persona en un día. Promedio: <b className="text-fg-soft">{data.sessions.avg} min</b>.</>} rows={data.sessions.buckets} unit={['día', 'días']}/>
+                    <Buckets title="Constancia" caption={<><CalendarCheck size={12} className="mr-1 inline text-accent"/>Cuántos días practicó cada persona esta semana.</>} rows={data.consistency} unit={['persona', 'personas']}/>
+                </div>
+                <LevelCard data={data}/>
+                <PeopleCard data={data}/>
+            </>}
             {data.modules.length === 0
                 ? <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>
                 : data.modules.map((module, index) => <ModuleCard key={module.id} module={module} place={index + 1} data={data}/>)}

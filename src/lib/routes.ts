@@ -19,6 +19,7 @@ export const ROUTES = {
   metronome: "/herramientas/metronomo",
   about: "/acerca-de",
   analytics: "/analytics",
+  userProfile: "/perfil",
 };
 
 /** Slug del módulo en la URL. */
@@ -85,3 +86,5 @@ export const practiceUrl = (moduleId: string, lessonId?: string, query?: string)
 /** Sala de práctica del ejercicio (`…/ejercicio`); la página de la lección queda para su objetivo. */
 export const exerciseUrl = (moduleId: string, lessonId: string, query?: string) =>
   `${lessonUrl(moduleId, lessonId)}/ejercicio${query ? `?${query}` : ""}`;
+/** Perfil de un usuario (Comunidad; el admin ve además sus datos privados). Va por `?uid=` porque la exportación estática no tiene rutas por usuario. */
+export const userProfileUrl = (uid: string) => `${ROUTES.userProfile}?uid=${encodeURIComponent(uid)}`;

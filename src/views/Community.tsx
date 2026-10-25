@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES, practiceUrl } from '@/lib/routes';
+import { ROUTES, practiceUrl, userProfileUrl } from '@/lib/routes';
 import { Link, useHydrated } from '@/lib/router';
 import { Activity, Crown, Flame, Guitar, Loader2, LogIn, Users } from 'lucide-react';
 import { Card, Caption, PageTitle, SectionTitle } from '@/components/ui';
@@ -9,15 +9,12 @@ import { LEVELS, levelLabel, useAccount } from '@/lib/account';
 import { useCommunity } from '@/lib/community';
 import { timeAgo } from '@/lib/timeAgo';
 import { cn } from '@/lib/cn';
+import { initials, toneOf } from '@/lib/avatar';
 
 /**
  * Comunidad: el progreso de todos esta semana, con datos reales (ver `lib/community`).
  * Se necesita sesión iniciada para leerlos.
  */
-const FACE_TONES = ['bg-[#7a2e26]', 'bg-[#7a5a1f]', 'bg-[#2b4f6e]', 'bg-[#2f5e38]', 'bg-[#4f3473]', 'bg-[#733445]'];
-/** Color estable por usuario. */
-const toneOf = (uid: string) => FACE_TONES[[...uid].reduce((sum, char) => sum + char.charCodeAt(0), 0) % FACE_TONES.length];
-const initials = (name: string) => name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
 const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const lessonsById = new Map(courses.flatMap(course => course.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice').map(lesson => [lesson.id, { lesson, moduleId: course.id }] as const)));
@@ -27,7 +24,7 @@ const TOP = 12;
 
 const PODIUM = ['h-24 border-t-2 border-gold bg-white/5 text-gold', 'h-16 border-t-2 border-line-strong bg-white/5 text-fg-soft', 'h-12 border-t-2 border-accent/60 bg-white/5 text-accent'];
 
-type RankEntry = { name: string; tone: string; you: boolean; seconds: number; active: number };
+type RankEntry = { uid: string; name: string; tone: string; you: boolean; seconds: number; active: number };
 
 /** Tiempo de la semana: «2 h 15 min», «45 min». */
 const hoursLabel = (seconds: number) => {
@@ -38,12 +35,12 @@ const hoursLabel = (seconds: number) => {
 
 
 function RankRow({ row, place }: { row: RankEntry; place: number }) {
-    return <li className={cn('flex items-center gap-3 rounded-lg border px-3.5 py-3', row.you ? 'border-blue/50 bg-blue/10' : 'border-line bg-white/2')}>
+    return <li><Link to={userProfileUrl(row.uid)} className={cn('group flex items-center gap-3 rounded-lg border px-3.5 py-3 transition-colors', row.you ? 'border-blue/50 bg-blue/10 hover:bg-blue/15' : 'border-line bg-white/2 hover:border-line-strong hover:bg-white/5')}>
         <span className="w-7 font-mono text-sm text-muted">{place}</span>
         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', row.tone)}>{initials(row.name)}</span>
         <span className={cn('min-w-0 flex-1 truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
         <span className="text-right text-2xs leading-tight text-muted"><b className="block font-mono text-base text-fg">{hoursLabel(row.seconds)}</b>{row.active} días</span>
-    </li>;
+    </Link></li>;
 }
 
 export default function CommunityPage() {
@@ -94,13 +91,13 @@ export default function CommunityPage() {
             <ol className="mt-8 grid grid-cols-3 items-end gap-3 md:gap-5">{[1, 0, 2].map(place => {
                 const row = ranking[place];
                 if (!row) return <li key={place}/>;
-                return <li key={row.uid} className="flex flex-col items-center text-center">
+                return <li key={row.uid}><Link to={userProfileUrl(row.uid)} className="group flex flex-col items-center text-center">
                     {place === 0 && <Crown size={24} className="mb-1 fill-gold text-gold"/>}
                     <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-20 text-xl ring-gold/60' : 'size-16 text-lg ring-line-strong')}>{initials(row.name)}</span>
-                    <b className={cn('mt-2.5 max-w-full truncate', row.you ? 'text-accent' : 'text-fg')}>{row.you ? `${row.name} (tú)` : row.name}</b>
+                    <b className={cn('mt-2.5 max-w-full truncate group-hover:underline', row.you ? 'text-accent' : 'text-fg')}>{row.you ? `${row.name} (tú)` : row.name}</b>
                     <span className="text-xs text-muted"><b className="font-mono text-fg-soft">{hoursLabel(row.seconds)}</b> · {row.active} días</span>
                     <span className={cn('mt-3 grid w-full place-items-center rounded-t-xl font-mono text-2xl font-black', PODIUM[place])}>{place + 1}</span>
-                </li>;
+                </Link></li>;
             })}</ol>
 
             {/* Del 4º al 12º */}
