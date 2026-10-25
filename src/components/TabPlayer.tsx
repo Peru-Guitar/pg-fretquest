@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Repeat, SkipBack, SkipForward, Square, Volume2 } from "lucide-react";
-import { play as playNote, prepare, silence } from "@/lib/audio/guitar";
+import { harmonic, play as playNote, prepare, silence, slide } from "@/lib/audio/guitar";
 import { createLocalStore } from "@/lib/localStore";
 import { parseTab, pickDirections, type Picking } from "@/lib/domain/tab";
 
@@ -66,9 +66,19 @@ export function TabPlayer({ tab, bpm, notesPerBeat = 4, picking, cursor, marks, 
   }, [bpm, loop]);
 
   const stepDuration = () => 60 / bpmRef.current / notesPerBeat;
-  const sound = (i: number) => {
+  /** `alone`: nota suelta (siguiente/anterior), así la destino de un slide también se oye. */
+  const sound = (i: number, alone = false) => {
     const col = parsed.steps[i];
-    for (const row of parsed.rows) for (const n of row.notes) if (n.col === col) playNote(n.string, n.fret, stepDuration());
+    for (const row of parsed.rows)
+      for (const n of row.notes) {
+        if (n.col !== col) continue;
+        if (n.harmonic) harmonic(n.string, n.fret, stepDuration() * 4);
+        else if (n.slideTo !== undefined && !alone) {
+          // La nota inicial ocupa sus pasos hasta la destino; desliza al final y la destino sigue sonando un paso.
+          const steps = Math.max(1, parsed.steps.indexOf(n.slideToCol!) - i);
+          slide(n.string, n.fret, n.slideTo, steps * stepDuration() * 0.6, (steps + 1) * stepDuration());
+        } else if (!n.slid || alone) playNote(n.string, n.fret, stepDuration());
+      }
   };
 
   function stop() {
@@ -117,7 +127,7 @@ export function TabPlayer({ tab, bpm, notesPerBeat = 4, picking, cursor, marks, 
     const next = step === null ? (delta > 0 ? 0 : n - 1) : (step + delta + n) % n;
     setStep(next);
     await prepare().catch(() => {});
-    sound(next);
+    sound(next, true);
   }
 
   // Detiene el sonido al salir de la pantalla (p. ej. al empezar una sesión).
