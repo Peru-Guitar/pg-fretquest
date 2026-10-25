@@ -66,10 +66,10 @@ export default function HomePage() {
   </section>}
 
   <div>
-   <section className="relative flex min-h-97 items-center overflow-hidden rounded-xl border border-line-strong bg-[linear-gradient(120deg,#232323,#151515_55%,#111111)] 2xl:min-h-105">
+   <section className="relative flex min-h-97 flex-col overflow-hidden rounded-xl border border-line-strong bg-[linear-gradient(120deg,#232323,#151515_55%,#111111)] 2xl:min-h-105">
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#151515f5_0%,#151515e6_38%,#15151580_65%,#15151520_100%)] max-xs:bg-[#151515cc]"/>
-    <div className="relative z-10 w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
+    <div className="relative z-10 flex flex-1 items-center"><div className="w-full max-w-180 p-6 xs:w-[80%] xs:p-7 lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
      {/* Con sesión: tu semana primero y, debajo, la lección para hoy. */}
      {account && community && <p className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-soft">
       <span className="flex items-center gap-1.5"><Clock size={16} className="text-accent"/>Esta semana vas <b className="text-fg tabular-nums">{weekMinutes >= 60 ? `${Math.floor(weekMinutes / 60)} h ${weekMinutes % 60} min` : `${weekMinutes} min`}</b></span>
@@ -84,9 +84,9 @@ export default function HomePage() {
       {practicedModule && plan && plan.next.lesson.id !== lastLesson.id && <LinkButton to={practiceUrl(plan.next.moduleId, plan.next.lesson.id)} variant="secondary">Sigue en tu plan: {plan.next.lesson.title}</LinkButton>}
      </div>
      {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
-    </div>
+    </div></div>
+    <CommunityPulse className="relative z-10 rounded-none border-x-0 border-b-0 border-white/10 bg-black/40 backdrop-blur-sm"/>
    </section>
-   <CommunityPulse/>
   </div>
 
   <SectionTitle title="Últimas lecciones agregadas" to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
