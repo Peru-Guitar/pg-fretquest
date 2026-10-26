@@ -2,6 +2,15 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.2.1',
+        date: '2026-10-25',
+        notes: [
+            'Los ejercicios de digitación ahora van en corcheas y empiezan a 60 BPM.',
+            'Ahora puedes elegir libremente cuántas rondas practicar.',
+            'El metrónomo se escucha más fuerte y la guitarra del tab un poco más suave.',
+        ],
+    },
+    {
         version: '0.2.0',
         date: '2026-10-25',
         notes: [
