@@ -30,7 +30,7 @@ function click(at: number, accent: boolean) {
   const gain = ac.createGain();
   osc.frequency.value = accent ? 1600 : 1000;
   gain.gain.setValueAtTime(0.0001, at);
-  gain.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, at + 0.002);
+  gain.gain.exponentialRampToValueAtTime(accent ? 1 : 0.7, at + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
   osc.connect(gain).connect(clickBus());
   osc.start(at);
