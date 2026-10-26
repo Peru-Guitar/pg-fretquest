@@ -6,7 +6,7 @@ import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practic
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
-import { courses, tempos, type Difficulty, type PracticeLesson } from '@/data/questMock';
+import { courses, tempos, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, SkipForward, Square, Target, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
@@ -27,12 +27,6 @@ const now = () => Date.now();
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
-/** Rondas máximas según la dificultad: cuanto más difícil, menos repeticiones. */
-const MAX_ROUNDS: Record<Difficulty, number> = { base: 10, intermedio: 5, avanzado: 3, experto: 1 };
-/** Tiempo de práctica que deben caber las rondas: un ejercicio largo admite menos repeticiones. */
-const ROUNDS_BUDGET_SECONDS = 90;
-/** BPM de referencia para medir el largo de un ejercicio, igual para todos. */
-const ROUNDS_REFERENCE_BPM = 100;
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -307,16 +301,12 @@ function PracticeView({ mode }: { mode: Mode }) {
         </select>
     </label>;
 
-    // Duración de una ronda a un BPM fijo de referencia (no al elegido, para que el tope no cambie al mover la velocidad).
-    const roundSeconds = pattern.length / FIGURES[figure].notesPerBeat / ROUNDS_REFERENCE_BPM * 60;
-    const maxRounds = Math.min(MAX_ROUNDS[activeExercise.difficulty], Math.max(1, Math.floor(ROUNDS_BUDGET_SECONDS / roundSeconds)));
     const roundsGroup = <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
         <div className="flex overflow-hidden rounded-md border border-line-strong">
             {ROUND_OPTIONS.map(option => {
                 const selected = rounds === option;
-                const disabled = option > maxRounds;
-                return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} disabled={disabled} onClick={() => setRounds(option)}
-                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-blue text-white' : disabled ? 'cursor-not-allowed text-muted/40' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
+                return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} onClick={() => setRounds(option)}
+                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-blue text-white' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
             })}
         </div>
     </div>;
