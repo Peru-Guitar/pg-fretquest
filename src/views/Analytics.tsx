@@ -1,21 +1,22 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
-import { Activity, CalendarCheck, ChevronRight, Clock, Gauge, Loader2, Repeat, Target, Users } from 'lucide-react';
-import { Card, PageTitle, SectionTitle, Stat } from '@/components/ui';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Activity, CalendarCheck, ChevronRight, Clock, Gauge, Loader2, Repeat, Search, Target, Users } from 'lucide-react';
+import { Button, Card, PageTitle, SectionTitle, Stat, Tabs } from '@/components/ui';
 import { Tip } from '@/components/ui/Tip';
-import { Link, useHydrated } from '@/lib/router';
+import { Link, useHydrated, useNavigate, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
-import { readAnalytics, type AnalyticsData, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
+import { readAnalytics, readMembers, type AnalyticsData, type Member, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
 import { initials, toneOf } from '@/lib/avatar';
 import { weekStartKey } from '@/lib/progressDb';
-import { userProfileUrl } from '@/lib/routes';
+import { ROUTES, userProfileUrl } from '@/lib/routes';
 import { cn } from '@/lib/cn';
 
 /**
  * Analytics: solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
- * Arriba, la semana en cifras; luego cuándo y cuánto se practica, quiénes, y cada módulo con sus lecciones
- * (tiempo, BPM real frente al sugerido y quiénes la practicaron). Cada cara lleva al perfil del usuario.
+ * Tres pestañas (`?tab=`): Resumen (la semana en cifras, cuándo y cuánto se practica), Lecciones (cada módulo con sus
+ * lecciones: tiempo, BPM real frente al sugerido y quiénes la practicaron) y Usuarios (todos los registrados y quiénes
+ * practicaron). Cada cara lleva al perfil del usuario.
  */
 export const time = (seconds: number) => seconds < 60 ? `${Math.round(seconds)} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
 /** Módulo y lecciones comparten columnas para que las cifras queden alineadas. */
@@ -23,6 +24,13 @@ const COLUMNS = 'grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0
 /** Avatares visibles por lección; el resto se resume en «+N». */
 const FACES = 5;
 const share = (part: number, total: number) => total > 0 ? Math.round(part / total * 100) : 0;
+const TABS = [{ value: 'resumen', label: 'Resumen' }, { value: 'lecciones', label: 'Lecciones' }, { value: 'usuarios', label: 'Usuarios' }] as const;
+type Tab = typeof TABS[number]['value'];
+/** Filas por página en la lista de usuarios. */
+const PAGE = 50;
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const shortDate = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const fold = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 /** Dato del módulo: solo la cifra. */
@@ -172,10 +180,64 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
     </Card>;
 }
 
+/** Todos los registrados, por última práctica. Se cargan al abrir la pestaña; buscar y paginar no cuesta lecturas. */
+function MembersCard() {
+    const [state, setState] = useState<{ members: Member[] | null; error: boolean }>({ members: null, error: false });
+    const [search, setSearch] = useState('');
+    const [shown, setShown] = useState(PAGE);
+    useEffect(() => {
+        let alive = true;
+        readMembers().then(members => alive && setState({ members, error: false })).catch(() => alive && setState({ members: null, error: true }));
+        return () => { alive = false; };
+    }, []);
+    const { members, error } = state;
+    const found = useMemo(() => {
+        const term = fold(search.trim());
+        return !members || !term ? members ?? [] : members.filter(member => fold([member.name, member.city, member.country].filter(Boolean).join(' ')).includes(term));
+    }, [members, search]);
+
+    return <Card>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <SectionTitle title="Todos los usuarios" className="mb-1"/>
+                <p className="text-xs text-muted">{members ? `${members.length} registrados, por última práctica.` : 'Por última práctica.'}</p>
+            </div>
+            <label className="relative w-full sm:w-64">
+                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"/>
+                <input type="search" value={search} onChange={event => { setSearch(event.target.value); setShown(PAGE); }} placeholder="Buscar por nombre o lugar" aria-label="Buscar usuarios" className="w-full pl-9"/>
+            </label>
+        </div>
+        {error ? <p className="text-sm text-muted">No se pudo cargar la lista.</p>
+            : !members ? <div className="grid place-items-center py-12 text-muted"><Loader2 className="animate-spin"/></div>
+            : found.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nadie coincide con «{search}».</p>
+            : <>
+                <ul className="divide-y divide-line-soft">{found.slice(0, shown).map(member => <li key={member.uid}>
+                    <Link to={userProfileUrl(member.uid)} className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-1 py-2.5 transition-colors hover:bg-white/4 md:grid-cols-[auto_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
+                        <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(member.uid))}>{initials(member.name)}</span>
+                        <span className="min-w-0">
+                            <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{member.name}</b>
+                            <span className="block truncate text-2xs text-muted">{member.level ? levelLabel(member.level) : 'Sin nivel'}<span className="md:hidden">{member.lastPractice ? ` · ${shortDate(member.lastPractice)}` : ''}</span></span>
+                        </span>
+                        <span className="hidden truncate text-xs text-muted md:block">{[member.city, member.country].filter(Boolean).join(', ') || '—'}</span>
+                        <span className="hidden truncate text-xs text-muted md:block">{member.guitar ?? '—'}</span>
+                        <span className="hidden text-right text-xs tabular-nums text-fg-soft md:block">{member.lastPractice ? shortDate(member.lastPractice) : <span className="text-muted">Nunca</span>}</span>
+                        <ChevronRight size={15} className="shrink-0 text-subtle group-hover:text-accent"/>
+                    </Link>
+                </li>)}</ul>
+                {found.length > shown && <div className="mt-4 flex justify-center">
+                    <Button variant="secondary" onClick={() => setShown(shown + PAGE)}>Ver {Math.min(PAGE, found.length - shown)} más</Button>
+                </div>}
+            </>}
+    </Card>;
+}
+
 export default function AnalyticsPage() {
     const hydrated = useHydrated();
     const account = useAccount();
     const admin = isAdmin(account);
+    const [params] = useSearchParams();
+    const navigate = useNavigate();
+    const tab: Tab = TABS.find(item => item.value === params.get('tab'))?.value ?? 'resumen';
     const [state, setState] = useState<{ data: AnalyticsData | null; error: boolean }>({ data: null, error: false });
     useEffect(() => {
         if (!admin) return;
@@ -190,25 +252,30 @@ export default function AnalyticsPage() {
     const { data, error } = state;
     return <>
         <PageTitle eyebrow="ADMIN" title="Analytics" text={`Usuarios y lo más practicado esta semana (desde el lunes ${weekStartKey()}).`}/>
-        {error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : <div className="grid gap-5">
+        <Tabs items={[...TABS]} value={tab} onChange={value => navigate(value === 'resumen' ? ROUTES.analytics : `${ROUTES.analytics}?tab=${value}`)} label="Secciones de Analytics" className="mb-5"/>
+        {tab === 'usuarios' && <div className="grid gap-5">
+            <MembersCard/>
+            {data && data.people.length > 0 && <PeopleCard data={data}/>}
+        </div>}
+        {tab !== 'usuarios' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid gap-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
                 <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo practicado" detail={`${data.sessions.avg} min por persona y día`}/>
                 <Stat icon={<Target size={20}/>} value={`${share(data.goal.completed, data.goal.days)}%`} label="Días con la meta cumplida" detail={`${data.goal.completed} de ${data.goal.days} días`}/>
             </div>
-            {data.people.length > 0 && <>
+            {data.people.length > 0 ? <>
                 <Heatmap heat={data.heat}/>
                 <div className="grid gap-5 lg:grid-cols-2">
                     <Buckets title="Sesión típica" caption={<>Minutos por persona en un día. Promedio: <b className="text-fg-soft">{data.sessions.avg} min</b>.</>} rows={data.sessions.buckets} unit={['día', 'días']}/>
                     <Buckets title="Constancia" caption={<><CalendarCheck size={12} className="mr-1 inline text-accent"/>Cuántos días practicó cada persona esta semana.</>} rows={data.consistency} unit={['persona', 'personas']}/>
                 </div>
                 <LevelCard data={data}/>
-                <PeopleCard data={data}/>
-            </>}
+            </> : <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>}
+        </div> : <div className="grid gap-5">
             {data.modules.length === 0
                 ? <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>
                 : data.modules.map((module, index) => <ModuleCard key={module.id} module={module} place={index + 1} data={data}/>)}
-        </div>}
+        </div>)}
     </>;
 }

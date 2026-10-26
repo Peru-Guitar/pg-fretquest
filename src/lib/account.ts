@@ -3,7 +3,7 @@ import { DIFFICULTY } from "@/lib/points";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { watchProgress } from "@/lib/progressDb";
+import { saveName, watchProgress } from "@/lib/progressDb";
 import { createLocalStore } from "@/lib/localStore";
 import { addDays, weekStart } from "@/lib/domain/report";
 
@@ -62,6 +62,8 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const level = LEVELS.includes(data.level) ? data.level as Difficulty : account.level;
     const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
     const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
+    // Sin nombre guardado (recién llegado): se guarda el de Google, para que también lo vean Analytics y la Comunidad.
+    if (typeof data.name !== 'string' && user.displayName) void saveName(user.uid, user.displayName.slice(0, 40)).catch(() => { /* se reintenta al volver a entrar */ });
     const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
     store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {

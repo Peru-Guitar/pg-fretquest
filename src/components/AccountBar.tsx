@@ -1,7 +1,7 @@
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, userProfileUrl } from '@/lib/routes';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useHydrated } from '@/lib/router';
-import { ChevronDown, LogIn, LogOut, UserRound } from 'lucide-react';
+import { ChevronDown, IdCard, LogIn, LogOut, UserRound } from 'lucide-react';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { DEFAULT_RHYTHM, levelLabel, signOut, useAccount } from '@/lib/account';
 import { cn } from '@/lib/cn';
@@ -58,6 +58,7 @@ export function AccountBar() {
                     <p className="text-2xs font-bold text-fg-soft">Tu semana · {done}/{goal} días</p>
                     <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full', reached ? 'bg-success' : 'bg-blue')} style={{ width: `${Math.min(100, done / goal * 100)}%` }}/></span>
                 </div>
+                <Link to={userProfileUrl(account.uid)} role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><IdCard size={17}/>Mi perfil</Link>
                 <Link to={ROUTES.account} role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><UserRound size={17}/>Mi cuenta</Link>
                 <button type="button" role="menuitem" onClick={() => { setOpen(false); void signOut(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-fg-soft hover:bg-white/5 hover:text-fg"><LogOut size={17}/>Cerrar sesión</button>
             </div>}

@@ -39,9 +39,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         {menuOpen && <button className="fixed inset-0 z-35 bg-black/60 md:hidden" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)}/>}
 
         <aside className={cn(
-            'fixed inset-y-0 left-0 z-40 flex w-61 flex-col border-r border-line-soft bg-linear-to-b from-surface to-canvas px-4 pt-6 pb-4 transition-transform',
+            'fixed inset-y-0 left-0 z-40 flex w-61 flex-col overflow-y-auto border-r border-line-soft bg-linear-to-b from-surface to-canvas px-4 pt-6 pb-4 transition-transform',
             'md:w-50 md:translate-x-0 md:px-3 md:pt-8 xl:w-56 xl:px-4',
-            menuOpen ? 'overflow-y-auto shadow-[20px_0_80px_#0005]' : 'invisible -translate-x-full md:visible',
+            menuOpen ? 'shadow-[20px_0_80px_#0005]' : 'invisible -translate-x-full md:visible',
         )}>
             <Link to="/" className="relative flex items-center gap-2 px-px pb-3 font-black whitespace-nowrap md:gap-0.5 xl:gap-2">
                 <img className="h-12 w-11 object-contain drop-shadow-[0_0_10px_#3198dc30] md:w-9 xl:w-11" src="/icons/quest-mark.svg" alt=""/>

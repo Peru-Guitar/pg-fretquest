@@ -23,7 +23,6 @@ const duration = (seconds: number) => seconds < 60 ? `${seconds} s` : seconds < 
  * en formato humano, coloreada por lo reciente que es.
  */
 function StatChips({ stats, weekSeconds }: { stats: { count: number; last: number }; weekSeconds: number }) {
-    if (stats.count === 0) return <span className="rounded-full border border-dashed border-line-strong px-3 py-1 text-2xs font-bold text-muted">Sin practicar</span>;
     const hours = (now() - stats.last) / 3_600_000;
     const recency = hours <= 48 ? 'border-success/40 bg-success/12 text-success' : hours <= 96 ? 'border-gold/40 bg-gold/12 text-gold' : 'border-line-strong bg-white/4 text-muted';
     return <>
@@ -141,21 +140,19 @@ export default function PlanPage() {
             <Card>
                 <p className="text-3xs font-black tracking-[0.18em] text-accent-strong">MÓDULO {blockIndex + (recommendations ? 2 : 1)}</p>
                 <h2 className="mt-1.5 mb-4 text-lg">{block.title}</h2>
-                <div className="flex flex-col gap-5">{groupByArtist(block.lessons).map(group => <div key={group.artist ?? 'none'} className="flex flex-col gap-3">
-                {group.artist ? <ArtistHeader id={group.artist}/> : block.lessons.some(lesson => lesson.artist) && <b className="text-sm text-fg">De la comunidad</b>}
-                <div className="divide-y divide-line rounded-lg border border-line">{group.lessons.map(lesson => {
+                <div className="flex flex-col gap-5">{groupByArtist(block.lessons).map(group => <div key={`${group.artist}-${group.category}`} className="flex flex-col gap-3">
+                {group.artist ? <ArtistHeader id={group.artist}/> : group.category ? <h3 className="flex items-center gap-3 text-sm font-bold text-fg-soft"><span className="shrink-0">{group.category}</span><span aria-hidden className="h-px flex-1 bg-line"/></h3> : block.lessons.some(lesson => lesson.artist) && <b className="text-sm text-fg">De la comunidad</b>}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{group.lessons.map(lesson => {
                     const stats = statsOf(lesson.id);
-                    return <Link key={lesson.id} to={practiceUrl(block.moduleId, lesson.id)} className="flex items-center gap-3 px-4 py-3.5 transition first:rounded-t-lg last:rounded-b-lg hover:bg-white/3">
+                    return <Link key={lesson.id} to={practiceUrl(block.moduleId, lesson.id)} className="flex items-start gap-3 rounded-lg border border-line px-4 py-3.5 transition hover:bg-white/3">
                         {/* Actividad, no «terminada»: punto naranja si ya la practicaste alguna vez. */}
                         <span title={stats.count > 0 ? 'Con actividad' : 'Sin actividad'} className={cn('grid size-7 shrink-0 place-items-center rounded-full border', stats.count > 0 ? 'border-blue/50' : 'border-line-strong')}>
                             {stats.count > 0 && <span className="size-2.5 rounded-full bg-blue"/>}
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="flex flex-wrap items-center gap-2 font-bold">{lesson.title}</p>
-                            <span className="mt-2 flex flex-wrap gap-1.5 sm:hidden"><StatChips stats={stats} weekSeconds={weekSeconds[lesson.id] ?? 0}/></span>
+                            {stats.count === 0 ? <span className="text-xs text-muted">Sin practicar</span> : <span className="mt-2 flex flex-wrap gap-1.5"><StatChips stats={stats} weekSeconds={weekSeconds[lesson.id] ?? 0}/></span>}
                         </div>
-                        {/* Registro de esta lección: veces practicada (una por día) y última fecha, en chips. */}
-                        <span className="hidden shrink-0 items-center gap-2 sm:flex"><StatChips stats={stats} weekSeconds={weekSeconds[lesson.id] ?? 0}/></span>
                         <DifficultySignal difficulty={lesson.difficulty}/>
                     </Link>;
                 })}</div>
