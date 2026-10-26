@@ -55,9 +55,28 @@ export function useSearchParams() {
     const search = useSyncExternalStore(subscribeToHistory, () => window.location.search, () => '');
     return [useMemo(() => new URLSearchParams(search), [search])] as const;
 }
+// pushState/replaceState no emiten evento: cambiar solo `?tab=` (misma ruta) no se notaría. Se envuelven una vez.
+const HISTORY_EVENT = 'fq:history';
+let historyPatched = false;
+const patchHistory = () => {
+    if (historyPatched) return;
+    historyPatched = true;
+    for (const method of ['pushState', 'replaceState'] as const) {
+        const original = window.history[method].bind(window.history);
+        window.history[method] = (...args: Parameters<History['pushState']>) => {
+            original(...args);
+            window.dispatchEvent(new Event(HISTORY_EVENT));
+        };
+    }
+};
 const subscribeToHistory = (listener: () => void) => {
+    patchHistory();
     window.addEventListener('popstate', listener);
-    return () => window.removeEventListener('popstate', listener);
+    window.addEventListener(HISTORY_EVENT, listener);
+    return () => {
+        window.removeEventListener('popstate', listener);
+        window.removeEventListener(HISTORY_EVENT, listener);
+    };
 };
 
 export function useNavigate() {
