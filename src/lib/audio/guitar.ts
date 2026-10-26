@@ -59,7 +59,7 @@ export function prepare(): Promise<void> {
       baseUrl: SAMPLE_BASE,
       // Sin reverb y con release corto: cada nota se apaga antes de la siguiente, sin eco.
       release: 0.25,
-      volume: -10,
+      volume: -13,
     }).connect(drive);
     buffers = new tone.ToneAudioBuffers({
       urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`])),
@@ -165,9 +165,9 @@ export function slide(string: number, fromFret: number, toFret: number, holdSec:
   src.playbackRate.setValueAtTime(rate(from), t);
   src.playbackRate.setValueAtTime(rate(from), t + holdSec);
   src.playbackRate.exponentialRampToValueAtTime(rate(open + toFret), t + holdSec + glide);
-  // Mismo nivel que el sampler (-10 dB, fuerza 0.85) y una caída corta al final, sin clic.
-  gain.gain.setValueAtTime(0.27, t);
-  gain.gain.setValueAtTime(0.27, end - 0.08);
+  // Mismo nivel que el sampler (-13 dB, fuerza 0.85) y una caída corta al final, sin clic.
+  gain.gain.setValueAtTime(0.19, t);
+  gain.gain.setValueAtTime(0.19, end - 0.08);
   gain.gain.linearRampToValueAtTime(0, end);
   src.start(t);
   src.stop(end);
