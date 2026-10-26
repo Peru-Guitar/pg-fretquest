@@ -1,4 +1,4 @@
-import { collection, getCountFromServer } from "firebase/firestore";
+import { collection, getCountFromServer, getDocs } from "firebase/firestore";
 import { courses, type Difficulty, type PracticeLesson } from "@/data/questMock";
 import { LEVELS } from "@/lib/account";
 import { db } from "@/lib/firebase";
@@ -108,4 +108,25 @@ export async function readAnalytics(): Promise<AnalyticsData> {
     }),
     people: personList,
   };
+}
+
+/** Perfil de un registrado, para la pestaña Usuarios. */
+export type Member = { uid: string; name: string; level: Difficulty | null; city?: string; country?: string; guitar?: string; lastPractice: string | null };
+
+/**
+ * Todos los registrados: una lectura por usuario, y solo al abrir la pestaña Usuarios.
+ * Se ordenan por última práctica (los que nunca practicaron al final); buscar y paginar se hace aquí.
+ */
+export async function readMembers(): Promise<Member[]> {
+  const snapshot = await getDocs(collection(db, "users"));
+  const text = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : undefined;
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      uid: doc.id, name: text(data.name) ?? "Guitarrista",
+      level: LEVELS.includes(data.level) ? data.level as Difficulty : null,
+      city: text(data.city), country: text(data.country), guitar: text(data.guitar),
+      lastPractice: text(data.lastPractice?.date) ?? null,
+    };
+  }).sort((a, b) => (b.lastPractice ?? "").localeCompare(a.lastPractice ?? "") || a.name.localeCompare(b.name));
 }
