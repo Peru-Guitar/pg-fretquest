@@ -81,7 +81,7 @@ export function prepare(): Promise<void> {
     clicker = new tone.Synth({
       oscillator: { type: "square" },
       envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 },
-      volume: -4,
+      volume: -8,
     }).connect(master);
     await tone.loaded();
   })().catch((error) => {
