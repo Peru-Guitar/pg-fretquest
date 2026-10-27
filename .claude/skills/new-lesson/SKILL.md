@@ -73,4 +73,4 @@ Español, tuteo, frases cortas e instrucciones concretas: dedo, traste, cuerda, 
 
 - Ejecuta `npx tsc --noEmit` y `npx eslint src`.
 - Dile al usuario la ruta para probarla: `/practice/<moduloId>?exercise=<lessonId>` o `/modules/<moduloId>/<lessonId>`.
-- No hagas commit ni push si no te lo piden.
+- No hagas commit si no te lo piden. **Nunca hagas push**: eso solo pasa con la skill `push` y un pedido explícito.
