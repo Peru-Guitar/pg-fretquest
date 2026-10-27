@@ -53,7 +53,7 @@ export default function JoinPage() {
         <div className="mx-auto max-w-5xl">
         <section className="mt-12">
             <h2 className="text-2xl md:text-3xl">Qué vas a aprender</h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <div key={module.id} className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <div key={module.id} className="relative aspect-4/3 overflow-hidden rounded-xl border border-line">
                 <img src={module.image} alt="" className="absolute inset-0 size-full object-cover"/>
                 <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/60 to-transparent"/>
                 <div className="absolute inset-x-0 bottom-0 p-5">
