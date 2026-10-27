@@ -323,62 +323,44 @@ const ROMEO_BARS = [
 // La primera nota de cada grupo de tres va con tapping.
 const romeoBars = ROMEO_BARS.map(bar => bar.split(' ').map((note, index): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret, tap: index % 3 === 0 }; }));
 
-// Una sola cuerda: patrones en la primera cuerda con púa alternada continua, sin cambios de cuerda.
-const firstString = (frets: number[]): PatternNote[] => frets.map(fret => ({ string: 1, fret }));
-const SINGLE_STRING_MISTAKES = ['Reiniciar con púa abajo en cada grupo: la alternancia no se interrumpe.', 'Atacar más fuerte con púa abajo que con púa arriba.', 'Levantar mucho los dedos de la mano izquierda entre nota y nota.'];
-const singleStringRepeat: PracticeStudy = {
-    description: 'Cuatro golpes en cada nota de la primera cuerda: A, B, C y de vuelta a B. Púa alternada continua.',
-    notation: 'Primera cuerda · Semicorcheas: un grupo de cuatro notas por pulso · Púa alternada continua',
-    goal: 'Sincronizar las dos manos en lo más simple: la mano izquierda cambia de traste justo cuando la púa empieza un grupo nuevo, y cada golpe suena igual, abajo y arriba.',
-    steps: [
-        'Toca cuatro veces cada nota: 5, 7, 8 y 7 en la primera cuerda (A, B, C, B).',
-        'Púa alternada ⊓ V ⊓ V: cada grupo empieza con púa abajo, en el pulso.',
-        'Cambia de traste justo antes del primer golpe del grupo, no durante.',
-        'Repite el patrón sin pausas.',
-    ],
-    mistakes: SINGLE_STRING_MISTAKES,
-    criterion: 'Cuando los cuatro grupos suenen parejos y sin cortes entre notas, sube el BPM.',
-    figure: 'semicorcheas',
-    bpm: 80,
-    pattern: firstString([5, 5, 5, 5, 7, 7, 7, 7, 8, 8, 8, 8, 7, 7, 7, 7]),
+// Mano derecha (lección «Ejercicio de mano derecha» de ERP Skool): cuerdas al aire, cuatro golpes por cuerda con púa alternada.
+const openStrings = (strings: number[]): PatternNote[] => strings.flatMap(string => [0, 0, 0, 0].map(fret => ({ string, fret })));
+const RIGHT_HAND_STEPS = [
+    'Solo trabaja la mano derecha: todas las cuerdas van al aire.',
+    'Púa alternada ⊓ V ⊓ V en todos los golpes, también al cambiar de cuerda.',
+    'Silencia con la palma: solo debe sonar la cuerda que tocas.',
+    'Al bajar, inclina ligeramente la púa.',
+];
+const RIGHT_HAND_MISTAKES = ['Reiniciar con púa abajo al cambiar de cuerda: la alternancia no se interrumpe.', 'Dejar sonando las cuerdas que ya tocaste.', 'Atacar más fuerte con púa abajo que con púa arriba.'];
+const rightHandOpen: PracticeStudy = {
+    description: 'Cuerdas al aire de la sexta a la primera, cuatro golpes por cuerda con púa alternada.',
+    notation: 'Cuerdas al aire · Corcheas · Púa alternada continua',
+    goal: 'Ejercitar la mano derecha por separado antes de coordinarla con la izquierda: golpes parejos, abajo y arriba, y cambios de cuerda sin cortar la alternancia.',
+    steps: RIGHT_HAND_STEPS,
+    mistakes: RIGHT_HAND_MISTAKES,
+    criterion: 'Cuando los cuatro golpes de cada cuerda suenen parejos y sin ruido de las demás cuerdas, sube el BPM.',
+    perRow: 24,
+    figure: 'corcheas',
+    bpm: 60,
+    pattern: openStrings([6, 5, 4, 3, 2, 1]),
 };
-const singleStringChromatic: PracticeStudy = {
-    description: 'Cromático en la primera cuerda: sube del 5 al 8 (A, A#, B, C) y baja del 8 al 5. Un dedo por traste.',
-    notation: 'Primera cuerda · Semicorcheas · Púa alternada continua · Un dedo por traste',
-    goal: 'Coordinar los cuatro dedos con la púa: cada dedo pisa justo cuando la púa ataca, sin que una mano se adelante a la otra.',
-    steps: [
-        'Subida con los dedos 1-2-3-4 (trastes 5-6-7-8), bajada con 4-3-2-1.',
-        'El C (traste 8) se toca dos veces seguidas en el cambio de dirección.',
-        'Púa alternada ⊓ V ⊓ V continua.',
-        'Deja los dedos cerca del diapasón al bajar: levanta solo el que acaba de sonar.',
-    ],
-    mistakes: SINGLE_STRING_MISTAKES,
-    criterion: 'Cuando la subida y la bajada suenen igual de parejas, sube el BPM.',
-    figure: 'semicorcheas',
-    bpm: 80,
-    pattern: firstString([5, 6, 7, 8, 8, 7, 6, 5]),
-};
-const singleStringThrees: PracticeStudy = {
-    description: 'Secuencia de tres notas de Am en la primera cuerda: sube en grupos de tres (A B C, B C D, C D E) y vuelve a bajar.',
-    notation: 'Primera cuerda · Tresillos: un grupo de tres notas por pulso · Púa alternada continua',
-    goal: 'Mantener la púa alternada con grupos impares: como cada grupo tiene tres notas, uno empieza con púa abajo y el siguiente con púa arriba. Aprendes a sentir el pulso sin depender de la dirección de la púa.',
-    steps: [
-        'Grupos: 5-7-8, 7-8-10, 8-10-12 de subida y 10-8-7, 8-7-5 de bajada.',
-        'Cada grupo empieza una nota más arriba (o más abajo) que el anterior.',
-        'Púa alternada continua: un grupo va ⊓ V ⊓ y el siguiente V ⊓ V.',
-        'Acentúa la primera nota de cada grupo para marcar el pulso, aunque caiga con púa arriba.',
-    ],
-    mistakes: [SINGLE_STRING_MISTAKES[0], 'Perder el pulso en los grupos que empiezan con púa arriba.', 'Estirar la mano hasta el 12: deja que el brazo la lleve.'],
-    criterion: 'Cuando todos los grupos suenen parejos, empiecen con ⊓ o con V, sube el BPM.',
-    figure: 'tresillos',
-    bpm: 70,
-    perRow: 15,
-    pattern: firstString([5, 7, 8, 7, 8, 10, 8, 10, 12, 10, 8, 7, 8, 7, 5]),
+const rightHandSkip: PracticeStudy = {
+    description: 'El mismo patrón de cuatro golpes por cuerda, pero saltando una cuerda en cada cambio. Dos recorridos: de la sexta a la primera y de vuelta.',
+    notation: 'Cuerdas al aire · Corcheas · Púa alternada continua · Salto de cuerda',
+    goal: 'Mantener la púa alternada y el control al saltar cuerdas: la púa llega justo a la cuerda que toca sin rozar la que salta.',
+    steps: RIGHT_HAND_STEPS,
+    mistakes: [...RIGHT_HAND_MISTAKES, 'Rozar la cuerda que saltas.'],
+    criterion: 'Cuando los dos recorridos suenen parejos y sin que suene la cuerda que saltas, sube el BPM.',
+    figure: 'corcheas',
+    bpm: 60,
+    ...withSections([
+        { title: 'Primer recorrido', pattern: openStrings([6, 4, 5, 3, 4, 2, 3, 1]) },
+        { title: 'Segundo recorrido', pattern: openStrings([1, 3, 2, 4, 3, 5, 4, 6]) },
+    ]),
 };
 export const practiceStudies: Record<string, PracticeStudy> = {
-    'alternate-picking-single-01': singleStringRepeat,
-    'alternate-picking-single-02': singleStringChromatic,
-    'alternate-picking-single-03': singleStringThrees,
+    'alternate-picking-right-hand-01': rightHandOpen,
+    'alternate-picking-right-hand-02': rightHandSkip,
     ...Object.fromEntries(SCALE_MODES.map(mode => [mode.id, modeStudy(mode)])),
     'fingering-01': {
         description: 'Cromático clásico 1–2–3–4 en todas las cuerdas, de ida y de vuelta, en cuatro posiciones del mástil: trastes 1, 5, 7 y 12.',
