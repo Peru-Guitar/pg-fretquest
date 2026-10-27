@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Clock3, Music2, Play, Target, X } from 'lucide-react';
+import { Clock3, Music2, Play, Target, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { cn } from '@/lib/cn';
 
 /** Profesor con la guitarra explicando el modo práctica. Formato vertical, 800×1000. */
 const INTRO_IMAGE = '/images/practice-intro.webp';
@@ -13,10 +14,10 @@ const POINTS = [
 ];
 
 /**
- * Preparación de la práctica: qué va a pasar al empezar y la configuración (`settings`: BPM, rondas).
+ * Preparación de la práctica: qué va a pasar al empezar y la configuración (`children`: velocidad, rondas, guía).
  * Sale siempre antes de practicar; cancelar no inicia nada.
  */
-export function PracticeIntro({ settings, onStart, onCancel }: { settings: ReactNode; onStart: () => void; onCancel: () => void }) {
+export function PracticeIntro({ children, onStart, onCancel }: { children: ReactNode; onStart: () => void; onCancel: () => void }) {
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
     useEffect(() => {
@@ -46,7 +47,7 @@ export function PracticeIntro({ settings, onStart, onCancel }: { settings: React
                     </li>)}
                 </ul>
                 <p className="mt-6 text-xs text-muted">Antes de sonar hay una cuenta de entrada. Pulsa <kbd className="rounded border border-line-strong px-1.5 font-mono">Esc</kbd> para cancelar en cualquier momento.</p>
-                <div className="mt-6 flex flex-col gap-4 rounded-xl border border-line bg-sunken/60 p-4">{settings}</div>
+                <div className="mt-6 flex flex-col gap-3">{children}</div>
                 <div className="mt-6 flex flex-wrap gap-3">
                     <Button onClick={onStart}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
@@ -54,4 +55,25 @@ export function PracticeIntro({ settings, onStart, onCancel }: { settings: React
             </div>
         </div>
     </div>, document.body);
+}
+
+/** Campo de la preparación con su etiqueta encima (velocidad, rondas). */
+export function PracticeField({ label, icon: Icon, children }: { label: string; icon: LucideIcon; children: ReactNode }) {
+    return <label className="flex min-w-0 flex-col gap-1.5">
+        <span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Icon size={13}/>{label}</span>
+        {children}
+    </label>;
+}
+
+/** Opción que se activa con un interruptor; `note` aparece debajo (en rojo si es `warning`). */
+export function PracticeOption({ icon: Icon, title, note, warning, checked, onChange }: { icon: LucideIcon; title: string; note?: ReactNode; warning?: boolean; checked: boolean; onChange: (checked: boolean) => void }) {
+    return <label className={cn('flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition', checked ? 'border-accent/40 bg-accent/5' : 'border-line bg-sunken/50 hover:border-line-strong')}>
+        <span className={cn('grid size-8 shrink-0 place-items-center rounded-lg', checked ? 'bg-accent/15 text-accent' : 'bg-white/5 text-muted')}><Icon size={16}/></span>
+        <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-fg">{title}</span>
+            {note && <span className={cn('mt-0.5 block text-xs leading-relaxed', warning ? 'text-danger' : 'text-muted')}>{note}</span>}
+        </span>
+        <input type="checkbox" role="switch" checked={checked} onChange={event => onChange(event.target.checked)} className="peer sr-only"/>
+        <span aria-hidden className="relative mt-1 h-5 w-9 shrink-0 rounded-full bg-white/15 transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent after:absolute after:top-0.5 after:left-0.5 after:size-4 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4"/>
+    </label>;
 }

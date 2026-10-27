@@ -15,6 +15,8 @@ export type PatternNote = { string: number; fret: number; slide?: boolean; /** N
 type RoundOptions = {
   /** Toca la guitarra de guía (Práctica). En Progreso solo suena el metrónomo. */
   guide: boolean;
+  /** Fuerza de la guitarra de guía (0.85 por defecto). Al practicar con guía suena muy bajita. */
+  guideVelocity?: number;
   /** Con cuenta de entrada (por defecto). Al escuchar el ejercicio empieza directo. */
   countIn?: boolean;
   /** Notas por clic del metrónomo (1 por defecto). */
@@ -73,7 +75,7 @@ export function scheduleRound(bpm: number, pattern: PatternNote[], options: Roun
   pattern.forEach((note, index) => {
     const length = lengths[index];
     transport.schedule((time: number) => {
-      if (options.guide) playAt(note.string, note.fret, length * step * 0.95, time);
+      if (options.guide) playAt(note.string, note.fret, length * step * 0.95, time, options.guideVelocity);
       draw.schedule(ui(() => options.onStep(index)), time);
     }, start + at * step);
     at += length;

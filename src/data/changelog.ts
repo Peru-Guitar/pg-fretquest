@@ -2,6 +2,17 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.3.0',
+        date: '2026-10-26',
+        notes: [
+            'Practicar ahora se abre en su propia pantalla completa, para que la tablatura tenga todo el espacio.',
+            'Antes de practicar eliges la velocidad y las rondas.',
+            'Nueva opción: practicar con la tablatura de guía sonando muy bajita.',
+            'La cuenta de entrada aparece al instante.',
+            'Las opciones de «¿Cómo te sentiste?» se resaltan al pasar el mouse.',
+        ],
+    },
+    {
         version: '0.2.2',
         date: '2026-10-26',
         notes: [

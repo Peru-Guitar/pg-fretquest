@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise } from '@/lib/progress';
-import { PracticeIntro } from '@/components/practice/PracticeIntro';
+import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
@@ -27,6 +27,8 @@ const now = () => Date.now();
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
+/** Fuerza de la guitarra de guía al practicar: apenas una referencia bajo el metrónomo. */
+const GUIDE_VELOCITY = 0.08;
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -158,6 +160,10 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [phase]);
     const [step, setStep] = useState(-1);
     const [listening, setListening] = useState(false);
+    // Guitarra de guía al practicar: opcional y muy bajita (al escuchar suena normal).
+    const [practiceGuide, setPracticeGuide] = useState(false);
+    const practiceGuideRef = useRef(practiceGuide);
+    useEffect(() => { practiceGuideRef.current = practiceGuide; }, [practiceGuide]);
     const active = phase !== 'idle';
     // Practicar (no Reproducir) se muestra en su propia pantalla completa: la tablatura gana todo el espacio.
     const stage = active && !listening;
@@ -186,7 +192,8 @@ function PracticeView({ mode }: { mode: Mode }) {
         cancelRef.current = scheduleRound(bpmRef.current, pattern.slice(offset), {
             // El metrónomo siempre marca negras (un clic por pulso), sin importar la figura de la tablatura.
             notesPerBeat: FIGURES[figure].notesPerBeat,
-            guide: listen,
+            guide: listen || practiceGuideRef.current,
+            guideVelocity: listen ? undefined : GUIDE_VELOCITY,
             countIn: !listen,
             onCount: value => { setCount(value); setPulse(beat => beat + 1); },
             onStep: index => { setPhase('playing'); setStep(index + offset); },
@@ -222,6 +229,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     const start = async (listen: boolean) => {
         setFinished(null);
         setListening(listen);
+        setCount(-1);
         setPhase('loading');
         try { await prepare(); } catch { setPhase('idle'); return; }
         startedAt.current = now();
@@ -229,6 +237,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         runRound(1, listen);
     };
     const stop = () => { cancelRef.current?.(); cancelRef.current = null; setStep(-1); setRound(1); setPhase('idle'); };
+
     // Detener a mano corta la sesión: ese día no cuenta (no pasa nada). Salir de la página, en cambio, no la borra.
     const userStop = () => { if (sessionRef.current) setPlanSession(null); stop(); };
     const goNext = () => {
@@ -328,15 +337,9 @@ function PracticeView({ mode }: { mode: Mode }) {
         </select>
     </label>;
 
-    const roundsGroup = <div role="radiogroup" aria-label="Rondas" className="flex items-center gap-2 text-sm text-muted"><Repeat size={15}/>Rondas
-        <div className="flex overflow-hidden rounded-md border border-line-strong">
-            {ROUND_OPTIONS.map(option => {
-                const selected = rounds === option;
-                return <button key={option} type="button" role="radio" aria-checked={selected} aria-label={`${option} ${option === 1 ? 'ronda' : 'rondas'}`} onClick={() => setRounds(option)}
-                    className={cn('min-h-9 min-w-9 border-l border-line-strong px-2.5 font-mono font-bold transition first:border-l-0', selected ? 'bg-blue text-white' : 'text-fg-soft hover:bg-white/5')}>{option}</button>;
-            })}
-        </div>
-    </div>;
+    const roundsSelect = <select value={rounds} onChange={event => setRounds(Number(event.target.value))} className="min-h-10 w-full py-1.5 font-bold text-fg">
+        {ROUND_OPTIONS.map(option => <option key={option} value={option}>{option} {option === 1 ? 'ronda' : 'rondas'}</option>)}
+    </select>;
 
     // La misma tarjeta del ejercicio; al practicar va en una capa a pantalla completa (en <body>, por el `transform` de <main>).
     const inStage = (content: ReactNode) => stage
@@ -443,7 +446,20 @@ function PracticeView({ mode }: { mode: Mode }) {
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro settings={<>{tempoSelect}{session ? <p className="text-sm text-muted">Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</p> : roundsGroup}</>} onCancel={() => setShowIntro(false)} onStart={() => { setShowIntro(false); void start(false); }}/>}
+                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={() => { setShowIntro(false); void start(false); }}>
+                    <div className="grid grid-cols-2 gap-3">
+                        <PracticeField label="Velocidad" icon={Gauge}>
+                            <select value={bpm} onChange={event => setBpm(Number(event.target.value))} className="min-h-10 w-full py-1.5 font-bold text-fg">
+                                {tempos.map(item => <option key={item.bpm} value={item.bpm}>{item.name} · {item.bpm} BPM</option>)}
+                            </select>
+                        </PracticeField>
+                        {session
+                            ? <div className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Repeat size={13}/>Sesión</span><p className="text-sm text-fg-soft"><b>{session.minutes} min</b>: rondas hasta completar el tiempo</p></div>
+                            : <PracticeField label="Rondas" icon={Repeat}>{roundsSelect}</PracticeField>}
+                    </div>
+                    <PracticeOption icon={Headphones} title="Tablatura de guía, muy bajita" checked={practiceGuide} onChange={setPracticeGuide} warning={practiceGuide}
+                        note={practiceGuide ? 'Se recomienda practicar sin guía para que puedas oírte mejor.' : 'Una referencia suave por debajo del metrónomo.'}/>
+                </PracticeIntro>}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
                 {/* En móvil la nota elegida va en su propia fila, separada con una línea como el resto de la tarjeta. */}
                 <div className="flex flex-col border-t border-line text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-3">
@@ -492,9 +508,9 @@ function PracticeView({ mode }: { mode: Mode }) {
                         </div>)}
                     </div>
                 </div>
-                {/* Cuenta de entrada: pantalla completa con el fondo borroso.
+                {/* Cuenta de entrada: pantalla completa con el fondo borroso. Al practicar sale ya mientras carga el sonido, sin hueco.
                     Va en <body> porque el `transform` animado de <main> encerraría un `fixed`. */}
-                {phase === 'countdown' && createPortal(<div role="status" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-sunken/60 px-6 text-center backdrop-blur-md">
+                {(phase === 'countdown' || (phase === 'loading' && !listening)) && createPortal(<div role="status" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-sunken/60 px-6 text-center backdrop-blur-md">
                     {count < 0
                         ? <span key={pulse} className="block size-28 animate-pop rounded-full bg-violet/60 shadow-[0_0_80px_#3198dc88] md:size-36"/>
                         : <span key={pulse} className={cn('block animate-pop font-black leading-none text-accent-strong', count > 0 ? 'text-[9rem] md:text-[12rem]' : 'text-6xl md:text-7xl')}>{count > 0 ? count : `Ronda ${round}`}</span>}

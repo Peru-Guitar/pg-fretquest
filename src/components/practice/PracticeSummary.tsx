@@ -80,7 +80,7 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                     <div role="radiogroup" aria-label="Valoración de la práctica" className="mt-3 grid w-full grid-cols-5 gap-1.5">
                         {RATINGS.map(option => <button key={option.value} type="button" role="radio" aria-checked={rating === option.value} title={option.label} onClick={() => setRating(option.value)} className={cn(
                             'flex flex-col items-center gap-1 rounded-lg border px-1 py-2.5 transition',
-                            rating === option.value ? 'border-blue bg-blue/20 text-fg' : 'border-white/10 bg-white/3 text-fg-soft hover:border-line-strong',
+                            rating === option.value ? 'border-blue bg-blue/20 text-fg' : 'border-white/10 bg-white/3 text-fg-soft hover:border-blue/60 hover:bg-white/6 hover:text-fg',
                         )}>
                             <b className="font-mono text-lg">{option.value}</b>
                             <span className="text-3xs leading-tight">{option.label}</span>
