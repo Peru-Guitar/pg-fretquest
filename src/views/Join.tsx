@@ -35,15 +35,22 @@ export default function JoinPage() {
         {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
     </>;
 
-    return <div className="mx-auto max-w-5xl">
-        <Card className="relative overflow-hidden px-6 py-14 text-center md:px-16 md:py-20">
-            <img src="/icons/quest-mark.svg" alt="" className="mx-auto h-16 w-16 drop-shadow-[0_0_20px_#3198dc55]"/>
-            <Eyebrow className="mt-6 justify-center">TE INVITARON A FRET QUEST</Eyebrow>
-            <h1 className="mx-auto mt-3 max-w-2xl text-4xl md:text-6xl">Tu gimnasio de guitarra eléctrica</h1>
-            <p className="mx-auto mt-5 max-w-xl text-base text-muted md:text-lg">Entrena coordinación, limpieza y control con ejercicios guiados. Gratis, a tu ritmo y desde el navegador.</p>
-            <div className="mt-10 flex flex-col items-center">{cta}</div>
-        </Card>
+    // Hero a todo el ancho: los márgenes negativos anulan el padding de <main> (AppShell).
+    return <>
+        <header className="relative -mx-4.5 -mt-6.5 overflow-hidden border-b border-line-soft md:-mx-6 md:-mt-7.5 xl:-mx-9.5 xl:-mt-9">
+            <img src="/images/practice-intro.webp" alt="" className="absolute inset-0 size-full object-cover object-[center_25%]"/>
+            <div className="absolute inset-0 bg-black/65"/>
+            <div className="absolute inset-0 bg-linear-to-t from-canvas via-transparent to-transparent"/>
+            <div className="relative flex min-h-[78dvh] flex-col items-center justify-center px-6 py-20 text-center md:py-28">
+                <img src="/icons/quest-mark.svg" alt="" className="h-16 w-16 drop-shadow-[0_0_20px_#3198dc55]"/>
+                <Eyebrow className="mt-6 justify-center">TE INVITARON A FRET QUEST</Eyebrow>
+                <h1 className="mt-3 max-w-3xl text-4xl text-white md:text-7xl">Tu gimnasio de guitarra eléctrica</h1>
+                <p className="mt-5 max-w-xl text-base text-white/80 md:text-lg">Entrena coordinación, limpieza y control con ejercicios guiados. Gratis, a tu ritmo y desde el navegador.</p>
+                <div className="mt-10 flex w-full flex-col items-center">{cta}</div>
+            </div>
+        </header>
 
+        <div className="mx-auto max-w-5xl">
         <section className="mt-12">
             <h2 className="text-2xl md:text-3xl">Qué vas a aprender</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <div key={module.id} className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line">
@@ -69,5 +76,6 @@ export default function JoinPage() {
             <p className="mt-2 mb-8 text-muted">Crea tu cuenta en un clic y arma tu plan.</p>
             {cta}
         </Card>
-    </div>;
+        </div>
+    </>;
 }
