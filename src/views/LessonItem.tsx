@@ -1,16 +1,18 @@
 'use client';
 
-import { ROUTES, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
+import { ROUTES, lessonIdFromSlug, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
-import { Link, Navigate, useParams } from '@/lib/router';
-import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Navigate, useParams } from '@/lib/router';
+import { CheckCircle2 } from 'lucide-react';
 import { useAccount } from '@/lib/account';
 import { setReadingDone, useProgress } from '@/lib/progressDb';
 import { timeAgo } from '@/lib/timeAgo';
 import { Button, Card } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
-import PracticePage, { type Mode } from '@/views/Practice';
+import PracticePage, { LessonPager, type Mode } from '@/views/Practice';
 import { courses, } from '@/data/questMock';
+import { PeopleThisWeek } from '@/components/quest/QuestUI';
+import { useCommunity } from '@/lib/community';
 
 /** Página de lección: las de lectura se muestran aquí; las de práctica, su Objetivo (o la sala, con `view="practice"`). */
 export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
@@ -19,6 +21,8 @@ export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
     const lessonId = lessonIdFromSlug(moduleId, leccion);
     const account = useAccount();
     const progress = useProgress();
+    // Quiénes la leyeron esta semana (datos y caché de Comunidad).
+    const { data: community } = useCommunity(account !== null);
     const course = courses.find(item => item.id === moduleId);
     const index = course?.lessons.findIndex(item => item.id === lessonId) ?? -1;
     if (!course || index < 0) return <Navigate to={ROUTES.exercises} replace/>;
@@ -27,8 +31,6 @@ export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
     // Ejercicio: Objetivo en la página de la lección; tablatura y metrónomo en `…/ejercicio`.
     if (lesson.type === 'practice') return <PracticePage mode={view}/>;
     const readAt = progress.readings[lesson.id]?.readAt?.toMillis();
-    const prev = course.lessons[index - 1];
-    const next = course.lessons[index + 1];
 
     return <>
         <ModuleHero image={course.image} back={{ to: moduleUrl(course.id), label: course.title }} eyebrow={`${course.category} · Lectura`} title={lesson.title} text={lesson.summary}
@@ -51,13 +53,10 @@ export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
                 ? <p className="flex items-center gap-2 text-sm text-success"><CheckCircle2 size={18}/>Leída {timeAgo(readAt)}</p>
                 : <p className="text-sm text-muted">¿Terminaste de leer? Márcala para llevar tu registro.</p>}
             {readAt
-                ? <button type="button" onClick={() => void setReadingDone(lesson.id, false)} className="text-xs text-muted hover:text-fg">Marcar como no leída</button>
-                : <Button onClick={() => void setReadingDone(lesson.id, true)}><CheckCircle2 size={17}/>Marcar como leída</Button>}
+                ? <button type="button" onClick={() => void setReadingDone(lesson.id, false, account.name)} className="text-xs text-muted hover:text-fg">Marcar como no leída</button>
+                : <Button onClick={() => void setReadingDone(lesson.id, true, account.name)}><CheckCircle2 size={17}/>Marcar como leída</Button>}
         </div>}
-        <nav className="mt-6 border-t border-line pt-6 flex justify-between gap-4 text-sm" aria-label="Lecciones del módulo">
-            {prev ? <Link to={lessonUrl(course.id, prev.id)} className="flex items-center gap-2 text-muted hover:text-fg"><ArrowLeft size={16}/>{prev.title}</Link> : <span/>}
-            {next ? <Link to={lessonUrl(course.id, next.id)} className="flex items-center gap-2 text-right text-accent">{next.title}<ArrowRight size={16}/></Link>
-                : <Link to={moduleUrl(course.id)} className="flex items-center gap-2 text-accent">Volver al módulo<ArrowRight size={16}/></Link>}
-        </nav>
+        <div className="mt-6"><PeopleThisWeek title="Leída esta semana por" people={community?.byLesson[lesson.id] ?? []}/></div>
+        <LessonPager moduleId={course.id} moduleTitle={course.title} lessons={course.lessons} current={lesson} mode="goal"/>
     </>;
 }

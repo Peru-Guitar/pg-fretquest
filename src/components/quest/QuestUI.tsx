@@ -3,6 +3,8 @@ import { Link } from '@/lib/router';
 import { ArrowRight, Guitar, Star } from 'lucide-react';
 import { courses } from '@/data/questMock';
 import { cn } from '@/lib/cn';
+import { Card } from '@/components/ui';
+import { initials, toneOf } from '@/lib/avatar';
 
 const artTones: Record<string, { bg: string; fg: string }> = {
     riff: { bg: 'from-[#1d4a7a] via-[#111a30] via-62% to-[#0b0f1c]', fg: 'text-[#5ab8ec]' },
@@ -36,23 +38,44 @@ export function GuitarArt({ variant = 'riff', layout = 'card' }: { variant?: str
     </div>;
 }
 
-export function CourseCard({ course }: { course: typeof courses[number] }) {
+/** Caras superpuestas de quienes practicaron el módulo o la lección esta semana (hasta `max`; el resto, «+N»). */
+export function Practicing({ people, max = 5 }: { people: { uid: string; name: string }[]; max?: number }) {
+    const rest = people.length - max;
+    return <div className="flex -space-x-1.5" aria-label={`${people.length} practicando esta semana`}>
+        {people.slice(0, max).map(person => <span key={person.uid} title={person.name} className={cn('grid size-6 place-items-center rounded-full text-[0.5rem] font-black text-white ring-2 ring-card', toneOf(person.uid))}>{initials(person.name)}</span>)}
+        {rest > 0 && <span className="grid h-6 min-w-6 place-items-center rounded-full bg-raised px-1.5 text-[0.5rem] font-black text-fg-soft ring-2 ring-card">+{rest}</span>}
+    </div>;
+}
+
+/** Fila con todas las personas de la semana en una lección: iniciales y primer nombre. Sin nadie, no se muestra. */
+export function PeopleThisWeek({ title, people }: { title: string; people: { uid: string; name: string }[] }) {
+    if (!people.length) return null;
+    return <Card>
+        <h2 className="mb-4 text-md">{title} <span className="font-normal text-muted">· {people.length}</span></h2>
+        <ul className="flex flex-wrap gap-2">{people.map(person => <li key={person.uid} className="inline-flex items-center gap-2 rounded-full border border-line bg-raised py-1 pr-3 pl-1 text-xs text-fg-soft">
+            <span className={cn('grid size-6 place-items-center rounded-full text-[0.5rem] font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>{person.name.split(' ')[0]}
+        </li>)}</ul>
+    </Card>;
+}
+
+export function CourseCard({ course, practicing = [] }: { course: typeof courses[number]; practicing?: { uid: string; name: string }[] }) {
     const content = <>
         <div className="relative">
             <img src={course.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-44 w-full bg-sunken object-cover"/>
             {!course.available && <span className="absolute top-3 right-3 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-xs font-bold text-white">Próximamente</span>}
         </div>
-        <div className="p-4 xl:p-5">
+        <div className="flex flex-1 flex-col p-4 xl:p-5">
             <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{course.category}</p>
             <h3 className="mt-2 mb-2 text-base md:text-[1.0625rem] xl:text-lg">{course.title}</h3>
             <p className="text-xs leading-relaxed text-muted xs:min-h-9.5">{course.description}</p>
-            <div className="mt-4.5 mb-3.5 text-3xs text-muted">{course.lessonCount} lecciones</div>
-            {course.available && <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-accent"><span>Ver lecciones</span><ArrowRight size={16}/></div>}
+            {/* El conteo y el pie van siempre abajo, alineados entre tarjetas de distinta altura. */}
+            <div className="mt-auto pt-4.5 pb-3.5 text-3xs text-muted">{course.lessonCount} lecciones</div>
+            {course.available && <div className="flex min-h-9 items-center justify-between border-t border-line pt-3 text-xs text-accent">{practicing.length > 0 ? <Practicing people={practicing}/> : <span>Ver lecciones</span>}<ArrowRight size={16}/></div>}
         </div>
     </>;
     return course.available
-        ? <Link to={moduleUrl(course.id)} className="overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60">{content}</Link>
-        : <article aria-label={`${course.title}: próximamente`} className="overflow-hidden rounded-lg border border-line bg-card opacity-60">{content}</article>;
+        ? <Link to={moduleUrl(course.id)} className="flex flex-col overflow-hidden rounded-lg border border-line bg-card transition hover:-translate-y-1 hover:border-accent/60">{content}</Link>
+        : <article aria-label={`${course.title}: próximamente`} className="flex flex-col overflow-hidden rounded-lg border border-line bg-card opacity-60">{content}</article>;
 }
 
 export function CourseGrid({ children, className }: { children: React.ReactNode; className?: string }) {

@@ -41,11 +41,13 @@ service cloud.firestore {
       }
 
       // Lecturas leídas: solo el dueño; se marcan con la hora del servidor y se pueden desmarcar.
+      // `name`: copia del nombre para mostrar quién la leyó esta semana.
       match /readings/{lessonId} {
         allow read, delete: if isOwner(uid);
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly(['readAt'])
-          && request.resource.data.readAt == request.time;
+          && request.resource.data.keys().hasOnly(['readAt', 'name'])
+          && request.resource.data.readAt == request.time
+          && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 40));
       }
 
       // Resumen por lección (Mi plan): los contadores solo suben.
@@ -62,6 +64,11 @@ service cloud.firestore {
 
     // Ranking semanal: consulta de grupo sobre los días de todos (solo lectura, con sesión iniciada).
     match /{path=**}/days/{date} {
+      allow read: if signedIn();
+    }
+
+    // Quién leyó cada lección esta semana: consulta de grupo sobre las lecturas (solo lectura, con sesión iniciada).
+    match /{path=**}/readings/{lessonId} {
       allow read: if signedIn();
     }
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { CalendarDays, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, RefreshCw, Repeat, Target } from 'lucide-react';
-import { BackLink, Button, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
+import { CalendarDays, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, Repeat, Target } from 'lucide-react';
+import { BackLink, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
 import { useHydrated, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
 import { useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
@@ -46,7 +46,7 @@ function Columns({ rows, highlight }: { rows: { label: string; tip: string; minu
     </div>;
 }
 
-function Header({ profile, onRefresh }: { profile: UserProfile; onRefresh: () => void }) {
+function Header({ profile }: { profile: UserProfile }) {
     const place = [profile.city, profile.country].filter(Boolean).join(', ');
     return <Card className="mb-5 flex flex-wrap items-center gap-4 md:gap-5">
         <span className={cn('grid size-16 shrink-0 place-items-center rounded-full text-xl font-black text-white ring-4 ring-line-strong md:size-20 md:text-2xl', toneOf(profile.uid))}>{initials(profile.name)}</span>
@@ -59,8 +59,8 @@ function Header({ profile, onRefresh }: { profile: UserProfile; onRefresh: () =>
                 {profile.weeklyGoal && <span className="flex items-center gap-1"><Target size={13}/>{profile.weeklyGoal} días/sem · {profile.sessionMinutes ?? 30} min</span>}
             </p>
             <p className="mt-1.5 text-2xs text-subtle">Desde {dateLabel(profile.first)} · última práctica {dateLabel(profile.last)}</p>
+            <p className="mt-1 text-2xs text-subtle">Datos de las {new Date(profile.at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} · se actualizan cada hora</p>
         </div>
-        <Button variant="secondary" onClick={onRefresh} className="shrink-0"><RefreshCw size={15}/>Actualizar</Button>
     </Card>;
 }
 
@@ -70,7 +70,7 @@ export default function UserProfilePage() {
     const admin = isAdmin(account);
     const [params] = useSearchParams();
     const uid = params.get('uid');
-    const { data, error, refresh } = useUserProfile(account ? uid : null, admin);
+    const { data, error } = useUserProfile(account ? uid : null, admin);
 
     const spinner = <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (!hydrated || (account && !account.synced)) return spinner;
@@ -88,7 +88,7 @@ export default function UserProfilePage() {
     const modules = groupByModule(data.lessons);
     return <>
         {back}
-        <Header profile={data} onRefresh={refresh}/>
+        <Header profile={data}/>
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo total" detail={data.days ? `${Math.round(data.seconds / 60 / data.days)} min por día` : undefined}/>
             <Stat icon={<CalendarDays size={20}/>} value={String(data.days)} label="Días practicados" detail={`${data.completed} con la meta cumplida`}/>
