@@ -20,7 +20,7 @@ export function ArtistTag({ id }: { id: string }) {
 }
 
 /** Crédito destacado del autor (pantalla del ejercicio). */
-export function ArtistCredit({ id }: { id: string }) {
+export function ArtistCredit({ id, transcribedBy }: { id: string; transcribedBy?: string }) {
     const artist = artists[id];
     if (!artist) return null;
     return <section className="mb-6 flex items-center gap-4 rounded-2xl border border-line bg-card p-4 md:gap-5 md:p-5">
@@ -29,6 +29,7 @@ export function ArtistCredit({ id }: { id: string }) {
             <p className="text-3xs font-black tracking-[0.18em] text-accent">EJERCICIO DE ARTISTA</p>
             <h2 className="mt-1 text-xl md:text-2xl">Realizado por {artist.name}</h2>
             <p className="mt-1 text-sm text-muted">{artist.note}</p>
+            {transcribedBy && <p className="mt-2 text-xs font-bold text-fg-soft">Transcrito por: {transcribedBy}</p>}
         </div>
     </section>;
 }
