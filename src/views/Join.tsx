@@ -2,7 +2,7 @@
 
 import { ROUTES } from '@/lib/routes';
 import { useState } from 'react';
-import { Navigate, useHydrated } from '@/lib/router';
+import { useNavigate } from '@/lib/router';
 import { Gauge, ListChecks, LogIn, TrendingUp, Users } from 'lucide-react';
 import { Button, Card, Eyebrow } from '@/components/ui';
 import { signIn, useAccount } from '@/lib/account';
@@ -17,18 +17,18 @@ const STEPS = [
     { icon: Users, title: 'Entrena en comunidad', text: 'Mira cómo avanzan los demás y únete al grupo de WhatsApp.' },
 ];
 
-/** Landing de invitación (`/unirse`): el enlace que se comparte. Con sesión iniciada, directo al plan. */
+/** Landing de invitación (`/unirse`): el enlace que se comparte. Pública, también con sesión iniciada; al unirse (o si ya hay sesión, al pulsar el botón) sigue al onboarding. */
 export default function JoinPage() {
+    const navigate = useNavigate();
     const account = useAccount();
-    const hydrated = useHydrated();
     const [signingIn, setSigningIn] = useState(false);
     const [error, setError] = useState('');
 
-    if (hydrated && account) return <Navigate to={ROUTES.login} replace/>;
-
     const join = () => {
+        // Con sesión ya iniciada no se vuelve a pasar por Google: sigue directo.
+        if (account) { navigate(ROUTES.login); return; }
         setError(''); setSigningIn(true);
-        signIn().catch((reason: { code?: string }) => { if (reason.code !== 'auth/popup-closed-by-user' && reason.code !== 'auth/cancelled-popup-request') setError('No se pudo entrar. Inténtalo de nuevo.'); }).finally(() => setSigningIn(false));
+        signIn().then(() => navigate(ROUTES.login)).catch((reason: { code?: string }) => { if (reason.code !== 'auth/popup-closed-by-user' && reason.code !== 'auth/cancelled-popup-request') setError('No se pudo entrar. Inténtalo de nuevo.'); }).finally(() => setSigningIn(false));
     };
     const cta = <>
         <Button className="min-h-14 w-full max-w-sm text-base" disabled={signingIn} onClick={join}><LogIn size={20}/>{signingIn ? 'Entrando…' : 'Unirme gratis con Google'}</Button>
