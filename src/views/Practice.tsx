@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, SkipForward, Square, Target, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Trash2, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
@@ -15,6 +15,8 @@ import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
+import { InputLevel, RoundRecordings } from '@/components/practice/RoundRecordings';
+import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
@@ -29,6 +31,15 @@ const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }>
 const ROUND_OPTIONS = [1, 3, 5, 7, 10];
 /** Fuerza de la guitarra de guía al practicar: apenas una referencia bajo el metrónomo. */
 const GUIDE_VELOCITY = 0.08;
+/**
+ * TODO(deuda técnica): grabación por ronda apagada hasta pulirla. Pendiente:
+ * - Probarla con interfaces de varios canales (p. ej. Quad Cortex): el navegador solo toma los canales 1/2,
+ *   que pueden traer la señal seca (DI) en vez de la procesada.
+ * - Con parlantes, el micrófono capta la guía por el aire (solo la mezcla digital la excluye).
+ * - Revisar el flujo completo en el navegador: permiso, cambio de entrada, tomas al detener a mano, Safari/iOS.
+ * Con `true` vuelve la opción «Grabar cada ronda» en la preparación; el resto ya está conectado.
+ */
+const RECORDING_ENABLED = false;
 // Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -136,7 +147,13 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [finished, setFinished] = useState<{ rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
     const startedAt = useRef(0);
     const [startedAtView, setStartedAtView] = useState(0);
-    const closeSummary = useCallback(() => setFinished(null), []);
+    // Grabación opcional, una toma por ronda: en memoria, se escucha al final y se borra al cerrar el resumen.
+    const recorder = usePracticeRecorder();
+    const { clear: clearTakes, startTake } = recorder;
+    const [record, setRecord] = useState(false);
+    // Entrada de audio elegida para grabar ("" = la predeterminada). No se guarda: cada visita parte de la predeterminada.
+    const [inputId, setInputId] = useState('');
+    const closeSummary = useCallback(() => { setFinished(null); clearTakes(); }, [clearTakes]);
     // Nota elegida en la tablatura: Reproducir empieza desde ahí (Practicar siempre toca el patrón completo).
     const [from, setFrom] = useState<number | null>(null);
     // Al cambiar de ejercicio vuelve al valor por defecto de su tablatura.
@@ -199,6 +216,7 @@ function PracticeView({ mode }: { mode: Mode }) {
             onStep: index => { setPhase('playing'); setStep(index + offset); },
             onEnd: () => {
                 if (listen) { stop(); return; }
+                recorder.endTake();
                 const current = sessionRef.current;
                 if (current) {
                     // En sesión: rondas sin fin hasta que se acabe el tiempo; la ronda en curso siempre termina.
@@ -211,6 +229,19 @@ function PracticeView({ mode }: { mode: Mode }) {
                 runRound(number + 1, false);
             },
         });
+    };
+    // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
+    useEffect(() => { if (phase === 'playing' && !listening) startTake(round); }, [phase, listening, round, startTake]);
+    // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
+    const openIntro = () => { setShowIntro(true); if (record) void recorder.open(inputId); };
+    const closeIntro = () => { setShowIntro(false); recorder.close(); };
+    const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
+    const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
+    // Una práctica nueva borra las tomas anteriores.
+    const startPractice = () => {
+        recorder.clear();
+        setShowIntro(false);
+        void start(false);
     };
     // Al salir el resumen se registra la práctica (solo con sesión iniciada); el modal muestra los minutos sumados.
     const finish = (rounds: number, session?: { sessionMinutes: number; seconds: number }) => {
@@ -236,7 +267,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         setStartedAtView(startedAt.current);
         runRound(1, listen);
     };
-    const stop = () => { cancelRef.current?.(); cancelRef.current = null; setStep(-1); setRound(1); setPhase('idle'); };
+    const stop = () => { cancelRef.current?.(); cancelRef.current = null; if (!listening) recorder.close(); setStep(-1); setRound(1); setPhase('idle'); };
 
     // Detener a mano corta la sesión: ese día no cuenta (no pasa nada). Salir de la página, en cambio, no la borra.
     const userStop = () => { if (sessionRef.current) setPlanSession(null); stop(); };
@@ -325,9 +356,9 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
         <Button onClick={() => start(true)} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
-        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={() => setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
+        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={openIntro}><Play size={16} fill="currentColor"/>Practicar</Button>
     </>;
-    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
+    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b>{recorder.recording && <> · <span className="inline-flex items-center gap-1.5 font-bold text-danger"><span className="size-2 animate-pulse rounded-full bg-danger"/>REC</span></>}</span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
     const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
 
@@ -446,7 +477,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={() => { setShowIntro(false); void start(false); }}>
+                {showIntro && <PracticeIntro onCancel={closeIntro} onStart={startPractice} canStart={!record || recorder.status === 'ready'}>
                     <div className="grid grid-cols-2 gap-3">
                         <PracticeField label="Velocidad" icon={Gauge}>
                             <select value={bpm} onChange={event => setBpm(Number(event.target.value))} className="min-h-10 w-full py-1.5 font-bold text-fg">
@@ -459,8 +490,31 @@ function PracticeView({ mode }: { mode: Mode }) {
                     </div>
                     <PracticeOption icon={Headphones} title="Tablatura de guía, muy bajita" checked={practiceGuide} onChange={setPracticeGuide} warning={practiceGuide}
                         note={practiceGuide ? 'Se recomienda practicar sin guía para que puedas oírte mejor.' : 'Una referencia suave por debajo del metrónomo.'}/>
+                    {RECORDING_ENABLED && <>
+                    <PracticeOption icon={Mic} title="Grabar cada ronda" checked={record} onChange={toggleRecord} warning={record && (recorder.status === 'denied' || recorder.status === 'none')}
+                        note={!record ? 'Al terminar eliges una ronda y te escuchas: es la mejor forma de notar errores de tiempo y de limpieza. Queda solo en tu dispositivo y se borra al cerrar el resumen.'
+                            : recorder.status === 'denied' ? 'No tenemos permiso para usar tu entrada de audio. Actívalo en el navegador e inténtalo de nuevo.'
+                            : recorder.status === 'none' ? 'No encontramos ninguna entrada de audio. Conecta tu interfaz o micrófono.'
+                            : 'Se graba tu entrada con el metrónomo; la guía no se graba. Con audífonos queda más limpio.'}/>
+                    {record && recorder.status !== 'denied' && recorder.status !== 'none' && <div className="grid gap-3 rounded-xl border border-line bg-sunken/50 p-3.5">
+                        <PracticeField label="Entrada de audio" icon={Mic}>
+                            <select value={inputId} onChange={event => changeInput(event.target.value)} disabled={recorder.status !== 'ready'} className="min-h-10 w-full py-1.5 font-bold text-fg">
+                                <option value="">Entrada predeterminada</option>
+                                {recorder.devices.map(device => <option key={device.deviceId} value={device.deviceId}>{device.label || 'Entrada de audio'}</option>)}
+                            </select>
+                        </PracticeField>
+                        <InputLevel analyser={recorder.analyser} ready={recorder.status === 'ready'}/>
+                    </div>}
+                    </>}
                 </PracticeIntro>}
-                {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
+                {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}>
+                    {recorder.takes.length > 0 && <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo y se borra al cerrar este resumen."/>}
+                </PracticeSummary>}
+                {/* Detenida a mano no hay resumen: las tomas quedan aquí hasta borrarlas o empezar otra práctica. */}
+                {phase === 'idle' && !finished && recorder.takes.length > 0 && <div className="flex flex-col gap-2 border-t border-line px-4 py-3 sm:flex-row sm:items-start xl:px-5.5">
+                    <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo: se borra al salir o al empezar otra práctica."/>
+                    <Button variant="secondary" onClick={recorder.clear} className="shrink-0"><Trash2 size={15}/>Borrar</Button>
+                </div>}
                 {/* En móvil la nota elegida va en su propia fila, separada con una línea como el resto de la tarjeta. */}
                 <div className="flex flex-col border-t border-line text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-3">
                     <p className="px-5 py-3 sm:p-0"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>

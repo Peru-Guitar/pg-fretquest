@@ -1,5 +1,5 @@
 import { ROUTES } from '@/lib/routes';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Clock3, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -27,7 +27,7 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Ma
  * Resumen al terminar las rondas de una práctica, a pantalla completa con el fondo borroso:
  * rondas, BPM, tiempo y una valoración opcional. No se guarda nada.
  */
-export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress, onClose }: { rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; onClose: () => void }) {
+export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress, children, onClose }: { rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; children?: ReactNode; onClose: () => void }) {
     const signedIn = useAccount() !== null;
     // Minutos que suma esta práctica a la de hoy (solo con sesión y si el día aún no estaba completo).
     const goal = progress?.goalMinutes ?? 0;
@@ -75,6 +75,7 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                         <span className="block h-2 flex-1 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full', after >= goal ? 'bg-success' : 'bg-blue')} style={{ width: `${after / goal * 100}%` }}/></span>
                         <span className={cn('shrink-0 font-mono text-xs', after >= goal ? 'font-bold text-success' : 'text-fg-soft')}>{after >= goal ? '¡Hoy completo!' : `${after}/${goal} min hoy`}</span>
                     </div>}
+                    {children && <div className="mt-6 w-full">{children}</div>}
 
                     <p className="mt-6 text-sm text-fg-soft">¿Cómo te sentiste practicando? <span className="text-muted">(opcional)</span></p>
                     <div role="radiogroup" aria-label="Valoración de la práctica" className="mt-3 grid w-full grid-cols-5 gap-1.5">
