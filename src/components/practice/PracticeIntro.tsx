@@ -17,7 +17,7 @@ const POINTS = [
  * Preparación de la práctica: qué va a pasar al empezar y la configuración (`children`: velocidad, rondas, guía).
  * Sale siempre antes de practicar; cancelar no inicia nada.
  */
-export function PracticeIntro({ children, onStart, onCancel }: { children: ReactNode; onStart: () => void; onCancel: () => void }) {
+export function PracticeIntro({ children, canStart = true, onStart, onCancel }: { children: ReactNode; canStart?: boolean; onStart: () => void; onCancel: () => void }) {
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
     useEffect(() => {
@@ -49,7 +49,7 @@ export function PracticeIntro({ children, onStart, onCancel }: { children: React
                 <p className="mt-6 text-xs text-muted">Antes de sonar hay una cuenta de entrada. Pulsa <kbd className="rounded border border-line-strong px-1.5 font-mono">Esc</kbd> para cancelar en cualquier momento.</p>
                 <div className="mt-6 flex flex-col gap-3">{children}</div>
                 <div className="mt-6 flex flex-wrap gap-3">
-                    <Button onClick={onStart}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>
+                    <Button onClick={onStart} disabled={!canStart}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
                 </div>
             </div>

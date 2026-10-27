@@ -21,6 +21,8 @@ const OPEN_STRINGS = [64, 59, 55, 50, 45, 40];
 let tone: Tone = null;
 let sampler: Tone = null;
 let clicker: Tone = null;
+/** Salida propia de los clics: la grabación de la práctica toma el metrónomo de aquí, sin la guitarra de guía. */
+let clicks: Tone = null;
 /** Las mismas muestras como búferes sueltos: el slide las reproduce cambiando la velocidad sobre la marcha. */
 let buffers: Tone = null;
 /** Armónicos: la misma guitarra sin graves (suena delgada y brillante) más un poco de tono puro. */
@@ -82,7 +84,7 @@ export function prepare(): Promise<void> {
       oscillator: { type: "square" },
       envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 },
       volume: -8,
-    }).connect(master);
+    }).connect((clicks = new tone.Gain(1).connect(master)));
     await tone.loaded();
   })().catch((error) => {
     loading = null; // permite reintentar
@@ -178,6 +180,19 @@ export function slide(string: number, fromFret: number, toFret: number, holdSec:
 /** Clic del metrónomo: `accent` = tick (tiempo), si no tac (contratiempo). */
 export function clickAt(time: number, accent: boolean): void {
   clicker?.triggerAttackRelease(accent ? 1800 : 1100, 0.03, time, accent ? 1 : 0.6);
+}
+
+/** Lleva también los clics del metrónomo a `node` (la grabación). Requiere `prepare`. */
+export function connectClicks(node: AudioNode): void {
+  clicks?.connect(node);
+}
+
+export function disconnectClicks(node: AudioNode): void {
+  try {
+    clicks?.disconnect(node);
+  } catch {
+    // No estaba conectado.
+  }
 }
 
 /** Tone.js ya cargado (tras `prepare`). */
