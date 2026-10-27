@@ -6,7 +6,7 @@ export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; poi
 /** Lección de práctica: patrón para tocar en la sala de práctica. */
 /** Dificultad propia de cada ejercicio (factor de puntos). */
 export type Difficulty = 'base' | 'intermedio' | 'avanzado' | 'experto';
-export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; /** Categoría del patrón dentro del módulo (p. ej. «Grupos de tres cuerdas»): agrupa las lecciones. */ category?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
+export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; /** Quién transcribió el patrón. */ transcribedBy?: string; /** Categoría del patrón dentro del módulo (p. ej. «Grupos de tres cuerdas»): agrupa las lecciones. */ category?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
 export type Lesson = ReadingLesson | PracticeLesson;
 export type TechniqueModule = { id: string; title: string; category: string; description: string; art: string; level: string; icon: string; completedLessons: number; skills: string[]; lessons: Lesson[] };
 // Visual fixtures for guitarists with basic playing experience. No teaching, evaluation or persistence.
@@ -1073,6 +1073,11 @@ moduleFixtures.find(module => module.id === 'alternate-picking')!.lessons = [
 ];
 // Primera del módulo: la más reciente.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-howe-01', title: 'Abrupt Terminal: secuencia de arpegios',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.splice(1, 0, {
  id: 'licks-phrasing-romeo-01', title: 'Tresillos en string skipping sobre Em',
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
@@ -1116,6 +1121,7 @@ const ADDED: Record<string, string> = {
  'alternate-picking-right-hand-02': '2026-10-26',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
+ 'licks-phrasing-howe-01': '2026-10-26',
  'licks-phrasing-romeo-01': '2026-10-25',
  'licks-phrasing-yngwie-02': '2026-10-24',
  'licks-phrasing-gilbert-01': '2026-10-24',
@@ -1135,6 +1141,7 @@ for (const module of moduleFixtures) {
   lesson.description = study.description;
   lesson.goal = study.goal;
   lesson.artist = study.artist;
+  lesson.transcribedBy = study.transcribedBy;
   lesson.tempo = { min: 40, max: lesson.difficulty === 'base' ? 100 : lesson.difficulty === 'intermedio' ? 120 : 160 };
   delete lesson.record;
  }

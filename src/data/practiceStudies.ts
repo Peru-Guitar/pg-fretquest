@@ -34,6 +34,8 @@ export type PracticeStudy = {
     legatoFrom?: number;
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
     artist?: string;
+    /** Quién transcribió el patrón (se muestra junto al crédito del artista). */
+    transcribedBy?: string;
     /** Velocidad inicial del metrónomo (100 BPM por defecto). */
     bpm?: number;
     pattern: PatternNote[];
@@ -323,6 +325,26 @@ const ROMEO_BARS = [
 // La primera nota de cada grupo de tres va con tapping.
 const romeoBars = ROMEO_BARS.map(bar => bar.split(' ').map((note, index): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret, tap: index % 3 === 0 }; }));
 
+/** Greg Howe, «Abrupt Terminal»: sección de arpegios (transcripción de Koko Rengifo). Un compás de 3/4 en semicorcheas por línea; «T» marca el tapping. */
+const HOWE_BARS = [
+    '18/3 14/1 17/1 14/1 18/3 14/3 16/4 17/5 16/4 14/3 18/3 17/2',
+    '17/1 21/1 19/1 16/1 17/2 16/3 16/1 12/1 16/3 13/3 15/4 13/3',
+    '16/3 15/2 13/3 16/3 15/2 13/1 14/1 15/2 14/3 16/4 14/4 16/5',
+    '12/5 16/5 14/4 13/3 16/3 12/1 16/1 12/1 16/3 13/3 16/4 14/3',
+    '16/3 16/2 14/1 11/1 13/2 14/3 13/3 14/2 13/1 16/1 21/1T 16/1',
+    '13/1 16/3 19/1 16/1 17/2 16/3 18/4 19/5 18/4 16/3 19/3 18/2',
+    '16/1 19/1 22/1T 19/1 16/1 18/2 21/1 17/1 19/2 18/3 19/4 21/5',
+    '16/5 17/6 14/6 12/5 16/5 16/4 14/3 14/2 17/2 15/2 14/2 17/2',
+    '15/2 14/2 16/3 15/2 14/2 16/3 14/3 16/3 13/3 15/4 16/4 11/4',
+    '12/5 14/6 12/5 11/4 11/3 13/3 14/3 11/3 12/4 12/5 11/4 14/4',
+    '14/3 14/2 12/1 17/1 12/1 14/2 15/2 22/2T 15/2 12/2 14/2 22/2T',
+    '14/2 10/2 12/2 22/2T 12/2 9/2 10/2 12/2 10/2 9/2 11/3 9/2',
+    '10/3 12/4 11/4 10/3 11/3',
+];
+const howeBars = HOWE_BARS.map(bar => bar.split(' ').map((note): PatternNote => { const [fret, string] = note.replace('T', '').split('/').map(Number); return { string, fret, ...(note.endsWith('T') && { tap: true }) }; }));
+// La nota final (F#) dura un pulso.
+howeBars[howeBars.length - 1].at(-1)!.beats = 1;
+
 // Mano derecha (lección «Ejercicio de mano derecha» de ERP Skool): cuerdas al aire, cuatro golpes por cuerda con púa alternada.
 const openStrings = (strings: number[]): PatternNote[] => strings.flatMap(string => [0, 0, 0, 0].map(fret => ({ string, fret })));
 const RIGHT_HAND_STEPS = [
@@ -586,7 +608,28 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         picking: 'tapping',
         artist: 'michael-romeo',
         bpm: 60,
-        ...withSections(romeoBars.map((pattern, index) => ({ title: `Compás ${index + 1}`, pattern }))),
+        pattern: romeoBars.flat(),
+    },
+    'licks-phrasing-howe-01': {
+        description: 'La sección de arpegios de «Abrupt Terminal» de Greg Howe: arpegios de A, E, F#m, B, D y C# que suben y bajan entre los trastes 9 y 22, con tapping en las notas más agudas.',
+        notation: 'A mayor · 3/4 · Semicorcheas · Púa alternada + tapping (T)',
+        goal: 'Tocar los arpegios con púa alternada y meter el tapping sin cortar el pulso, con todas las notas al mismo volumen.',
+        steps: [
+            'Cada línea es un compás de 3/4: doce semicorcheas, cuatro por pulso.',
+            'Púa alternada ⊓ V en todas las notas, también al cambiar de cuerda.',
+            'Las notas con T (trastes 21 y 22) van con tapping de la mano derecha; la nota siguiente en la misma cuerda sale con pull-off desde el tap.',
+            'En los compases 11 y 12 los taps caen en la segunda cuerda: deja la mano izquierda fija en 12–15 y tapea el 22.',
+            'Practica cada compás por separado y luego encadénalos.',
+            'La versión original va a 132 BPM: es la meta, no el punto de partida.',
+        ],
+        mistakes: ['Que el tap suene más fuerte o más débil que las notas con púa.', 'Perder el lugar de la púa después del tap: retoma la alternancia sin reiniciar con ⊓.', 'Que suenen las cuerdas al aire en los saltos a la quinta y sexta cuerda.', 'Acelerar en los compases fáciles y frenar en los saltos de cuerda.'],
+        criterion: 'Toca los trece compases sin pausas y con los taps a tiempo. Sube el BPM cuando el pull-off después de cada tap suene tan claro como las notas con púa.',
+        perRow: 12,
+        figure: 'semicorcheas',
+        artist: 'greg-howe',
+        transcribedBy: 'Koko Rengifo',
+        bpm: 120,
+        pattern: howeBars.flat(),
     },
     'licks-phrasing-vinnie-01': {
         description: 'Un lick de Vinnie Moore en Am: la escala baja con tres notas por cuerda, cambia de posición a mitad de camino y resuelve en A.',
@@ -640,7 +683,13 @@ export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['pickin
         if (note.tap) return 'tap';
         return previous && previous.string === note.string && note.fret < previous.fret ? 'pull' : 'hammer';
     });
-    if (picking === 'alternate' && legatoFrom === Infinity) return pattern.map((note, index) => note.slide ? 'slide' : index % 2 === 0 ? 'down' : 'up');
+    // Con púa alternada, una nota con `tap` va con la mano derecha (T) y la siguiente en la misma cuerda y más abajo sale con pull-off.
+    if (picking === 'alternate' && legatoFrom === Infinity) return pattern.map((note, index) => {
+        const previous = pattern[index - 1];
+        if (note.tap) return 'tap';
+        if (previous?.tap && previous.string === note.string && note.fret < previous.fret) return 'pull';
+        return note.slide ? 'slide' : index % 2 === 0 ? 'down' : 'up';
+    });
     // Arpegios: la púa solo ataca al cambiar de cuerda, siguiendo el movimiento (⊓ hacia la aguda, V hacia la grave);
     // en la misma cuerda se liga: hammer-on si el traste sube, pull-off si baja. Cuerda 1 = la más aguda.
     return pattern.map((note, index) => {
