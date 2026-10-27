@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Clock3, Music2, Play, Target, X } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -13,11 +13,10 @@ const POINTS = [
 ];
 
 /**
- * Aviso antes de la primera práctica: qué va a pasar al empezar. Se muestra hasta que se marca
- * «No volver a mostrar esta semana»; cancelar no inicia nada.
+ * Preparación de la práctica: qué va a pasar al empezar y la configuración (`settings`: BPM, rondas).
+ * Sale siempre antes de practicar; cancelar no inicia nada.
  */
-export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: boolean) => void; onCancel: () => void }) {
-    const [dontShowAgain, setDontShowAgain] = useState(false);
+export function PracticeIntro({ settings, onStart, onCancel }: { settings: ReactNode; onStart: () => void; onCancel: () => void }) {
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
     useEffect(() => {
@@ -47,12 +46,9 @@ export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: 
                     </li>)}
                 </ul>
                 <p className="mt-6 text-xs text-muted">Antes de sonar hay una cuenta de entrada. Pulsa <kbd className="rounded border border-line-strong px-1.5 font-mono">Esc</kbd> para cancelar en cualquier momento.</p>
-                <label className="mt-6 flex cursor-pointer items-center gap-2.5 text-sm text-fg-soft">
-                    <input type="checkbox" checked={dontShowAgain} onChange={event => setDontShowAgain(event.target.checked)} className="size-4 accent-brand"/>
-                    No volver a mostrar esta semana
-                </label>
+                <div className="mt-6 flex flex-col gap-4 rounded-xl border border-line bg-sunken/60 p-4">{settings}</div>
                 <div className="mt-6 flex flex-wrap gap-3">
-                    <Button onClick={() => onStart(dontShowAgain)}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>
+                    <Button onClick={onStart}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
                 </div>
             </div>

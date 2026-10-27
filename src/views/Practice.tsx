@@ -3,7 +3,7 @@
 import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type PracticeLesson } from '@/data/questMock';
@@ -13,14 +13,13 @@ import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
 import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
-import { setLastExercise, setPracticeIntroSeen, usePracticeIntroSeen } from '@/lib/progress';
+import { setLastExercise } from '@/lib/progress';
 import { PracticeIntro } from '@/components/practice/PracticeIntro';
-import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, todayKey, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
+import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
-import { weekStart } from '@/lib/domain/report';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
@@ -99,8 +98,6 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
-    // «No volver a mostrar» dura la semana: cada lunes el aviso vuelve a salir.
-    const introSeen = usePracticeIntroSeen() === weekStart(todayKey());
     const [showIntro, setShowIntro] = useState(false);
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
@@ -162,6 +159,14 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [step, setStep] = useState(-1);
     const [listening, setListening] = useState(false);
     const active = phase !== 'idle';
+    // Practicar (no Reproducir) se muestra en su propia pantalla completa: la tablatura gana todo el espacio.
+    const stage = active && !listening;
+    useEffect(() => {
+        if (!stage) return;
+        const overflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = overflow; };
+    }, [stage]);
     const cancelRef = useRef<(() => void) | null>(null);
     const bpmRef = useRef(bpm);
     useEffect(() => {
@@ -293,11 +298,11 @@ function PracticeView({ mode }: { mode: Mode }) {
         const observer = new IntersectionObserver(([entry]) => setHeaderHidden(!entry.isIntersecting), { rootMargin: "-64px 0px 0px 0px" });
         observer.observe(element);
         return () => observer.disconnect();
-    }, [mode]);
+    }, [mode, stage]);
     // La barra fija se alinea con la tarjeta del ejercicio (la columna de contenido, no toda la ventana).
     const sectionRef = useRef<HTMLElement | null>(null);
     const [barBox, setBarBox] = useState({ left: 0, width: 0 });
-    const showBar = active && phase !== 'loading' && headerHidden;
+    const showBar = active && !stage && phase !== 'loading' && headerHidden;
     useEffect(() => {
         if (!showBar) return;
         const measure = () => {
@@ -311,7 +316,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
         <Button onClick={() => start(true)} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
-        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={() => introSeen ? start(false) : setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
+        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={() => setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
@@ -332,6 +337,11 @@ function PracticeView({ mode }: { mode: Mode }) {
             })}
         </div>
     </div>;
+
+    // La misma tarjeta del ejercicio; al practicar va en una capa a pantalla completa (en <body>, por el `transform` de <main>).
+    const inStage = (content: ReactNode) => stage
+        ? createPortal(<div role="region" aria-label="Modo práctica" className="fixed inset-0 z-40 overflow-y-auto bg-canvas p-3 md:p-6">{content}</div>, document.body)
+        : content;
 
     return <>
         <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id), label: activeModule.title }} eyebrow={`${activeModule.category} · Práctica`} title={activeExercise.title} text={activeExercise.description}
@@ -401,8 +411,8 @@ function PracticeView({ mode }: { mode: Mode }) {
         </div>}
 
         {mode !== 'goal' && <div className="flex flex-col gap-6">
-            <section ref={sectionRef} className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-card">
-                <div ref={headerRef}>
+            {inStage(<section ref={sectionRef} className={cn('relative min-w-0 overflow-hidden rounded-xl border border-line bg-card', stage && 'mx-auto w-full max-w-7xl')}>
+                <div ref={headerRef} className={cn(stage && 'sticky top-0 z-20 bg-card')}>
                 <div className="flex flex-wrap items-center justify-between gap-3 p-5 md:p-6">
                     <div className="min-w-0">
                         <Eyebrow>{activeModule.title.toUpperCase()}</Eyebrow>
@@ -420,7 +430,6 @@ function PracticeView({ mode }: { mode: Mode }) {
                         : phase === 'loading'
                             ? <Button disabled className="min-w-40"><Loader2 size={17} className="animate-spin"/>Cargando sonido…</Button>
                             : playingInfo}
-                    {!active && <div className="-mx-4 flex w-[calc(100%+2rem)] flex-wrap items-center justify-center gap-3 border-t border-line px-4 pt-3 text-sm text-muted sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:border-0 sm:p-0">{session ? <span>Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</span> : roundsGroup}</div>}
                 </div>
                 </div>
                 {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-16 z-20 rounded-b-xl border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
@@ -434,7 +443,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={dontShowAgain => { setShowIntro(false); if (dontShowAgain) setPracticeIntroSeen(weekStart(todayKey())); start(false); }}/>}
+                {showIntro && <PracticeIntro settings={<>{tempoSelect}{session ? <p className="text-sm text-muted">Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</p> : roundsGroup}</>} onCancel={() => setShowIntro(false)} onStart={() => { setShowIntro(false); void start(false); }}/>}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
                 {/* En móvil la nota elegida va en su propia fila, separada con una línea como el resto de la tarjeta. */}
                 <div className="flex flex-col border-t border-line text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-3">
@@ -495,7 +504,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         <p className="mt-3 text-sm text-muted"><kbd className="rounded border border-line-strong px-1.5 font-mono text-xs">Esc</kbd> para cancelar</p>
                     </div>
                 </div>, document.body)}
-            </section>
+            </section>)}
         </div>}
         {!active && !session && <LessonPager moduleId={activeModule.id} moduleTitle={activeModule.title} lessons={practiceLessons} current={activeExercise} mode={mode}/>}
     </>;
