@@ -11,6 +11,38 @@ export const FIGURES: Record<Figure, { notesPerBeat: number; label: string; perB
     sextillos: { notesPerBeat: 6, label: 'Sextillos · 6 notas por pulso', perBeat: 'Seis notas por pulso' },
 };
 
+/**
+ * Velocidad: cinco niveles fijos en lugar de BPM sueltos. Las lecciones en corcheas suben por una escalera que pasa a
+ * semicorcheas a mitad de camino (de 2 a 10,7 notas por segundo, sin bajar nunca de 60 BPM para no perder el pulso).
+ * Las demás conservan su figura y cada nivel solo cambia el BPM.
+ */
+export type Speed = 1 | 2 | 3 | 4 | 5;
+export const SPEEDS: { speed: Speed; name: string }[] = [
+    { speed: 1, name: 'Base' },
+    { speed: 2, name: 'Estable' },
+    { speed: 3, name: 'Fluido' },
+    { speed: 4, name: 'Intenso' },
+    { speed: 5, name: 'Extremo' },
+];
+const LADDER: { figure: Figure; bpm: number }[] = [
+    { figure: 'corcheas', bpm: 60 },
+    { figure: 'corcheas', bpm: 90 },
+    { figure: 'semicorcheas', bpm: 70 },
+    { figure: 'semicorcheas', bpm: 120 },
+    { figure: 'semicorcheas', bpm: 160 },
+];
+const FIXED_BPM = [60, 80, 100, 120, 160];
+export const speedName = (speed: Speed) => SPEEDS[speed - 1].name;
+/** Figura y BPM con que suena una lección (su figura base) a cierta velocidad. */
+export const speedPlan = (figure: Figure, speed: Speed): { figure: Figure; bpm: number } =>
+    figure === 'corcheas' ? LADDER[speed - 1] : { figure, bpm: FIXED_BPM[speed - 1] };
+/** Nivel más cercano a un intento guardado solo con BPM (antes de los niveles): compara notas por segundo. */
+export const speedFromBpm = (figure: Figure, bpm: number): Speed => {
+    const rate = bpm * FIGURES[figure].notesPerBeat;
+    const rates = SPEEDS.map(({ speed }) => { const plan = speedPlan(figure, speed); return plan.bpm * FIGURES[plan.figure].notesPerBeat; });
+    return rates.reduce((best, value, index) => Math.abs(value - rate) < Math.abs(rates[best] - rate) ? index : best, 0) + 1 as Speed;
+};
+
 export type PracticeStudy = {
     description: string;
     notation?: string;
@@ -36,8 +68,8 @@ export type PracticeStudy = {
     artist?: string;
     /** Quién transcribió el patrón (se muestra junto al crédito del artista). */
     transcribedBy?: string;
-    /** Velocidad inicial del metrónomo (100 BPM por defecto). */
-    bpm?: number;
+    /** Velocidad sugerida (1–5, ver `SPEEDS`); 2 por defecto. */
+    speed?: Speed;
     pattern: PatternNote[];
     /** Partes con título (se numeran solas); cada una empieza en una fila nueva de la tablatura. Sin partes, el patrón se reparte de corrido. */
     sections?: { title: string; pattern: PatternNote[] }[];
@@ -51,7 +83,7 @@ const chromaticAt = (position: number, order = [1, 2, 3, 4]): PatternNote[] => {
 };
 const chromaticPositions: [string, number][] = [['Desde el primer traste', 1], ['Desde el quinto traste', 5], ['Desde el séptimo traste', 7], ['Desde el traste 12', 12]];
 // Arpegios de séptima (guía «No más arpegios aburridos» de peruguitar.com): una línea por cuerda tocada, «cuerda:trastes».
-// Todos en corcheas, 16 notas (dos compases de 4/4), sobre la escala mayor de C.
+// Todos en corcheas (16 notas, dos compases de 4/4) o semicorcheas según la velocidad, sobre la escala mayor de C.
 const tab = (text: string): PatternNote[] => text.trim().split('\n').flatMap(line => {
     const [string, frets] = line.trim().split(':');
     return frets.split('-').map(fret => ({ string: Number(string), fret: Number(fret) }));
@@ -91,16 +123,16 @@ const modalArpeggioStudy = ({ mode, degree, chord, formula, color, pattern, from
     goal: fromSeventh
         ? `Escuchar el arpegio de séptima como el color del modo ${mode}: no se le suma ninguna tensión.`
         : `Escuchar el color del modo ${mode}: la cuatriada del grado más su intervalo característico.`,
-    steps: [color, ...(fromSeventh ? [`Sin alteraciones: es exactamente el ${chord} de «${fromSeventh}», en los arpegios de séptima. Si ya lo dominas, úsalo para comparar su color con el de los modos que sí llevan tensión.`] : []), 'Sube desde la quinta cuerda hasta la primera y vuelve, una nota por corchea con el metrónomo.', 'Púa solo al cambiar de cuerda; en la misma cuerda liga con hammer-on y pull-off.', 'Toca el acorde antes y después del arpegio para tener su sonido en el oído.'],
+    steps: [color, ...(fromSeventh ? [`Sin alteraciones: es exactamente el ${chord} de «${fromSeventh}», en los arpegios de séptima. Si ya lo dominas, úsalo para comparar su color con el de los modos que sí llevan tensión.`] : []), 'Sube desde la quinta cuerda hasta la primera y vuelve, una nota por subdivisión del metrónomo.', 'Púa solo al cambiar de cuerda; en la misma cuerda liga con hammer-on y pull-off.', 'Toca el acorde antes y después del arpegio para tener su sonido en el oído.'],
     mistakes: ['Dejar sonar dos notas a la vez al cruzar de cuerda.', 'Perder la nota de la tensión: es la que da el color del modo.', 'Acelerar en la bajada.'],
-    criterion: 'Cuando el arpegio suene parejo a una velocidad cómoda, sube el BPM. La meta de la guía es 160 BPM en corcheas.',
+    criterion: 'Cuando el arpegio suene parejo a una velocidad cómoda, sube el BPM. La meta es llegar a Intenso.',
     figure: 'corcheas',
-    bpm: 80,
+    speed: 2,
     perRow: 16,
     picking: 'legato',
     ...withSections([{ title: `${chord} · ${mode} · grado ${degree}`, pattern }]),
 });
-const ARPEGGIO_TEXT = 'Escala mayor de C · Corcheas: dos compases de 4/4 por acorde · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
+const ARPEGGIO_TEXT = 'Escala mayor de C · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
 
 const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
@@ -174,7 +206,7 @@ const pentatonicStudy = (position: number): PracticeStudy => {
         mistakes: ['Perder el lugar al regresar dos cuerdas y repetir un grupo.', 'Acentuar la primera nota de cada grupo.', 'Dejar sonar las cuerdas al cambiar de dirección.'],
         criterion: 'Toca la subida y la bajada sin detenerte ni dudar en los regresos. Sube el BPM cuando todos los grupos suenen parejos.',
         figure: 'tresillos',
-        bpm: 60,
+        speed: 1,
         perRow: 12,
         pattern: pentatonicGroups(frets),
     };
@@ -212,48 +244,69 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
         criterion: 'Sube y baja sin pausas entre grupos y con todas las notas al mismo volumen. Sube el BPM solo cuando el sweep no suene a acorde.',
         figure: 'semicorcheas',
         picking: 'legato',
-        bpm: 60,
+        speed: 1,
         perRow: 16,
         pattern: [...up, ...down],
     };
 };
 
-// Modos de la escala mayor de C (patrón del curso de erpskool, «Escala de Do mayor»): todos con las notas de C mayor,
-// cada uno desde su grado (D dórico, E frigio…). Se agrupan por su tercera: los mayores en «Escala mayor» y los menores
-// en «Escala menor», junto a la menor natural (A eólico).
-// Tres notas por cuerda desde la tónica en la quinta cuerda, dos octavas; cada parte sube una cuerda más que la anterior
-// y regresa. La última baja hasta la sexta cuerda, vuelve a subir y termina en la tónica.
+// Modos de la escala mayor de C (patrón del curso de erpskool, «Escala de Do mayor») y de C menor armónica y C menor
+// melódica, que parten de la misma tónica: cada modo usa las notas de su escala y sale de su grado (D dórico, E frigio…), en el orden de los
+// grados. Tres notas por cuerda desde la tónica en la quinta cuerda, dos octavas; cada parte sube una cuerda más que la
+// anterior y regresa. La última baja hasta la sexta cuerda, vuelve a subir y termina en la tónica.
 const OPEN_MIDI = [64, 59, 55, 50, 45, 40];
-const NOTE_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const MAJOR_PCS = [0, 2, 4, 5, 7, 9, 11];
-/** Modos en el orden en que se presentan: id de lección, grado de C mayor del que salen y grupo. */
+/** Escalas madre: nota de partida (clase de altura), semitonos de cada grado desde ella y nombres de sus notas. */
+const PARENT_SCALES = {
+    major: { tonic: 0, steps: [0, 2, 4, 5, 7, 9, 11], names: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], name: 'la escala mayor de C', short: 'C mayor', category: 'Modos de la escala mayor' },
+    harmonic: { tonic: 0, steps: [0, 2, 3, 5, 7, 8, 11], names: ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'B'], name: 'la menor armónica de C', short: 'C menor armónica', category: 'Modos de la menor armónica' },
+    melodic: { tonic: 0, steps: [0, 2, 3, 5, 7, 9, 11], names: ['C', 'D', 'Eb', 'F', 'G', 'A', 'B'], name: 'la menor melódica de C', short: 'C menor melódica', category: 'Modos de la menor melódica' },
+} as const;
+/** Modos en el orden en que se presentan: id de lección, escala madre y grado del que salen. */
 export const SCALE_MODES = [
-    { id: 'scales-01', degree: 0, mode: 'jónico', group: 'Escala mayor', color: 'Es la escala mayor misma: brillante y estable.' },
-    { id: 'scales-04', degree: 3, mode: 'lidio', group: 'Escala mayor', color: 'Mayor con la cuarta aumentada (#4): suena abierto y suspendido.' },
-    { id: 'scales-05', degree: 4, mode: 'mixolidio', group: 'Escala mayor', color: 'Mayor con la séptima menor (b7): el sonido del acorde de dominante.' },
-    { id: 'scales-06', degree: 5, mode: 'eólico', group: 'Escala menor', color: 'Es la escala menor natural: la relativa menor de C mayor.' },
-    { id: 'scales-02', degree: 1, mode: 'dórico', group: 'Escala menor', color: 'Menor con la sexta mayor: un color menor más luminoso.' },
-    { id: 'scales-03', degree: 2, mode: 'frigio', group: 'Escala menor', color: 'Menor con la segunda menor (b2): oscuro, de sabor español.' },
-    { id: 'scales-07', degree: 6, mode: 'locrio', group: 'Escala menor', color: 'Con la segunda menor y la quinta disminuida (b2, b5): inestable y tenso.' },
+    { id: 'scales-01', scale: 'major', degree: 0, mode: 'jónico', color: 'Es la escala mayor misma: brillante y estable.' },
+    { id: 'scales-02', scale: 'major', degree: 1, mode: 'dórico', color: 'Menor con la sexta mayor: un color menor más luminoso.' },
+    { id: 'scales-03', scale: 'major', degree: 2, mode: 'frigio', color: 'Menor con la segunda menor (b2): oscuro, de sabor español.' },
+    { id: 'scales-04', scale: 'major', degree: 3, mode: 'lidio', color: 'Mayor con la cuarta aumentada (#4): suena abierto y suspendido.' },
+    { id: 'scales-05', scale: 'major', degree: 4, mode: 'mixolidio', color: 'Mayor con la séptima menor (b7): el sonido del acorde de dominante.' },
+    { id: 'scales-06', scale: 'major', degree: 5, mode: 'eólico', color: 'Es la escala menor natural: la relativa menor de C mayor.' },
+    { id: 'scales-07', scale: 'major', degree: 6, mode: 'locrio', color: 'Con la segunda menor y la quinta disminuida (b2, b5): inestable y tenso.' },
+    { id: 'scales-harmonic-01', scale: 'harmonic', degree: 0, mode: 'menor armónica', color: 'La menor natural con la séptima mayor: la sensible empuja hacia la tónica. Es el sonido neoclásico.' },
+    { id: 'scales-harmonic-02', scale: 'harmonic', degree: 1, mode: 'locrio ♮6', color: 'Locrio con la sexta mayor: semidisminuido, un poco menos oscuro.' },
+    { id: 'scales-harmonic-03', scale: 'harmonic', degree: 2, mode: 'jónico #5', color: 'Mayor con la quinta aumentada (#5): brillante pero inquieto.' },
+    { id: 'scales-harmonic-04', scale: 'harmonic', degree: 3, mode: 'dórico #4', color: 'Dórico con la cuarta aumentada (#4): menor con aire de Europa del Este.' },
+    { id: 'scales-harmonic-05', scale: 'harmonic', degree: 4, mode: 'frigio dominante', color: 'Frigio con la tercera mayor: el sonido flamenco y del metal neoclásico sobre G7.' },
+    { id: 'scales-harmonic-06', scale: 'harmonic', degree: 5, mode: 'lidio #2', color: 'Lidio con la segunda aumentada (#2): mayor, luminoso y exótico.' },
+    { id: 'scales-harmonic-07', scale: 'harmonic', degree: 6, mode: 'superlocrio bb7', color: 'Tercera menor, quinta disminuida y séptima disminuida: el sonido del acorde disminuido B°7.' },
+    { id: 'scales-melodic-01', scale: 'melodic', degree: 0, mode: 'menor melódica', color: 'Menor con la sexta y la séptima mayores: un menor suave, muy usado en el jazz.' },
+    { id: 'scales-melodic-02', scale: 'melodic', degree: 1, mode: 'dórico b2', color: 'Dórico con la segunda menor (b2): oscuro, cercano al frigio.' },
+    { id: 'scales-melodic-03', scale: 'melodic', degree: 2, mode: 'lidio aumentado', color: 'Lidio con la quinta aumentada (#4, #5): flotante y suspendido.' },
+    { id: 'scales-melodic-04', scale: 'melodic', degree: 3, mode: 'lidio dominante', color: 'Mayor con la cuarta aumentada y la séptima menor (#4, b7): el color de un dominante 7(#11).' },
+    { id: 'scales-melodic-05', scale: 'melodic', degree: 4, mode: 'mixolidio b6', color: 'Mixolidio con la sexta menor (b6): un dominante con toque melancólico.' },
+    { id: 'scales-melodic-06', scale: 'melodic', degree: 5, mode: 'locrio ♮2', color: 'Locrio con la segunda mayor: el color natural del acorde semidisminuido.' },
+    { id: 'scales-melodic-07', scale: 'melodic', degree: 6, mode: 'alterado', color: 'El dominante con todas sus tensiones alteradas (b9, #9, #11, b13): máxima tensión antes de resolver.' },
 ] as const;
+type ScaleMode = typeof SCALE_MODES[number];
 const ORDINALS = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo'];
-/** Tónica de cada modo: el grado de C mayor del que sale. */
-export const modeRoot = (degree: number) => NOTE_NAMES[degree];
+/** Título de la lección: tónica del modo y su nombre (C menor armónica, G frigio dominante…). */
+export const modeTitle = ({ scale, degree, mode }: ScaleMode) => `${PARENT_SCALES[scale].names[degree]} ${mode}`;
+/** Grupo de la lección dentro del módulo: los modos de su escala madre. */
+export const modeCategory = ({ scale }: ScaleMode) => PARENT_SCALES[scale].category;
 const note = (string: number, midi: number): PatternNote => ({ string, fret: midi - OPEN_MIDI[string - 1] });
-const modeStudy = ({ degree, mode, color }: typeof SCALE_MODES[number]): PracticeStudy => {
-    const root = modeRoot(degree);
-    const notes = [0, 1, 2, 3, 4, 5, 6].map(step => NOTE_NAMES[(degree + step) % 7]);
+const modeStudy = ({ scale: parentId, degree, mode, color }: ScaleMode): PracticeStudy => {
+    const parent = PARENT_SCALES[parentId];
+    const root = parent.names[degree];
+    const notes = [0, 1, 2, 3, 4, 5, 6].map(step => parent.names[(degree + step) % 7]);
     // La tónica va en la quinta cuerda entre los trastes 1 y 12.
-    const rootMidi = 45 + (((MAJOR_PCS[degree] - 9 + 12) % 12) || 12);
-    const scale = (offset: number) => { const index = degree + offset; return rootMidi - MAJOR_PCS[degree] + MAJOR_PCS[((index % 7) + 7) % 7] + Math.floor(index / 7) * 12; };
+    const rootMidi = 45 + (((parent.tonic + parent.steps[degree] - 9 + 24) % 12) || 12);
+    const scale = (offset: number) => { const index = degree + offset; return rootMidi - parent.steps[degree] + parent.steps[((index % 7) + 7) % 7] + Math.floor(index / 7) * 12; };
     const up = Array.from({ length: 15 }, (_, index) => note(5 - Math.floor(index / 3), scale(index)));
     const below = [-1, -2, -3].map(offset => note(6, scale(offset)));
     const part = (strings: number) => [...up.slice(0, strings * 3), ...up.slice(1, strings * 3 - 1).reverse()];
     const start = up[0].fret;
     return {
-        description: `${root} ${mode}: el ${ORDINALS[degree]} modo de la escala mayor de C (mismas notas, empezando en ${root}), con un patrón de tres notas por cuerda desde ${root} en el traste ${start} de la quinta cuerda. ${color}`,
-        notation: `${root} ${mode} (${notes.join(' ')}) · Corcheas · Púa alternada`,
-        goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos de C mayor y mejorar el picking.`,
+        description: `${root} ${mode}: el ${ORDINALS[degree]} modo de ${parent.name} (mismas notas, empezando en ${root}), con un patrón de tres notas por cuerda desde ${root} en el traste ${start} de la quinta cuerda. ${color}`,
+        notation: `${root} ${mode} (${notes.join(' ')}) · Púa alternada`,
+        goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos de ${parent.short} y mejorar el picking.`,
         steps: [
             `Antes del patrón, toca la escala completa: de ${root} en el traste ${start} de la quinta cuerda a ${root} en el traste ${up[14].fret} de la primera, dos octavas más arriba.`,
             `El patrón tiene cuatro partes. Cada una sale de ${root}, sube una cuerda más que la anterior y regresa hasta el traste ${up[1].fret} de la quinta cuerda.`,
@@ -264,7 +317,7 @@ const modeStudy = ({ degree, mode, color }: typeof SCALE_MODES[number]): Practic
         mistakes: ['Levantar los dedos al subir: se pierde el contacto con el mástil.', 'Dejar sonar las cuerdas que ya tocaste.', 'Correr antes de que el patrón se sienta fluido.'],
         criterion: 'Toca las cuatro partes de corrido, lento y sin pausas. Sube el BPM solo cuando todas las notas suenen limpias y parejas.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 2,
         ...withSections([
             { title: 'Hasta la cuarta cuerda', pattern: part(2) },
             { title: 'Hasta la tercera cuerda', pattern: part(3) },
@@ -356,25 +409,25 @@ const RIGHT_HAND_STEPS = [
 const RIGHT_HAND_MISTAKES = ['Reiniciar con púa abajo al cambiar de cuerda: la alternancia no se interrumpe.', 'Dejar sonando las cuerdas que ya tocaste.', 'Atacar más fuerte con púa abajo que con púa arriba.'];
 const rightHandOpen: PracticeStudy = {
     description: 'Cuerdas al aire de la sexta a la primera, cuatro golpes por cuerda con púa alternada.',
-    notation: 'Cuerdas al aire · Corcheas · Púa alternada continua',
+    notation: 'Cuerdas al aire · Púa alternada continua',
     goal: 'Ejercitar la mano derecha por separado antes de coordinarla con la izquierda: golpes parejos, abajo y arriba, y cambios de cuerda sin cortar la alternancia.',
     steps: RIGHT_HAND_STEPS,
     mistakes: RIGHT_HAND_MISTAKES,
     criterion: 'Cuando los cuatro golpes de cada cuerda suenen parejos y sin ruido de las demás cuerdas, sube el BPM.',
     perRow: 24,
     figure: 'corcheas',
-    bpm: 80,
+    speed: 1,
     pattern: openStrings([6, 5, 4, 3, 2, 1]),
 };
 const rightHandSkip: PracticeStudy = {
     description: 'El mismo patrón de cuatro golpes por cuerda, pero saltando una cuerda en cada cambio. Dos recorridos: de la sexta a la primera y de vuelta.',
-    notation: 'Cuerdas al aire · Corcheas · Púa alternada continua · Salto de cuerda',
+    notation: 'Cuerdas al aire · Púa alternada continua · Salto de cuerda',
     goal: 'Mantener la púa alternada y el control al saltar cuerdas: la púa llega justo a la cuerda que toca sin rozar la que salta.',
     steps: RIGHT_HAND_STEPS,
     mistakes: [...RIGHT_HAND_MISTAKES, 'Rozar la cuerda que saltas.'],
     criterion: 'Cuando los dos recorridos suenen parejos y sin que suene la cuerda que saltas, sube el BPM.',
     figure: 'corcheas',
-    bpm: 80,
+    speed: 1,
     ...withSections([
         { title: 'Primer recorrido', pattern: openStrings([6, 4, 5, 3, 4, 2, 3, 1]) },
         { title: 'Segundo recorrido', pattern: openStrings([1, 3, 2, 4, 3, 5, 4, 6]) },
@@ -387,51 +440,51 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     'fingering-01': {
         description: 'Cromático clásico 1–2–3–4 en todas las cuerdas, de ida y de vuelta, en cuatro posiciones del mástil: trastes 1, 5, 7 y 12.',
         goal: 'Soltar los dedos. Cada posición se siente distinta: abajo los trastes están más separados y arriba más juntos, así que la mano tiene que adaptarse a cada zona.',
-        steps: ['Dedos 1, 2, 3 y 4 = índice, medio, anular y meñique, un dedo por traste. En la primera posición van en los trastes 1, 2, 3 y 4.', 'Toca 1–2–3–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–2–3–4.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, dos notas por clic. Elige una velocidad a la que puedas tocar todo limpio, no la más rápida.'],
+        steps: ['Dedos 1, 2, 3 y 4 = índice, medio, anular y meñique, un dedo por traste. En la primera posición van en los trastes 1, 2, 3 y 4.', 'Toca 1–2–3–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–2–3–4.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, a tempo con el metrónomo. Elige una velocidad a la que puedas tocar todo limpio, no la más rápida.'],
         mistakes: ['Apretar de más en la primera posición, donde los trastes están más separados.', 'Amontonar los dedos en el traste 12, donde el espacio es menor.', 'Levantar mucho los dedos o mover toda la mano en cada nota.'],
         criterion: 'Recorre las cuatro posiciones sin pararte en los cambios y sin zumbidos. Sube la velocidad solo cuando todas suenen igual de limpias.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 1,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position) }))),
     },
     'fingering-02': {
         description: 'El mismo recorrido del cromático 1–2–3–4, pero al revés: 4–3–2–1 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
         goal: 'No es lo mismo tocar empezando por el meñique que por el índice. Desarrolla fuerza y control en ambas posturas, hasta que el 4–3–2–1 suene tan parejo como el 1–2–3–4.',
-        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4.', 'Toca 4–3–2–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–3–2–1.', 'Empezar por el meñique exige que el resto de dedos ya esté apoyado: al tocar el 4, los dedos 1, 2 y 3 esperan sobre sus trastes y se van soltando uno a uno.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, dos notas por clic. Elige una velocidad a la que todo suene limpio.'],
+        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4.', 'Toca 4–3–2–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–3–2–1.', 'Empezar por el meñique exige que el resto de dedos ya esté apoyado: al tocar el 4, los dedos 1, 2 y 3 esperan sobre sus trastes y se van soltando uno a uno.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, a tempo con el metrónomo. Elige una velocidad a la que todo suene limpio.'],
         mistakes: ['Que el meñique suene más débil o más corto que los demás dedos.', 'Levantar todos los dedos a la vez en lugar de soltarlos de uno en uno.', 'Tensar la mano para sostener la postura en la primera posición.'],
         criterion: 'Recorre las cuatro posiciones sin pararte y con el mismo volumen en las cuatro notas. Compara con el 1–2–3–4: cuando suenen igual, sube la velocidad.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 1,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [4, 3, 2, 1]) }))),
     },
     'fingering-03': {
         description: 'Cromático con los dedos intercalados: 1–3–2–4 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
         goal: 'Romper el automatismo de tocar los dedos siempre en orden. Cada dedo tiene que moverse por su cuenta, sin arrastrar al de al lado.',
-        steps: ['Un dedo por traste: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 1–3–2–4: los números son dedos.', 'Toca 1–3–2–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–2–4.', 'Al pasar del 3 al 2, deja el anular listo cerca de su traste; no lo levantes de más.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, dos notas por clic. Elige una velocidad a la que no se te cambie el orden de los dedos.'],
+        steps: ['Un dedo por traste: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 1–3–2–4: los números son dedos.', 'Toca 1–3–2–4 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–2–4.', 'Al pasar del 3 al 2, deja el anular listo cerca de su traste; no lo levantes de más.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, a tempo con el metrónomo. Elige una velocidad a la que no se te cambie el orden de los dedos.'],
         mistakes: ['Convertir el patrón sin darte cuenta en 1–2–3–4.', 'Dejar un dedo apoyado por encima del traste que debe sonar.', 'Mover la mano entera para alcanzar el salto del 1 al 3.'],
         criterion: 'Recorre las cuatro posiciones sin corregir la digitación a mitad del patrón. Sube la velocidad solo cuando el orden te salga sin pensarlo.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 1,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [1, 3, 2, 4]) }))),
     },
     'fingering-04': {
         description: 'El intercalado al revés: 4–2–3–1 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
         goal: 'Llevar la independencia de los dedos a la postura inversa. Empezar por el meñique y saltar entre dedos exige fuerza y control en toda la mano.',
-        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 4–2–3–1.', 'Toca 4–2–3–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–2–3–1.', 'Al tocar el 4, los demás dedos esperan apoyados. Suelta solo lo necesario para que suene cada nota.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, dos notas por clic. Elige una velocidad a la que todo suene limpio.'],
+        steps: ['Coloca los cuatro dedos antes de empezar: índice, medio, anular y meñique en los trastes 1, 2, 3 y 4. El orden es 4–2–3–1.', 'Toca 4–2–3–1 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 4–2–3–1.', 'Al tocar el 4, los demás dedos esperan apoyados. Suelta solo lo necesario para que suene cada nota.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–8), luego 7 (trastes 7–10) y finalmente 12 (trastes 12–15).', 'Púa alternada continua, a tempo con el metrónomo. Elige una velocidad a la que todo suene limpio.'],
         mistakes: ['Que el meñique suene más débil que los demás dedos.', 'Levantar todos los dedos a la vez en lugar de soltarlos según el orden.', 'Cambiar el patrón sin querer a 4–3–2–1.'],
         criterion: 'Recorre las cuatro posiciones con el mismo volumen en las cuatro notas. Compara con el 1–3–2–4: cuando suenen igual, sube la velocidad.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 1,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [4, 2, 3, 1]) }))),
     },
     'fingering-05': {
         description: 'Estiramiento de la mano izquierda: trastes 1–3–5–3–5 en cada cuerda, de ida y de vuelta, en los trastes 1, 5, 7 y 12.',
         goal: 'Abrir la mano para cubrir cinco trastes sin moverla. En los primeros trastes la distancia es mayor, por eso cada posición exige un estiramiento distinto.',
-        steps: ['Índice en el primer traste, dedo medio o anular en el tercero y meñique en el quinto. La mano no se desplaza: se abre.', 'Toca 1–3–5–3–5 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–5–3–5.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–9), luego 7 (trastes 7–11) y finalmente 12 (trastes 12–16).', 'Púa alternada continua, dos notas por clic. Ve despacio: el estiramiento se gana con constancia, no con fuerza.'],
+        steps: ['Índice en el primer traste, dedo medio o anular en el tercero y meñique en el quinto. La mano no se desplaza: se abre.', 'Toca 1–3–5–3–5 en cada cuerda desde la sexta hasta la primera. De regreso, desde la primera hasta la sexta, toca igual 1–3–5–3–5.', 'Al terminar la vuelta, sube la mano: posición 5 (trastes 5–9), luego 7 (trastes 7–11) y finalmente 12 (trastes 12–16).', 'Púa alternada continua, a tempo con el metrónomo. Ve despacio: el estiramiento se gana con constancia, no con fuerza.'],
         mistakes: ['Mover toda la mano para llegar al quinto traste en lugar de abrir los dedos.', 'Subir el hombro o apretar el pulgar para alcanzar la distancia.', 'Seguir tocando con dolor: si molesta, detente y empieza por la posición 12, donde los trastes están más juntos.'],
         criterion: 'Recorre las cuatro posiciones con las notas claras y sin tensión. Si la primera posición todavía no sale, practícala al final, cuando la mano ya esté caliente.',
         figure: 'corcheas',
-        bpm: 60,
+        speed: 1,
         perRow: 15,
         ...withSections(chromaticPositions.map(([title, position]) => ({ title, pattern: chromaticAt(position, [1, 3, 5, 3, 5]) }))),
     },
@@ -439,11 +492,11 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         description: 'Los dos arpegios Maj7 de la escala mayor de C: CMaj7 (grado I) y FMaj7 (grado IV). Fórmula 1 – 3 – 5 – 7.',
         notation: ARPEGGIO_TEXT,
         goal: 'Interiorizar el color de la séptima mayor. El recorrido de los dedos es exactamente el mismo para CMaj7 y FMaj7: solo cambia el traste de partida.',
-        steps: ['Al armonizar la escala mayor obtenemos dos acordes Maj7, en el primer y cuarto grado: CMaj7 y FMaj7.', 'La característica de ambos es la séptima mayor en su estructura. Fórmula: 1 – 3 – 5 – 7.', 'Sube desde la quinta cuerda hasta la primera y vuelve. Resolvemos en la tercera mayor y no en la tónica para no dejar un silencio en el compás.', 'Una nota por corchea, con el metrónomo. Toca cada arpegio limpio antes de pasar al siguiente.'],
+        steps: ['Al armonizar la escala mayor obtenemos dos acordes Maj7, en el primer y cuarto grado: CMaj7 y FMaj7.', 'La característica de ambos es la séptima mayor en su estructura. Fórmula: 1 – 3 – 5 – 7.', 'Sube desde la quinta cuerda hasta la primera y vuelve. Resolvemos en la tercera mayor y no en la tónica para no dejar un silencio en el compás.', 'Una nota por subdivisión, con el metrónomo. Toca cada arpegio limpio antes de pasar al siguiente.'],
         mistakes: ['Dejar sonar dos notas a la vez al cruzar de cuerda.', 'Mover la mano entera en lugar de estirar el meñique para la séptima.', 'Acelerar en la bajada.'],
-        criterion: 'Cuando los dos arpegios suenen parejos a una velocidad cómoda, sube el BPM. La meta de la guía es 160 BPM en corcheas.',
+        criterion: 'Cuando los dos arpegios suenen parejos a una velocidad cómoda, sube el BPM. La meta es llegar a Intenso.',
         figure: 'corcheas',
-        bpm: 80,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([{ title: 'CMaj7 · grado I', pattern: ARPEGGIOS.cmaj7 }, { title: 'FMaj7 · grado IV', pattern: ARPEGGIOS.fmaj7 }]),
@@ -452,11 +505,11 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         description: 'Los tres arpegios m7 de la escala mayor de C: Dm7 (II), Em7 (III) y Am7 (VI). Fórmula 1 – b3 – 5 – b7.',
         notation: ARPEGGIO_TEXT,
         goal: 'Reconocer el color menor con séptima menor. Los tres arpegios usan el mismo recorrido de dedos: solo varía el traste.',
-        steps: ['Al armonizar la escala mayor obtenemos tres acordes m7, en el segundo, tercer y sexto grado: Dm7, Em7 y Am7.', 'Su característica es la tercera menor y la séptima menor. Fórmula: 1 – b3 – 5 – b7.', 'Volvemos a resolver en la tercera, esta vez la tercera menor, para no dejar un silencio en el compás.', 'Una nota por corchea. Cambia de arpegio sin detenerte: es el mismo dibujo en otra posición.'],
+        steps: ['Al armonizar la escala mayor obtenemos tres acordes m7, en el segundo, tercer y sexto grado: Dm7, Em7 y Am7.', 'Su característica es la tercera menor y la séptima menor. Fórmula: 1 – b3 – 5 – b7.', 'Volvemos a resolver en la tercera, esta vez la tercera menor, para no dejar un silencio en el compás.', 'Una nota por subdivisión. Cambia de arpegio sin detenerte: es el mismo dibujo en otra posición.'],
         mistakes: ['Confundir el dibujo con el de Maj7 (la tercera y la séptima están un traste más abajo).', 'Perder el pulso al cambiar de posición entre arpegios.'],
         criterion: 'Sube el BPM cuando puedas encadenar los tres sin pausas y con todas las notas iguales.',
         figure: 'corcheas',
-        bpm: 80,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([{ title: 'Dm7 · grado II', pattern: ARPEGGIOS.dm7 }, { title: 'Em7 · grado III', pattern: ARPEGGIOS.em7 }, { title: 'Am7 · grado VI', pattern: ARPEGGIOS.am7 }]),
@@ -465,11 +518,11 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         description: 'El arpegio de séptima de dominante de la escala mayor de C: G7 (grado V), en dos formas. Fórmula 1 – 3 – 5 – b7.',
         notation: ARPEGGIO_TEXT,
         goal: 'Escuchar la tensión del dominante: tercera mayor con séptima menor forman el tritono que pide resolver al primer grado.',
-        steps: ['Al armonizar la escala mayor obtenemos un único acorde de séptima de dominante, en el quinto grado: G7.', 'Su característica es la tercera mayor junto a la séptima menor. Fórmula: 1 – 3 – 5 – b7.', 'La segunda parte es una variación de G7 para verlo de otra forma; para completar el compás se repiten las últimas notas.', 'Una nota por corchea. Escucha la tensión: es la que hace que la música avance.'],
+        steps: ['Al armonizar la escala mayor obtenemos un único acorde de séptima de dominante, en el quinto grado: G7.', 'Su característica es la tercera mayor junto a la séptima menor. Fórmula: 1 – 3 – 5 – b7.', 'La segunda parte es una variación de G7 para verlo de otra forma; para completar el compás se repiten las últimas notas.', 'Una nota por subdivisión. Escucha la tensión: es la que hace que la música avance.'],
         mistakes: ['Tocar la séptima mayor por costumbre de Maj7.', 'Perder el pulso en los saltos de cuerda de la variación.'],
         criterion: 'Sube el BPM cuando las dos formas suenen igual de limpias.',
         figure: 'corcheas',
-        bpm: 80,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([{ title: 'G7 · grado V', pattern: ARPEGGIOS.g7 }, { title: 'G7 · variación', pattern: ARPEGGIOS.g7ii }]),
@@ -482,7 +535,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         mistakes: ['Tocar la quinta justa en lugar de la disminuida.', 'Tensar la mano en la posición baja del mástil.'],
         criterion: 'Sube el BPM cuando las dos formas salgan sin dudar en la quinta disminuida.',
         figure: 'corcheas',
-        bpm: 80,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([{ title: 'Bm7b5 · grado VII', pattern: ARPEGGIOS.bm7b5 }, { title: 'Bm7b5/D · primera inversión', pattern: ARPEGGIOS.bm7b5d }]),
@@ -491,11 +544,11 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         description: 'Los siete arpegios de séptima de la escala mayor de C, de corrido y sin pausas, hasta la octava: CMaj7, Dm7, Em7, FMaj7, G7, Am7, Bm7b5 y de nuevo CMaj7, subiendo por el mástil.',
         notation: ARPEGGIO_TEXT,
         goal: 'Encadenar la escala armonizada completa, de la tónica a su octava. Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba: el cambio tiene que sonar continuo.',
-        steps: ['El orden es el de la escala: I CMaj7, II Dm7, III Em7, IV FMaj7, V G7, VI Am7, VII Bm7b5 y cierra en la octava con CMaj7.', 'Todos usan el mismo recorrido: suben de la quinta a la primera cuerda, vuelven y resuelven en la tercera.', 'El paso de un arpegio al siguiente es corto y en la misma cuerda: prepara la mano mientras tocas las últimas notas.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por corchea, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
+        steps: ['El orden es el de la escala: I CMaj7, II Dm7, III Em7, IV FMaj7, V G7, VI Am7, VII Bm7b5 y cierra en la octava con CMaj7.', 'Todos usan el mismo recorrido: suben de la quinta a la primera cuerda, vuelven y resuelven en la tercera.', 'El paso de un arpegio al siguiente es corto y en la misma cuerda: prepara la mano mientras tocas las últimas notas.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por subdivisión, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
         mistakes: ['Detenerse o acentuar el primer tiempo de cada arpegio nuevo.', 'Perder la tercera o la séptima correcta al cambiar de tipo de acorde (mayor, menor, dominante, semidisminuido).', 'Tensar la mano en los trastes altos.'],
         criterion: 'Recorre los ocho arpegios sin cortes antes de subir el BPM. Si un cambio falla, practica solo ese par de arpegios.',
         figure: 'corcheas',
-        bpm: 70,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([
@@ -525,7 +578,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         perRow: 12,
         figure: 'sextillos',
         artist: 'yngwie-malmsteen',
-        bpm: 60,
+        speed: 1,
         // El arpegio final de Bm va en sweep: púa solo al cambiar de cuerda, hammer-on / pull-off en la primera.
         legatoFrom: yngwieBars.flat().length - bmSweep.length,
         pattern: yngwieBars.flat(),
@@ -547,7 +600,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         perRow: 16,
         figure: 'semicorcheas',
         artist: 'yngwie-malmsteen',
-        bpm: 100,
+        speed: 3,
         pattern: yngwieDescent,
     },
     'licks-phrasing-becker-01': {
@@ -567,7 +620,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         picking: 'legato',
         artist: 'jason-becker',
-        bpm: 80,
+        speed: 2,
         ...withSections(beckerBars.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-gilbert-01': {
@@ -586,7 +639,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         picking: 'legato',
         artist: 'paul-gilbert',
-        bpm: 100,
+        speed: 3,
         ...withSections(gilbertFigures.map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-romeo-01': {
@@ -607,7 +660,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'sextillos',
         picking: 'tapping',
         artist: 'michael-romeo',
-        bpm: 60,
+        speed: 1,
         pattern: romeoBars.flat(),
     },
     'licks-phrasing-howe-01': {
@@ -628,7 +681,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         artist: 'greg-howe',
         transcribedBy: 'Koko Rengifo',
-        bpm: 120,
+        speed: 4,
         pattern: howeBars.flat(),
     },
     'licks-phrasing-vinnie-01': {
@@ -645,18 +698,18 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         perRow: 12,
         figure: 'sextillos',
         artist: 'vinnie-moore',
-        bpm: 80,
+        speed: 2,
         pattern: vinnieDescent,
     },
     'arpeggios-modal-chain': {
         description: 'Los siete arpegios modales de la escala mayor de C, de corrido y sin pausas, hasta la octava: CMaj7, Dm13, Em7(b9), FMaj7(#11), G7, Am7, Bm7b5 y de nuevo CMaj7, subiendo por el mástil. Solo dórico, frigio y lidio llevan tensión; los otros cuatro son los mismos arpegios de séptima, sin alteración.',
         notation: ARPEGGIO_TEXT,
         goal: 'Recorrer los siete modos en un solo pasaje y oír cómo cambia el color en cada grado: la trecena del dórico, la b9 del frigio y la #11 del lidio.',
-        steps: ['El orden es el de la escala: I jónico, II dórico, III frigio, IV lidio, V mixolidio, VI eólico, VII locrio y cierra en la octava con CMaj7.', 'Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba.', 'Solo tres arpegios cambian respecto a «Los arpegios de séptima encadenados»: Dm13 (dórico), Em7(b9) (frigio) y FMaj7(#11) (lidio). Jónico, mixolidio, eólico y locrio son los mismos arpegios de séptima, sin alteración.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por corchea, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
+        steps: ['El orden es el de la escala: I jónico, II dórico, III frigio, IV lidio, V mixolidio, VI eólico, VII locrio y cierra en la octava con CMaj7.', 'Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba.', 'Solo tres arpegios cambian respecto a «Los arpegios de séptima encadenados»: Dm13 (dórico), Em7(b9) (frigio) y FMaj7(#11) (lidio). Jónico, mixolidio, eólico y locrio son los mismos arpegios de séptima, sin alteración.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por subdivisión, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
         mistakes: ['Detenerse o acentuar el primer tiempo de cada arpegio nuevo.', 'Tocar la séptima del arpegio de séptima en lugar de la tensión del modo.', 'Tensar la mano en los trastes altos.'],
         criterion: 'Recorre los ocho arpegios sin cortes antes de subir el BPM. Si un cambio falla, practica solo ese par de arpegios.',
         figure: 'corcheas',
-        bpm: 70,
+        speed: 2,
         perRow: 16,
         picking: 'legato',
         ...withSections([

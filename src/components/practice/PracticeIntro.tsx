@@ -30,7 +30,7 @@ export function PracticeIntro({ children, canStart = true, onStart, onCancel }: 
 
     // Va en <body> porque el `transform` animado de <main> encerraría un `fixed`.
     return createPortal(<div role="dialog" aria-modal="true" aria-labelledby="practice-intro-title" className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-sunken/70 p-4 backdrop-blur-md">
-        <div className="relative grid w-full max-w-4xl animate-pop overflow-hidden rounded-2xl border border-line-strong bg-raised shadow-[0_30px_90px_#000b] md:grid-cols-[2fr_3fr]">
+        <div className="relative grid w-full max-w-4xl animate-pop xl:max-w-5xl overflow-hidden rounded-2xl border border-line-strong bg-raised shadow-[0_30px_90px_#000b] md:grid-cols-[2fr_3fr]">
             {/* Imagen del profesor. Si aún no existe, queda el degradado de la marca. */}
             <div className="relative h-44 overflow-hidden bg-raised md:h-auto">
                 {imageOk && <img src={INTRO_IMAGE} alt="" width={800} height={1000} decoding="async" onError={() => setImageOk(false)} className="absolute inset-0 size-full object-cover object-[center_25%] md:object-center"/>}

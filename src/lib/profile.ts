@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { courses, type Difficulty } from "@/data/questMock";
 import { db } from "@/lib/firebase";
-import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
+import { attemptSpeed, localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
+import { practiceStudies, type Speed } from "@/data/practiceStudies";
 
 /**
  * Perfil de un usuario: TODOS sus días (los lee cualquiera con sesión, como el ranking). El admin lee además
@@ -10,7 +11,7 @@ import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
  * Se guarda ya calculado y en JSON plano (sin Timestamps) 1 hora en el navegador, por usuario;
  * «Actualizar» lo vuelve a leer.
  */
-export type ProfileLesson = { id: string; title: string; module: string; moduleId: string; days: number; attempts: number; seconds: number; bpmMax: number; bpmLast: number; target?: { min: number; max: number }; lastAt: number };
+export type ProfileLesson = { id: string; title: string; module: string; moduleId: string; days: number; attempts: number; seconds: number; /** Velocidad máxima y última (niveles 1–5, 0 = sin dato) y la sugerida de la lección. */ speedMax: Speed | 0; speedLast: Speed | 0; target?: Speed; lastAt: number };
 export type UserProfile = {
   at: number;
   uid: string;
@@ -28,7 +29,7 @@ export type UserProfile = {
 };
 
 const CACHE_MS = 60 * 60 * 1000;
-const cacheKey = (uid: string, admin: boolean) => `fretquest.profile.v1.${admin ? 'admin' : 'public'}.${uid}`;
+const cacheKey = (uid: string, admin: boolean) => `fretquest.profile.v2.${admin ? 'admin' : 'public'}.${uid}`;
 const lessonsById = new Map(courses.flatMap(course => course.lessons.map(lesson => [lesson.id, { lesson, course }] as const)));
 
 const addDays = (key: string, days: number) => { const [y, m, d] = key.split("-").map(Number); return localDateKey(new Date(y, m - 1, d + days)); };
@@ -52,14 +53,15 @@ async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
       const meta = lessonsById.get(lessonId);
       const row = lessons.get(lessonId) ?? lessons.set(lessonId, {
         id: lessonId, title: meta?.lesson.title ?? lessonId, module: meta?.course.title ?? "Sin módulo", moduleId: meta?.course.id ?? "",
-        days: 0, attempts: 0, seconds: 0, bpmMax: 0, bpmLast: 0, lastAt: 0,
-        target: meta?.lesson.type === "practice" ? meta.lesson.tempo : undefined,
+        days: 0, attempts: 0, seconds: 0, speedMax: 0, speedLast: 0, lastAt: 0,
+        target: practiceStudies[lessonId] ? practiceStudies[lessonId].speed ?? 2 : undefined,
       }).get(lessonId)!;
       row.days += 1; row.attempts += lesson.attempts ?? 0; row.seconds += lesson.seconds ?? 0;
       for (const attempt of lesson.sessions ?? []) {
         const at = attempt.startedAt.toMillis();
-        row.bpmMax = Math.max(row.bpmMax, attempt.bpm ?? 0);
-        if (at >= row.lastAt) { row.lastAt = at; row.bpmLast = attempt.bpm ?? 0; }
+        const speed = attemptSpeed(lessonId, attempt) ?? 0;
+        row.speedMax = Math.max(row.speedMax, speed) as Speed | 0;
+        if (at >= row.lastAt) { row.lastAt = at; row.speedLast = speed; }
       }
     }
   }

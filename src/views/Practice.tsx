@@ -2,11 +2,11 @@
 
 import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
-import { FIGURES, pickingOf, practiceStudies, type Stroke } from '@/data/practiceStudies';
+import { FIGURES, pickingOf, practiceStudies, speedName, speedPlan, type Speed, type Stroke } from '@/data/practiceStudies';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
-import { courses, tempos, type PracticeLesson } from '@/data/questMock';
+import { courses, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Trash2, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
@@ -15,6 +15,8 @@ import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
+import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
+import { createLocalStore } from '@/lib/localStore';
 import { InputLevel, RoundRecordings } from '@/components/practice/RoundRecordings';
 import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
@@ -30,7 +32,13 @@ const now = () => Date.now();
 /** Marca de ataque sobre cada nota de la tablatura. */
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
 // Rondas por práctica; siempre empieza en 1.
-const ROUND_OPTIONS = [1, 3, 5, 7, 10];
+const ROUND_OPTIONS: RichOption<number>[] = [
+    { value: 1, badge: '1', title: '1 ronda', detail: 'Una pasada completa' },
+    { value: 3, badge: '3', title: '3 rondas', detail: 'Calentamiento corto' },
+    { value: 5, badge: '5', title: '5 rondas', detail: 'Práctica estándar' },
+    { value: 7, badge: '7', title: '7 rondas', detail: 'Para fijar el patrón' },
+    { value: 10, badge: '10', title: '10 rondas', detail: 'Resistencia' },
+];
 /** Fuerza de la guitarra de guía al practicar: apenas una referencia bajo el metrónomo. */
 const GUIDE_VELOCITY = 0.08;
 /**
@@ -89,6 +97,9 @@ function Remaining({ until }: { until: number }) {
     return <span className="flex items-baseline gap-1.5 font-mono text-lg font-bold text-accent tabular-nums" aria-label="Tiempo restante de la sesión">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}<small className="font-sans text-2xs font-normal text-muted">restantes</small></span>;
 }
 
+/** Guitarra de guía al practicar: se recuerda en este navegador. */
+const guideStore = createLocalStore('fretquest.practiceGuide', false);
+
 export default function PracticePage({ mode }: { mode: Mode }) {
     // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
     const { modulo, leccion } = useParams();
@@ -130,7 +141,11 @@ function PracticeView({ mode }: { mode: Mode }) {
     useEffect(() => { setLastExercise({ moduleId: activeModule.id, exerciseId: activeExercise.id }); }, [activeModule.id, activeExercise.id]);
     const pattern = study?.pattern ?? PATTERN;
     const picks = pickingOf(pattern, study?.picking, study?.legatoFrom);
-    const figure = study?.figure ?? 'negras';
+    const baseFigure = study?.figure ?? 'negras';
+    const suggestedSpeed = study?.speed ?? 2;
+    // Velocidad: el nivel elegido decide la figura (en las lecciones en corcheas) y el BPM.
+    const [speed, setSpeed] = useState<Speed>(suggestedSpeed);
+    const { figure, bpm } = speedPlan(baseFigure, speed);
     const perRow = study?.perRow ?? 16;
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
     const bars: { notes: PatternNote[]; start: number; columns: number; part?: { number: number; title: string } }[] = [];
@@ -144,12 +159,11 @@ function PracticeView({ mode }: { mode: Mode }) {
     }
     // Una fila incompleta con 6 notas o más las reparte en todo el ancho; con menos, quedan alineadas con las filas completas.
     const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
-    const [bpm, setBpm] = useState(study?.bpm ?? 100);
     const [phase, setPhase] = useState<Phase>('idle');
     const [round, setRound] = useState(1);
     const suggestedRounds = activeExercise.rounds ?? 1;
     const [rounds, setRounds] = useState(suggestedRounds);
-    const [finished, setFinished] = useState<{ rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
+    const [finished, setFinished] = useState<{ rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
     const startedAt = useRef(0);
     const [startedAtView, setStartedAtView] = useState(0);
     // Grabación opcional, una toma por ronda: en memoria, se escucha al final y se borra al cerrar el resumen.
@@ -165,7 +179,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [roundsFor, setRoundsFor] = useState(activeExercise.id);
     if (roundsFor !== activeExercise.id) {
         setRoundsFor(activeExercise.id);
-        setBpm(study?.bpm ?? 100);
+        setSpeed(suggestedSpeed);
         setRounds(suggestedRounds);
         setFinished(null);
         setFrom(null);
@@ -183,7 +197,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [step, setStep] = useState(-1);
     const [listening, setListening] = useState(false);
     // Guitarra de guía al practicar: opcional y muy bajita (al escuchar suena normal).
-    const [practiceGuide, setPracticeGuide] = useState(false);
+    const practiceGuide = guideStore.use();
+    const setPracticeGuide = guideStore.set;
     const practiceGuideRef = useRef(practiceGuide);
     useEffect(() => { practiceGuideRef.current = practiceGuide; }, [practiceGuide]);
     const active = phase !== 'idle';
@@ -253,13 +268,13 @@ function PracticeView({ mode }: { mode: Mode }) {
         const endedAt = new Date();
         const startedAtDate = new Date(startedAt.current);
         const seconds = (endedAt.getTime() - startedAtDate.getTime()) / 1000;
-        setFinished({ rounds, bpm: bpmRef.current, seconds: session?.seconds ?? seconds, sessionMinutes: session?.sessionMinutes, progress: null });
+        setFinished({ rounds, speed, bpm: bpmRef.current, seconds: session?.seconds ?? seconds, sessionMinutes: session?.sessionMinutes, progress: null });
         if (!account) return;
         recordPractice(activeExercise.id);
         const goalMinutes = account.sessionMinutes ?? DEFAULT_SESSION_MINUTES;
         const before = todayOf(getProgress());
         setFinished(value => value && { ...value, progress: { beforeSeconds: before?.seconds ?? 0, addedSeconds: seconds, goalMinutes, completedBefore: before?.completed ?? false } });
-        recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, bpm: bpmRef.current })
+        recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm: bpmRef.current })
             .catch(() => setFinished(value => value && { ...value, progress: null }));
     };
     const start = async (listen: boolean) => {
@@ -334,13 +349,14 @@ function PracticeView({ mode }: { mode: Mode }) {
         if (currentRow >= 0 && !(document.activeElement instanceof HTMLSelectElement)) rowRefs.current[currentRow]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, [currentRow]);
 
-    // Cabecera fija: aparece mientras suena y la cabecera del ejercicio ya salió de la pantalla, debajo del header de la app (h-16).
+    // Cabecera fija: aparece mientras suena y la cabecera del ejercicio ya salió de la pantalla. Va pegada arriba; en móvil,
+    // debajo del header de la app (h-16), que ahí es sticky.
     const headerRef = useRef<HTMLDivElement | null>(null);
     const [headerHidden, setHeaderHidden] = useState(false);
     useEffect(() => {
         const element = headerRef.current;
         if (!element) return;
-        const observer = new IntersectionObserver(([entry]) => setHeaderHidden(!entry.isIntersecting), { rootMargin: "-64px 0px 0px 0px" });
+        const observer = new IntersectionObserver(([entry]) => setHeaderHidden(!entry.isIntersecting), { rootMargin: window.matchMedia("(min-width: 768px)").matches ? "0px" : "-64px 0px 0px 0px" });
         observer.observe(element);
         return () => observer.disconnect();
     }, [mode, stage]);
@@ -363,19 +379,13 @@ function PracticeView({ mode }: { mode: Mode }) {
         <Button onClick={() => start(true)} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
         <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={openIntro}><Play size={16} fill="currentColor"/>Practicar</Button>
     </>;
-    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b>{recorder.recording && <> · <span className="inline-flex items-center gap-1.5 font-bold text-danger"><span className="size-2 animate-pulse rounded-full bg-danger"/>REC</span></>}</span>;
+    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{speedName(speed)} · {bpm} BPM</b>{recorder.recording && <> · <span className="inline-flex items-center gap-1.5 font-bold text-danger"><span className="size-2 animate-pulse rounded-full bg-danger"/>REC</span></>}</span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
     const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
 
-    const tempoSelect = <label className="flex items-center gap-2 text-sm text-muted"><Gauge size={16}/><span className="sr-only">Velocidad</span>
-        <select value={bpm} onChange={event => { setBpm(Number(event.target.value)); event.target.blur(); }} className="min-h-10 py-1.5 font-bold text-fg">
-            {tempos.map(item => <option key={item.bpm} value={item.bpm}>{item.name} · {item.bpm} BPM</option>)}
-        </select>
-    </label>;
+    const tempoSelect = <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} suggested={suggestedSpeed}/>;
 
-    const roundsSelect = <select value={rounds} onChange={event => setRounds(Number(event.target.value))} className="min-h-10 w-full py-1.5 font-bold text-fg">
-        {ROUND_OPTIONS.map(option => <option key={option} value={option}>{option} {option === 1 ? 'ronda' : 'rondas'}</option>)}
-    </select>;
+    const roundsSelect = <RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/>;
 
     // La misma tarjeta del ejercicio; al practicar va en una capa a pantalla completa (en <body>, por el `transform` de <main>).
     const inStage = (content: ReactNode) => stage
@@ -407,7 +417,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 <span className="flex items-center gap-2 text-3xs font-bold tracking-[0.2em] text-accent"><Target size={15}/>OBJETIVO</span>
                 <p className="mt-3 text-base leading-relaxed text-fg-soft">{activeExercise.goal}</p>
                 <div className="mt-5 flex flex-wrap gap-2 text-xs">{[
-                    [Gauge, `${study?.bpm ?? 100} BPM sugeridos`],
+                    [Gauge, `Velocidad sugerida: ${speedName(suggestedSpeed)}`],
                     [Repeat, `${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}`],
                     [Music, FIGURES[figure].label.split(' · ')[0]],
                 ].map(([Icon, text]) => { const ChipIcon = Icon as typeof Gauge; return <span key={text as string} className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-white/3 px-3 py-1.5 text-fg-soft"><ChipIcon size={14} className="text-accent"/>{text as string}</span>; })}
@@ -441,7 +451,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 <h2 className="mb-5 text-md">Cómo practicar</h2>
                 <ol className="grid gap-5 md:grid-cols-3">{[
                     [Headphones, 'Escúchalo y apréndelo', 'Escucha el ejercicio y practícalo hasta tenerlo.'],
-                    [Gauge, 'Practica con lo sugerido', `Ya dominado, ve a ${study?.bpm ?? 100} BPM · ${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}. O empieza más lento: también cuenta.`],
+                    [Gauge, 'Practica con lo sugerido', `Ya dominado, ve a velocidad ${speedName(suggestedSpeed)} · ${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}. O empieza más lento: también cuenta.`],
                     [Save, 'Completa las rondas', 'Tu progreso se guarda solo al terminar todas las rondas, con sesión iniciada.'],
                 ].map(([Icon, title, text], index) => { const StepIcon = Icon as typeof Gauge; return <li key={title as string} className="flex gap-3">
                     <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-raised text-accent"><StepIcon size={19}/></span>
@@ -460,7 +470,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         <Eyebrow>{activeModule.title.toUpperCase()}</Eyebrow>
                         <h2 className="mt-2 flex items-center gap-3 text-[1.1875rem]">{activeExercise.title}<DifficultySignal difficulty={activeExercise.difficulty}/></h2>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className={cn('flex flex-wrap items-center gap-3', !(active && phase !== 'loading') && 'w-full sm:w-auto')}>
                         {active && phase !== 'loading' ? <>{session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAtView}/>}{nextButton}{stopButton}</> : tempoSelect}
                     </div>
                 </div>
@@ -474,7 +484,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                             : playingInfo}
                 </div>
                 </div>
-                {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-16 z-20 rounded-b-xl border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
+                {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-16 z-40 rounded-b-xl md:top-0 border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-2.5 md:px-6">
                         <div className="min-w-0 flex-1">
                             <p className="truncate font-bold text-fg">{activeExercise.title}</p>
@@ -486,18 +496,17 @@ function PracticeView({ mode }: { mode: Mode }) {
                     </div>
                 </div>, document.body)}
                 {showIntro && <PracticeIntro onCancel={closeIntro} onStart={startPractice} canStart={!record || recorder.status === 'ready'}>
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Velocidad y rondas: una por fila en móvil, en dos columnas desde sm. */}
+                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
                         <PracticeField label="Velocidad" icon={Gauge}>
-                            <select value={bpm} onChange={event => setBpm(Number(event.target.value))} className="min-h-10 w-full py-1.5 font-bold text-fg">
-                                {tempos.map(item => <option key={item.bpm} value={item.bpm}>{item.name} · {item.bpm} BPM</option>)}
-                            </select>
+                            <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} suggested={suggestedSpeed} full/>
                         </PracticeField>
                         {session
                             ? <div className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Repeat size={13}/>Sesión</span><p className="text-sm text-fg-soft"><b>{session.minutes} min</b>: rondas hasta completar el tiempo</p></div>
                             : <PracticeField label="Rondas" icon={Repeat}>{roundsSelect}</PracticeField>}
                     </div>
-                    <PracticeOption icon={Headphones} title="Tablatura de guía, muy bajita" checked={practiceGuide} onChange={setPracticeGuide} warning={practiceGuide}
-                        note={practiceGuide ? 'Se recomienda practicar sin guía para que puedas oírte mejor.' : 'Una referencia suave por debajo del metrónomo.'}/>
+                    <PracticeOption icon={Headphones} title="Tablatura de guía, muy bajita" checked={practiceGuide} onChange={setPracticeGuide} 
+                        note={practiceGuide ? 'La guía sonará por debajo del metrónomo.' : 'Una referencia suave por debajo del metrónomo.'}/>
                     {RECORDING_ENABLED && <>
                     <PracticeOption icon={Mic} title="Grabar cada ronda" checked={record} onChange={toggleRecord} warning={record && (recorder.status === 'denied' || recorder.status === 'none')}
                         note={!record ? 'Al terminar eliges una ronda y te escuchas: es la mejor forma de notar errores de tiempo y de limpieza. Queda solo en tu dispositivo y se borra al cerrar el resumen.'

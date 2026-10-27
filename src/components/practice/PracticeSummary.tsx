@@ -1,3 +1,4 @@
+import { speedName, type Speed } from '@/data/practiceStudies';
 import { ROUTES } from '@/lib/routes';
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -25,9 +26,9 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Ma
 
 /**
  * Resumen al terminar las rondas de una práctica, a pantalla completa con el fondo borroso:
- * rondas, BPM, tiempo y una valoración opcional. No se guarda nada.
+ * rondas, velocidad, tiempo y una valoración opcional. No se guarda nada.
  */
-export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress, children, onClose }: { rounds: number; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; children?: ReactNode; onClose: () => void }) {
+export function PracticeSummary({ rounds, speed, bpm, seconds, sessionMinutes, progress, children, onClose }: { rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; children?: ReactNode; onClose: () => void }) {
     const signedIn = useAccount() !== null;
     // Minutos que suma esta práctica a la de hoy (solo con sesión y si el día aún no estaba completo).
     const goal = progress?.goalMinutes ?? 0;
@@ -36,7 +37,7 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
     const showMinutes = progress !== null && !progress.completedBefore;
     const [rating, setRating] = useState<number | null>(null);
     const [imageOk, setImageOk] = useState(true);
-    const stats = [['Rondas', String(rounds)], ['BPM', String(bpm)], ['Tiempo', formatTime(seconds)]];
+    const stats = [['Rondas', String(rounds)], ['Velocidad', `${speedName(speed)} · ${bpm}`], ['Tiempo', formatTime(seconds)]];
     // Sin scroll detrás y Escape para cerrar.
     useEffect(() => {
         const overflow = document.body.style.overflow;
