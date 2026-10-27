@@ -36,11 +36,11 @@ export default function JoinPage() {
     </>;
 
     return <>
-        <header className="full-bleed relative -mt-6.5 overflow-hidden border-b border-line-soft md:-mt-7.5 xl:-mt-9">
-            <img src="/images/practice-intro.webp" alt="" className="absolute inset-0 size-full object-cover object-[center_25%]"/>
+        <header className="relative overflow-hidden border-b border-line-soft">
+            <img src="/images/join-hero.webp" alt="" width={1440} height={810} fetchPriority="high" className="absolute inset-0 size-full object-cover object-center"/>
             <div className="absolute inset-0 bg-black/65"/>
             <div className="absolute inset-0 bg-linear-to-t from-canvas via-transparent to-transparent"/>
-            <div className="relative flex min-h-96 flex-col items-center justify-center px-6 py-12 text-center md:py-16">
+            <div className="relative flex min-h-96 flex-col items-center justify-center px-6 pt-24 pb-12 text-center md:pb-16">
                 <img src="/icons/quest-mark.svg" alt="" className="h-16 w-16 drop-shadow-[0_0_20px_#3198dc55]"/>
                 <Eyebrow className="mt-6 justify-center">TE INVITARON A FRET QUEST</Eyebrow>
                 <h1 className="mt-3 max-w-3xl text-4xl text-white md:text-6xl">Tu gimnasio de guitarra eléctrica</h1>
@@ -49,7 +49,7 @@ export default function JoinPage() {
             </div>
         </header>
 
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl px-4.5 md:px-6">
         <section className="mt-12">
             <h2 className="text-2xl md:text-3xl">Qué vas a aprender</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <div key={module.id} className="relative aspect-4/3 overflow-hidden rounded-xl border border-line">

@@ -31,6 +31,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     // Analytics: solo con rol admin, y solo en el menú lateral.
     const admin = isAdmin(account);
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    // Landing de invitación: sin sidebar ni barra de cuenta, para que el único camino sea unirse. El logo y «Ir al inicio» vuelven a la app.
+    if (pathname === ROUTES.join) return <div className="min-h-dvh">
+        <header className="absolute inset-x-0 top-0 z-30 flex h-16 items-center justify-between px-4.5 md:px-9.5">
+            <Link to="/" className="flex items-center gap-2 text-lg font-black tracking-tight text-white">
+                <img className="h-9 w-8 object-contain" src="/icons/quest-mark.svg" alt=""/>Fret Quest
+            </Link>
+            <Link to="/" className="text-sm font-bold text-white/80 transition-colors hover:text-white">Ir al inicio →</Link>
+        </header>
+        <main id="main-content" className="animate-rise pb-11">{children}</main>
+    </div>;
     const isActive = (to: string, active: boolean) => active || (to === ROUTES.exercises && pathname.startsWith(`${ROUTES.exercises}/`));
     const navigation = (items: typeof primaryLinks, variant: typeof sidebarLink) => items.map(({ to, label, icon: Icon }) =>
         <NavLink key={to} end={to === '/'} to={to} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, variant.base, isActive(to, active) && cn(linkActive, variant.active), !hydrated && to === ROUTES.plan && 'invisible')}>
