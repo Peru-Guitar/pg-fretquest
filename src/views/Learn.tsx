@@ -5,9 +5,14 @@ import { Search } from 'lucide-react';
 import { CourseCard, CourseGrid } from '@/components/quest/QuestUI';
 import { Button, Caption, EmptyState, PageTitle } from '@/components/ui';
 import { courses } from '@/data/questMock';
+import { useAccount } from '@/lib/account';
+import { useCommunity } from '@/lib/community';
 
 export default function LearnPage() {
     const [query, setQuery] = useState('');
+    const account = useAccount();
+    // Quiénes practicaron cada módulo esta semana: sale de los datos de Comunidad (misma consulta y caché).
+    const { data: community } = useCommunity(account !== null);
     const normalizedQuery = query.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g, '');
     // Los módulos sin contenido todavía («próximamente») no se listan: siguen en el temario, escondidos.
     const filteredCourses = courses.filter(course => course.available).filter(course => {
@@ -23,7 +28,7 @@ export default function LearnPage() {
             </label>
         </div>
         <Caption className="-mt-2 mb-5.5">{filteredCourses.length} {filteredCourses.length === 1 ? 'módulo' : 'módulos'}</Caption>
-        <CourseGrid>{filteredCourses.map(course => <CourseCard key={course.id} course={course}/>)}</CourseGrid>
+        <CourseGrid>{filteredCourses.map(course => <CourseCard key={course.id} course={course} practicing={community?.byModule[course.id]}/>)}</CourseGrid>
         {!filteredCourses.length && <EmptyState icon={<Search/>} title="No encontramos ese entrenamiento" action={<Button onClick={() => { setQuery(''); }}>Ver todos los módulos</Button>}>Prueba otro nombre o vuelve a explorar todos los módulos.</EmptyState>}
     </>;
 }

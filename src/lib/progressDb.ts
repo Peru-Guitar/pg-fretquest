@@ -34,7 +34,8 @@ export type DayDoc = {
 };
 
 export type LessonSummary = { days: number; attempts: number; lastAt: Timestamp };
-export type Reading = { readAt: Timestamp };
+/** `name`: copia del nombre al marcarla, para mostrar quién la leyó sin joins (las antiguas no lo tienen). */
+export type Reading = { readAt: Timestamp; name?: string };
 
 /** Clave YYYY-MM-DD de un instante en la hora del navegador. */
 export const localDateKey = (at = new Date()) => `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
@@ -85,6 +86,13 @@ export async function readLessonSummaries(uid: string) {
 export async function readCommunityDays(from: string) {
   const snapshot = await getDocs(query(collectionGroup(db, "days"), where("date", ">=", from)));
   return snapshot.docs.map(item => ({ uid: item.ref.parent.parent?.id ?? "", ...(item.data() as DayDoc) }));
+}
+
+/** Lecturas marcadas de todos desde el lunes `from` (consulta de grupo sobre `readings`): quién leyó cada lección esta semana. */
+export async function readCommunityReadings(from: string) {
+  const [y, m, d] = from.split("-").map(Number);
+  const snapshot = await getDocs(query(collectionGroup(db, "readings"), where("readAt", ">=", Timestamp.fromDate(new Date(y, m - 1, d)))));
+  return snapshot.docs.map(item => ({ uid: item.ref.parent.parent?.id ?? "", lessonId: item.id, name: (item.data() as Reading).name }));
 }
 
 /** Guarda el nombre visible en el perfil (lo copian los días para el ranking). */
@@ -157,9 +165,9 @@ export async function recordFinishedPractice(params: { name: string; level: Diff
 }
 
 /** Marca (o desmarca) una lección de lectura como leída. Sin sesión no hace nada. */
-export function setReadingDone(lessonId: string, done: boolean) {
+export function setReadingDone(lessonId: string, done: boolean, name: string) {
   const { uid } = progress;
   if (!uid) return Promise.resolve();
   const ref = doc(db, "users", uid, "readings", lessonId);
-  return done ? setDoc(ref, { readAt: serverTimestamp() }) : deleteDoc(ref);
+  return done ? setDoc(ref, { readAt: serverTimestamp(), name: name.slice(0, 40) }) : deleteDoc(ref);
 }

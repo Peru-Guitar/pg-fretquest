@@ -13,6 +13,9 @@ import { ModuleHero } from '@/components/quest/ModuleHero';
 import type { ReactNode } from 'react';
 import { levelLabel } from '@/lib/account';
 import { courses, type Difficulty } from '@/data/questMock';
+import { Practicing } from '@/components/quest/QuestUI';
+import { useAccount } from '@/lib/account';
+import { useCommunity } from '@/lib/community';
 
 const LEVEL_ORDER: Difficulty[] = ['base', 'intermedio', 'avanzado', 'experto'];
 
@@ -21,6 +24,9 @@ export default function LessonPage() {
     const course = courses.find(item => item.id === lessonId) ?? courses[0];
     // Lecturas marcadas como leídas (solo con sesión).
     const progress = useProgress();
+    // Quiénes practicaron cada lección esta semana (datos y caché de Comunidad).
+    const account = useAccount();
+    const { data: community } = useCommunity(account !== null);
     const readings = course.lessons.filter(lesson => lesson.type === 'reading').length;
     const practices = course.lessonCount - readings;
 
@@ -43,6 +49,7 @@ export default function LessonPage() {
                 <div className="grid gap-3 md:grid-cols-2">{group.lessons.map(item => {
                     const lesson = course.lessons.find(candidate => candidate.id === item.id)!;
                     const { Icon, description } = lessonMeta(lesson);
+                    const practicing = community?.byLesson[lesson.id] ?? [];
                     return <Link key={lesson.id} to={lessonUrl(course.id, lesson.id)} className="flex items-center gap-3 rounded-lg border border-line bg-card px-3.5 py-4 transition hover:-translate-y-0.5 hover:border-accent/50 md:gap-4 md:px-5 md:py-5">
                         <span className="w-7 shrink-0 font-mono text-sm text-accent md:w-8 md:text-base">{String(course.lessons.indexOf(lesson) + 1).padStart(2, '0')}</span>
                         <div className="min-w-0 flex-1">
@@ -50,6 +57,8 @@ export default function LessonPage() {
                             <p className="flex items-center gap-1.5 text-2xs font-bold text-muted"><Icon size={13} className={lesson.type === 'reading' ? 'text-[#8fc0ff]' : 'text-accent-strong'}/>{description}</p>
                             <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-fg-soft">{lesson.type === 'practice' ? lesson.description : lesson.summary}</p>
                         </div>
+                        {/* Quiénes la hicieron esta semana: a la derecha, para que la tarjeta no crezca. */}
+                        {practicing.length > 0 && <div className="shrink-0"><Practicing people={practicing} max={3}/></div>}
                         {lesson.type === 'practice' && <DifficultySignal difficulty={lesson.difficulty}/>}
                         {lesson.type === 'reading' && progress.uid && <ReadStatus done={!!progress.readings[lesson.id]}/>}
                     </Link>;

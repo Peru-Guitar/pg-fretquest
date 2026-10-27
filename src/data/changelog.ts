@@ -2,6 +2,17 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.4.0',
+        date: '2026-10-26',
+        notes: [
+            'Ahora ves quién está practicando cada módulo y cada lección esta semana.',
+            'Las lecturas muestran quién las leyó esta semana.',
+            'Los perfiles indican a qué hora se actualizaron sus datos.',
+            'Las lecturas tienen la misma navegación de anterior y siguiente que los ejercicios.',
+            'Retoques visuales en las lecciones y las tablaturas.',
+        ],
+    },
+    {
         version: '0.3.2',
         date: '2026-10-26',
         notes: ['Nueva lección de Greg Howe: «Abrupt Terminal», transcrita por Koko Rengifo.', 'La tablatura ahora marca el tapping (T) también en los ejercicios con púa alternada.'],

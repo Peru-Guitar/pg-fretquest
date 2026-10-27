@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type PracticeLesson } from '@/data/questMock';
 import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Trash2, X } from 'lucide-react';
-import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
+import { Button, Caption, Card, Eyebrow } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
 import { prepare } from '@/lib/audio/guitar';
@@ -22,6 +22,8 @@ import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
+import { useCommunity } from '@/lib/community';
+import { PeopleThisWeek } from '@/components/quest/QuestUI';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
@@ -111,6 +113,9 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
+    // Quiénes practicaron esta lección esta semana (datos y caché de Comunidad).
+    const { data: community } = useCommunity(account !== null);
+    const practicing = community?.byLesson[activeExercise.id] ?? [];
     const [showIntro, setShowIntro] = useState(false);
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
@@ -421,9 +426,12 @@ function PracticeView({ mode }: { mode: Mode }) {
                         <h2 className="mb-4 text-md">Evita</h2>
                         <ul className="space-y-2.5">{study.mistakes.map(text => <li key={text} className="flex gap-2.5 text-sm leading-relaxed text-fg-soft"><X size={16} className="mt-0.5 shrink-0 text-danger"/>{text}</li>)}</ul>
                     </Card>
-                    <div className="flex gap-3 rounded-2xl border border-success/30 bg-success/5 p-5.5">
-                        <CircleCheck size={20} className="shrink-0 text-success"/>
-                        <div><h2 className="mb-1 text-md">Avanza cuando</h2><p className="text-sm leading-relaxed text-fg-soft">{study.criterion}</p></div>
+                    {/* El bloque (ícono + texto) se centra en la caja; el ícono queda arriba, a la altura del título. */}
+                    <div className="flex flex-1 flex-col justify-center rounded-2xl border border-success/30 bg-success/5 p-5.5">
+                        <div className="flex gap-3">
+                            <CircleCheck size={20} className="mt-0.5 shrink-0 text-success"/>
+                            <div><h2 className="mb-1 text-md">Avanza cuando</h2><p className="text-sm leading-relaxed text-fg-soft">{study.criterion}</p></div>
+                        </div>
                     </div>
                 </div>
             </div> : <Card><p className="text-sm text-muted">Esta lección usa un patrón cromático de ejemplo.</p></Card>}
@@ -441,7 +449,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 </li>; })}</ol>
             </Card>
 
-            <LinkButton className="self-start" to={exerciseUrl(activeModule.id, activeExercise.id, search)}><Play size={17} fill="currentColor"/>Ir al ejercicio</LinkButton>
+            <PeopleThisWeek title="Practicando esta semana" people={practicing}/>
         </div>}
 
         {mode !== 'goal' && <div className="flex flex-col gap-6">
@@ -580,13 +588,14 @@ function PracticeView({ mode }: { mode: Mode }) {
     </>;
 }
 
-/** Anterior / siguiente ejercicio del módulo, en el mismo modo (Objetivo o Práctica). En el último, vuelve al módulo. */
-function LessonPager({ moduleId, moduleTitle, lessons, current, mode }: { moduleId: string; moduleTitle: string; lessons: PracticeLesson[]; current: PracticeLesson; mode: Mode }) {
+type PagerLesson = { id: string; title: string; category?: string };
+/** Anterior / siguiente lección del módulo, en el mismo modo (Objetivo o Práctica). En la última, vuelve al módulo. También en las lecturas. */
+export function LessonPager({ moduleId, moduleTitle, lessons, current, mode }: { moduleId: string; moduleTitle: string; lessons: PagerLesson[]; current: PagerLesson; mode: Mode }) {
     const index = lessons.indexOf(current);
     const [previous, next] = [lessons[index - 1], lessons[index + 1]];
-    const urlOf = (lesson: PracticeLesson) => mode === 'goal' ? lessonUrl(moduleId, lesson.id) : exerciseUrl(moduleId, lesson.id);
+    const urlOf = (lesson: PagerLesson) => mode === 'goal' ? lessonUrl(moduleId, lesson.id) : exerciseUrl(moduleId, lesson.id);
     const card = 'group flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-line bg-card px-4 py-3.5 transition hover:border-accent/60';
-    const label = (text: string, lesson?: PracticeLesson) => <span className="flex min-w-0 flex-col gap-0.5">
+    const label = (text: string, lesson?: PagerLesson) => <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-2xs font-bold tracking-wide text-muted uppercase">{text}{lesson?.category && lesson.category !== current.category && <> · {lesson.category}</>}</span>
         <span className="line-clamp-2 font-bold text-fg-soft group-hover:text-fg">{lesson ? lesson.title : moduleTitle}</span>
     </span>;
