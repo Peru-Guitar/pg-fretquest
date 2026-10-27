@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { arrayUnion, collection, deleteDoc, collectionGroup, doc, getDocs, increment, onSnapshot, query, serverTimestamp, setDoc, Timestamp, where, writeBatch } from "firebase/firestore";
 import type { Difficulty } from "@/data/questMock";
+import { practiceStudies, speedFromBpm, type Speed } from "@/data/practiceStudies";
 import { db } from "@/lib/firebase";
 import { invalidateCommunity } from "@/lib/community";
 
@@ -16,8 +17,15 @@ import { invalidateCommunity } from "@/lib/community";
  * Las horas van en UTC (Timestamp); la web las muestra en la hora del navegador.
  */
 
-/** Un intento: rondas completadas de una lección, con fecha y hora exactas. */
-export type Attempt = { startedAt: Timestamp; endedAt: Timestamp; seconds: number; rounds: number; bpm: number };
+/**
+ * Un intento: rondas completadas de una lección, con fecha y hora exactas. `speed`: nivel de velocidad (1–5); los
+ * intentos anteriores a los niveles solo traen `bpm` (ver `attemptSpeed`).
+ */
+export type Attempt = { startedAt: Timestamp; endedAt: Timestamp; seconds: number; rounds: number; bpm: number; speed?: Speed };
+
+/** Nivel de velocidad de un intento; los antiguos (solo BPM) se pasan al nivel más cercano según la figura de la lección. */
+export const attemptSpeed = (lessonId: string, attempt: Pick<Attempt, "bpm" | "speed">): Speed | null =>
+  attempt.speed ?? (attempt.bpm ? speedFromBpm(practiceStudies[lessonId]?.figure ?? "negras", attempt.bpm) : null);
 
 export type DayDoc = {
   /** Día local del usuario, YYYY-MM-DD (= id del documento). */
@@ -47,12 +55,12 @@ export const localDateKey = (at = new Date()) => `${at.getFullYear()}-${String(a
  */
 export async function recordAttempt(params: {
   uid: string; name: string; level: Difficulty | null; lessonId: string;
-  startedAt: Date; endedAt: Date; rounds: number; bpm: number;
+  startedAt: Date; endedAt: Date; rounds: number; speed: Speed; bpm: number;
   sessionSeconds: number; daySecondsBefore: number; completedBefore: boolean; firstToday: boolean;
 }) {
   const seconds = Math.round((params.endedAt.getTime() - params.startedAt.getTime()) / 1000);
   const date = localDateKey(params.endedAt);
-  const attempt: Attempt = { startedAt: Timestamp.fromDate(params.startedAt), endedAt: Timestamp.fromDate(params.endedAt), seconds, rounds: params.rounds, bpm: params.bpm };
+  const attempt: Attempt = { startedAt: Timestamp.fromDate(params.startedAt), endedAt: Timestamp.fromDate(params.endedAt), seconds, rounds: params.rounds, speed: params.speed, bpm: params.bpm };
   const batch = writeBatch(db);
   batch.set(doc(db, "users", params.uid, "days", date), {
     date, name: params.name, level: params.level,
@@ -147,7 +155,7 @@ export const completedDaysThisWeek = (current: Progress) => Object.values(curren
  * Registra la práctica que acaba de terminar (al mostrarse el resumen). Devuelve los minutos de hoy
  * antes y después, para el modal. Sin sesión no hace nada y devuelve null.
  */
-export async function recordFinishedPractice(params: { name: string; level: Difficulty | null; sessionMinutes: number; lessonId: string; startedAt: Date; endedAt: Date; rounds: number; bpm: number }) {
+export async function recordFinishedPractice(params: { name: string; level: Difficulty | null; sessionMinutes: number; lessonId: string; startedAt: Date; endedAt: Date; rounds: number; speed: Speed; bpm: number }) {
   const { uid } = progress;
   if (!uid) return null;
   const today = todayOf(progress);
@@ -155,7 +163,7 @@ export async function recordFinishedPractice(params: { name: string; level: Diff
   const seconds = Math.round((params.endedAt.getTime() - params.startedAt.getTime()) / 1000);
   await recordAttempt({
     uid, name: params.name, level: params.level, lessonId: params.lessonId,
-    startedAt: params.startedAt, endedAt: params.endedAt, rounds: params.rounds, bpm: params.bpm,
+    startedAt: params.startedAt, endedAt: params.endedAt, rounds: params.rounds, speed: params.speed, bpm: params.bpm,
     sessionSeconds: params.sessionMinutes * 60, daySecondsBefore, completedBefore: today?.completed ?? false,
     firstToday: !today?.lessons?.[params.lessonId],
   });

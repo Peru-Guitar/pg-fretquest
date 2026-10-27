@@ -2,6 +2,17 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.5.0',
+        date: '2026-10-27',
+        notes: [
+            'Escalas y patrones: los modos de la escala mayor ahora van en orden, de jónico a locrio.',
+            'Nuevos modos de C menor armónica y C menor melódica.',
+            'La velocidad ahora va en 5 niveles, de Base a Extremo: los más altos pasan a semicorcheas.',
+            'La tablatura de guía recuerda si la dejaste activada.',
+            'Retoques visuales al elegir velocidad y rondas.',
+        ],
+    },
+    {
         version: '0.4.0',
         date: '2026-10-26',
         notes: [

@@ -1,16 +1,17 @@
 import { collection, getCountFromServer, getDocs } from "firebase/firestore";
-import { courses, type Difficulty, type PracticeLesson } from "@/data/questMock";
+import { courses, type Difficulty } from "@/data/questMock";
+import { practiceStudies, type Speed } from "@/data/practiceStudies";
 import { LEVELS } from "@/lib/account";
 import { db } from "@/lib/firebase";
-import { readCommunityDays, weekStartKey } from "@/lib/progressDb";
+import { attemptSpeed, readCommunityDays, weekStartKey } from "@/lib/progressDb";
 
 /**
  * Analytics del rol admin (`users/{uid}.role`, ver `isAdmin` en `lib/account`).
  * Todo sale de UNA lectura: los días de esta semana de todos (más el conteo de usuarios). Lo demás se calcula aquí.
  */
 export type Participant = { uid: string; name: string; seconds: number };
-/** BPM de los intentos: promedio y máximo, frente al rango sugerido de la lección. */
-export type Tempo = { avg: number; max: number; min: number; target: number };
+/** Velocidad de los intentos (niveles 1–5): promedio y máximo, frente a la sugerida de la lección. */
+export type Tempo = { avg: Speed; max: Speed; target: Speed };
 export type Ranked = { id: string; title: string; users: number; attempts: number; seconds: number; participants: Participant[]; tempo?: Tempo };
 export type ModuleRow = Ranked & { image?: string; lessons: Ranked[] };
 export type Person = { uid: string; name: string; level: Difficulty | null; seconds: number; days: number; completed: number };
@@ -31,16 +32,14 @@ export type AnalyticsData = {
 const lessonsById = new Map(courses.flatMap(course => course.lessons.map(lesson => [lesson.id, { lesson, course }] as const)));
 
 // Los nombres ya vienen copiados en cada día: listar participantes no cuesta lecturas extra.
-type Tally = Omit<Ranked, "participants" | "tempo"> & { uids: Map<string, Participant>; bpm: number[] };
-const tally = (id: string, title: string): Tally => ({ id, title, users: 0, attempts: 0, seconds: 0, uids: new Map(), bpm: [] });
+type Tally = Omit<Ranked, "participants" | "tempo"> & { uids: Map<string, Participant>; speeds: Speed[] };
+const tally = (id: string, title: string): Tally => ({ id, title, users: 0, attempts: 0, seconds: 0, uids: new Map(), speeds: [] });
 const byUsage = (a: Ranked, b: Ranked) => b.users - a.users || b.seconds - a.seconds || b.attempts - a.attempts;
-const tempoOf = (bpm: number[], target?: PracticeLesson["tempo"]): Tempo | undefined => bpm.length && target
-  ? { avg: Math.round(bpm.reduce((sum, value) => sum + value, 0) / bpm.length), max: Math.max(...bpm), min: target.min, target: target.max }
+const tempoOf = (id: string, speeds: Speed[]): Tempo | undefined => speeds.length && practiceStudies[id]
+  ? { avg: Math.round(speeds.reduce((sum, value) => sum + value, 0) / speeds.length) as Speed, max: Math.max(...speeds) as Speed, target: practiceStudies[id].speed ?? 2 }
   : undefined;
-const finish = ({ uids, bpm, ...row }: Tally): Ranked => {
-  const info = lessonsById.get(row.id)?.lesson;
-  return { ...row, users: uids.size, participants: [...uids.values()].sort((a, b) => b.seconds - a.seconds), tempo: tempoOf(bpm, info?.type === "practice" ? info.tempo : undefined) };
-};
+const finish = ({ uids, speeds, ...row }: Tally): Ranked =>
+  ({ ...row, users: uids.size, participants: [...uids.values()].sort((a, b) => b.seconds - a.seconds), tempo: tempoOf(row.id, speeds) });
 
 const BUCKETS = [{ label: "< 15 min", max: 15 }, { label: "15–30 min", max: 30 }, { label: "30–45 min", max: 45 }, { label: "45 min o más", max: Infinity }];
 
@@ -76,7 +75,8 @@ export async function readAnalytics(): Promise<AnalyticsData> {
       }
       level.lessons.set(lessonId, (level.lessons.get(lessonId) ?? 0) + (lesson.seconds ?? 0));
       for (const attempt of lesson.sessions ?? []) {
-        if (attempt.bpm) row.bpm.push(attempt.bpm);
+        const speed = attemptSpeed(lessonId, attempt);
+        if (speed) row.speeds.push(speed);
         const at = attempt.startedAt.toDate();
         heat[(at.getDay() + 6) % 7][at.getHours()] += (attempt.seconds ?? 0) / 60;
       }

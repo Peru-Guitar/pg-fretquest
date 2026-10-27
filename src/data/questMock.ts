@@ -1,4 +1,4 @@
-import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, SCALE_MODES, modeRoot, practiceStudies } from './practiceStudies';
+import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, SCALE_MODES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -1107,12 +1107,12 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
-// Escalas y patrones: los siete modos de C mayor, agrupados en «Escala mayor» y «Escala menor» (ver SCALE_MODES).
+// Escalas y patrones: los modos de C mayor, C menor armónica y C menor melódica, en el orden de sus grados (ver SCALE_MODES).
 Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
- description: 'Los modos de la escala mayor de C, agrupados en mayores (C jónico, F lidio, G mixolidio) y menores (A eólico, D dórico, E frigio, B locrio). Conoce sus posiciones en el mástil y mejora el picking.',
+ description: 'Los modos de la escala mayor de C, de C menor armónica y de C menor melódica, uno por grado y en orden. Conoce sus posiciones en el mástil y mejora el picking.',
  skills: ['Modos', 'Posiciones', 'Púa alternada'],
  lessons: [
-  ...SCALE_MODES.map(({ id, degree, mode, group }): Lesson => ({ id, title: `${modeRoot(degree)} ${mode}`, category: group, type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
+  ...SCALE_MODES.map((scaleMode): Lesson => ({ id: scaleMode.id, title: modeTitle(scaleMode), category: modeCategory(scaleMode), type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
  ],
 });
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
@@ -1120,7 +1120,7 @@ const ADDED: Record<string, string> = {
  'alternate-picking-right-hand-01': '2026-10-26',
  'alternate-picking-right-hand-02': '2026-10-26',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
- ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
+ ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : '2026-10-27'])),
  'licks-phrasing-howe-01': '2026-10-26',
  'licks-phrasing-romeo-01': '2026-10-25',
  'licks-phrasing-yngwie-02': '2026-10-24',

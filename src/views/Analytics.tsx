@@ -9,13 +9,14 @@ import { isAdmin, levelLabel, useAccount } from '@/lib/account';
 import { readAnalytics, readMembers, type AnalyticsData, type Member, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
 import { initials, toneOf } from '@/lib/avatar';
 import { weekStartKey } from '@/lib/progressDb';
+import { speedName } from '@/data/practiceStudies';
 import { ROUTES, userProfileUrl } from '@/lib/routes';
 import { cn } from '@/lib/cn';
 
 /**
  * Analytics: solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
  * Tres pestañas (`?tab=`): Resumen (la semana en cifras, cuándo y cuánto se practica), Lecciones (cada módulo con sus
- * lecciones: tiempo, BPM real frente al sugerido y quiénes la practicaron) y Usuarios (todos los registrados y quiénes
+ * lecciones: tiempo, velocidad real frente a la sugerida y quiénes la practicaron) y Usuarios (todos los registrados y quiénes
  * practicaron). Cada cara lleva al perfil del usuario.
  */
 export const time = (seconds: number) => seconds < 60 ? `${Math.round(seconds)} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
@@ -61,13 +62,13 @@ function Faces({ people }: { people: Participant[] }) {
     </ul>;
 }
 
-/** BPM real frente al rango sugerido: por debajo del mínimo, la lección quizá se les hace cuesta arriba. */
+/** Velocidad real frente a la sugerida: por debajo, la lección quizá se les hace cuesta arriba. */
 function TempoLine({ tempo }: { tempo: Tempo }) {
-    const low = tempo.avg < tempo.min;
+    const low = tempo.avg < tempo.target;
     return <p className="flex items-center gap-1.5 text-2xs text-muted">
         <Gauge size={12} className={low ? 'text-gold' : 'text-accent'}/>
-        <span><b className={cn('tabular-nums', low ? 'text-gold' : 'text-fg-soft')}>{tempo.avg}</b> BPM prom. · máx <b className="tabular-nums text-fg-soft">{tempo.max}</b></span>
-        <span className="text-subtle">/ sugerido {tempo.min}–{tempo.target}</span>
+        <span>Prom. <b className={low ? 'text-gold' : 'text-fg-soft'}>{speedName(tempo.avg)}</b> · máx <b className="text-fg-soft">{speedName(tempo.max)}</b></span>
+        <span className="text-subtle">/ sugerida {speedName(tempo.target)}</span>
     </p>;
 }
 
@@ -253,11 +254,11 @@ export default function AnalyticsPage() {
     return <>
         <PageTitle eyebrow="ADMIN" title="Analytics" text={`Usuarios y lo más practicado esta semana (desde el lunes ${weekStartKey()}).`}/>
         <Tabs items={[...TABS]} value={tab} onChange={value => navigate(value === 'resumen' ? ROUTES.analytics : `${ROUTES.analytics}?tab=${value}`)} label="Secciones de Analytics" className="mb-5"/>
-        {tab === 'usuarios' && <div className="grid gap-5">
+        {tab === 'usuarios' && <div className="grid grid-cols-1 gap-5">
             <MembersCard/>
             {data && data.people.length > 0 && <PeopleCard data={data}/>}
         </div>}
-        {tab !== 'usuarios' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid gap-5">
+        {tab !== 'usuarios' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid grid-cols-1 gap-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
@@ -272,7 +273,7 @@ export default function AnalyticsPage() {
                 </div>
                 <LevelCard data={data}/>
             </> : <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>}
-        </div> : <div className="grid gap-5">
+        </div> : <div className="grid grid-cols-1 gap-5">
             {data.modules.length === 0
                 ? <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>
                 : data.modules.map((module, index) => <ModuleCard key={module.id} module={module} place={index + 1} data={data}/>)}

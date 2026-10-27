@@ -6,6 +6,7 @@ import { useHydrated, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
 import { useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
 import { courses } from '@/data/questMock';
+import { speedName } from '@/data/practiceStudies';
 import { initials, toneOf } from '@/lib/avatar';
 import { ROUTES } from '@/lib/routes';
 import { timeAgo } from '@/lib/timeAgo';
@@ -111,7 +112,7 @@ export default function UserProfilePage() {
 
         <Card className="mb-5">
             <SectionTitle title="Módulos" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Cada lección con su BPM máximo y el último, frente al sugerido.</p>
+            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Cada lección con su velocidad máxima y la última, frente a la sugerida.</p>
             {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{modules.map(module => <li key={module.id} className="flex flex-col overflow-hidden rounded-xl border border-line-soft">
                 {module.image ? <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-28 w-full bg-sunken object-cover"/> : <span className="h-28 w-full bg-sunken"/>}
                 <div className="flex items-start gap-3 px-4 pt-3 pb-2">
@@ -122,13 +123,13 @@ export default function UserProfilePage() {
                     <b className="text-sm tabular-nums text-fg">{time(module.seconds)}</b>
                 </div>
                 <ul className="px-4 pb-1">{module.lessons.map(lesson => {
-                    const reached = lesson.target && lesson.bpmMax >= lesson.target.max;
+                    const reached = lesson.target && lesson.speedMax >= lesson.target;
                     return <li key={lesson.id} className="border-t border-line-soft py-2">
                         <p className="flex items-baseline gap-2"><span className="min-w-0 flex-1 truncate text-xs font-bold text-fg-soft">{lesson.title}</span><span className="text-2xs tabular-nums text-muted">{time(lesson.seconds)}</span></p>
                         <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted">
                             <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
-                            <span>máx <b className={cn('tabular-nums', reached ? 'text-success' : 'text-fg-soft')}>{lesson.bpmMax || '—'}</b> · último <b className="tabular-nums text-fg-soft">{lesson.bpmLast || '—'}</b></span>
-                            {lesson.target && <span className="text-subtle">/ {lesson.target.min}–{lesson.target.max}</span>}
+                            <span>máx <b className={reached ? 'text-success' : 'text-fg-soft'}>{lesson.speedMax ? speedName(lesson.speedMax) : '—'}</b> · última <b className="text-fg-soft">{lesson.speedLast ? speedName(lesson.speedLast) : '—'}</b></span>
+                            {lesson.target && <span className="text-subtle">/ {speedName(lesson.target)}</span>}
                         </p>
                     </li>;
                 })}</ul>
