@@ -4,14 +4,17 @@ import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
-import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, Users, Wrench, X } from 'lucide-react';
+import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, UserPlus, Users, Wrench, X } from 'lucide-react';
 import { isAdmin, useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
 import { SupportButton } from '@/components/SupportButton';
+import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { VersionInfo } from '@/components/VersionInfo';
 import { cn } from '@/lib/cn';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
+
+const inviteUrl = `https://wa.me/?text=${encodeURIComponent('¡Estoy aprendiendo guitarra gratis con Fret Quest! Practica conmigo: https://fretquest.peruguitar.com')}`;
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
 const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-accent';
@@ -58,6 +61,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <a href="https://chat.whatsapp.com/BqVeyGhXMGO2XkdD424Z7o?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <MessageCircle size={19}/><span>PG Skool</span>
                 </a>
+                <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
+                    <UserPlus size={19}/><span>Invitar a un amigo</span>
+                </a>
                 <SupportButton className={cn(linkBase, sidebarLink.base, 'w-full')}/>
             </nav>
             <div className="flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
@@ -80,5 +86,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {children}
             </main>
         </div>
+        <UpdatePrompt/>
     </div>;
 }

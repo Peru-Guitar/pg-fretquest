@@ -37,17 +37,17 @@ export function ArtistCredit({ id }: { id: string }) {
 export function ArtistHeader({ id }: { id: string }) {
     const artist = artists[id];
     if (!artist) return null;
-    return <h3 className="flex items-center gap-3.5 text-2xl md:text-3xl">
-        <ArtistPhoto id={id} name={artist.name} className="size-12 text-base ring-2 ring-blue/40 md:size-14"/>
-        <span className="shrink-0">{artist.name}</span>
-        <span aria-hidden className="h-px flex-1 bg-line"/>
+    return <h3 className="flex items-center gap-3 text-lg md:text-xl">
+        <ArtistPhoto id={id} name={artist.name} className="size-10 text-sm ring-2 ring-blue/40 md:size-11"/>
+        <span className="min-w-0">{artist.name}</span>
+        <span aria-hidden className="h-px min-w-6 flex-1 bg-line"/>
     </h3>;
 }
 
 /** Título de un grupo de lecciones de una misma categoría (p. ej. «Grupos de tres cuerdas»), con el mismo estilo que el de artista. */
 export function CategoryHeader({ title }: { title: string }) {
     return <h3 className="flex items-center gap-3.5 text-2xl md:text-3xl">
-        <span className="shrink-0">{title}</span>
-        <span aria-hidden className="h-px flex-1 bg-line"/>
+        <span className="min-w-0">{title}</span>
+        <span aria-hidden className="h-px min-w-6 flex-1 bg-line"/>
     </h3>;
 }

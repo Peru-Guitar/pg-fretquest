@@ -39,7 +39,7 @@ export const setLastExercise = lastExercise.set;
 
 
 
-/** Aviso del modo práctica ya visto («No volver a mostrar»). */
-const practiceIntro = createLocalStore<boolean>("fretquest.practiceIntroSeen", false);
+/** Semana (lunes, AAAA-MM-DD) en que se marcó «No volver a mostrar» en el aviso del modo práctica: vuelve a salir la semana siguiente. */
+const practiceIntro = createLocalStore<string | null>("fretquest.practiceIntroWeek", null);
 export const usePracticeIntroSeen = practiceIntro.use;
 export const setPracticeIntroSeen = practiceIntro.set;

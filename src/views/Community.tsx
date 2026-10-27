@@ -113,14 +113,14 @@ export default function CommunityPage() {
             {mine === 0 && <Link to={ROUTES.plan} className="text-sm font-bold text-accent hover:underline">Ir a mi plan →</Link>}
         </Card>}
 
-        <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr] [&>*]:min-w-0">
             <Card>
                 <SectionTitle title="Actividad de la semana" className="mb-1"/>
                 <Caption>Prácticas completadas por día</Caption>
-                <div className="flex h-56 items-end justify-around gap-3 pt-7.5" role="img" aria-label={`Prácticas por día: ${DAYS.map((day, index) => `${day} ${WEEK.byDay[index]}`).join(', ')}.`}>
+                <div className="flex h-56 items-end justify-around gap-1.5 pt-7.5 sm:gap-3" role="img" aria-label={`Prácticas por día: ${DAYS.map((day, index) => `${day} ${WEEK.byDay[index]}`).join(', ')}.`}>
                     {WEEK.byDay.map((value, index) => {
                         const future = index > todayIndex;
-                        return <div key={DAYS[index]} className="flex h-full w-10 flex-col items-center justify-end gap-2 text-3xs whitespace-nowrap text-muted">
+                        return <div key={DAYS[index]} className="flex h-full max-w-10 min-w-0 flex-1 flex-col items-center justify-end gap-2 text-3xs whitespace-nowrap text-muted">
                             <span className={cn(index === todayIndex && 'font-bold text-fg')}>{future ? '' : value}</span>
                             <i className={cn('w-full rounded-t', future ? 'h-1 bg-line' : index === todayIndex ? 'bg-blue' : 'bg-white/15')} style={future ? undefined : { height: `${value / maxDay * 150}px` }}/>
                             <small className={cn(index === todayIndex && 'font-bold text-fg')}>{index === todayIndex ? 'Hoy' : DAYS[index]}</small>
