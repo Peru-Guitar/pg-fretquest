@@ -12,6 +12,7 @@ export const ROUTES = {
   account: "/mi-cuenta",
   community: "/comunidad",
   login: "/entrar",
+  join: "/unirse",
   retakeQuiz: "/entrar?repetir",
   guide: "/como-funciona",
   tools: "/herramientas",

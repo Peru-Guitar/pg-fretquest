@@ -7,7 +7,7 @@ export const dynamic = "force-static";
 
 /** Solo páginas públicas: inicio, ejercicios, guía, herramientas, y cada módulo y lección publicados. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = [ROUTES.home, ROUTES.exercises, ROUTES.guide, ROUTES.tools, ROUTES.tuner, ROUTES.metronome, ROUTES.about];
+  const pages = [ROUTES.home, ROUTES.exercises, ROUTES.guide, ROUTES.tools, ROUTES.tuner, ROUTES.metronome, ROUTES.about, ROUTES.join];
   const published = courses.filter(course => course.available);
   return [
     ...pages.map(path => ({ url: `${SITE_URL}${path}` })),

@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
 
-const inviteUrl = `https://wa.me/?text=${encodeURIComponent('¡Estoy aprendiendo guitarra gratis con Fret Quest! Practica conmigo: https://fretquest.peruguitar.com')}`;
+const inviteUrl = `https://wa.me/?text=${encodeURIComponent('¡Estoy aprendiendo guitarra gratis con Fret Quest! Practica conmigo: https://fretquest.peruguitar.com/unirse')}`;
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
 const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-accent';
