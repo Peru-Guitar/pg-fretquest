@@ -1,8 +1,8 @@
 'use client';
 
-import { ROUTES, moduleUrl } from '@/lib/routes';
+import { ROUTES } from '@/lib/routes';
 import { useState } from 'react';
-import { Link, Navigate, useHydrated } from '@/lib/router';
+import { Navigate, useHydrated } from '@/lib/router';
 import { Gauge, ListChecks, LogIn, TrendingUp, Users } from 'lucide-react';
 import { Button, Card, Eyebrow } from '@/components/ui';
 import { signIn, useAccount } from '@/lib/account';
@@ -46,13 +46,14 @@ export default function JoinPage() {
 
         <section className="mt-12">
             <h2 className="text-2xl md:text-3xl">Qué vas a aprender</h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <Link key={module.id} to={moduleUrl(module.id)} className="group overflow-hidden rounded-xl border border-line transition hover:border-line-strong">
-                <img src={module.image} alt="" className="aspect-[16/9] w-full object-cover opacity-90 transition group-hover:opacity-100"/>
-                <div className="p-5">
-                    <h3 className="text-lg">{module.title}</h3>
-                    <p className="mt-1.5 line-clamp-3 text-sm text-muted">{module.description}</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MODULES.map(module => <div key={module.id} className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line">
+                <img src={module.image} alt="" className="absolute inset-0 size-full object-cover"/>
+                <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/60 to-transparent"/>
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                    <h3 className="text-lg text-white">{module.title}</h3>
+                    <p className="mt-1.5 line-clamp-3 text-sm text-white/75">{module.description}</p>
                 </div>
-            </Link>)}</div>
+            </div>)}</div>
         </section>
 
         <section className="mt-12">
