@@ -141,7 +141,7 @@ export default function PlanPage() {
                 <p className="text-3xs font-black tracking-[0.18em] text-accent-strong">MÓDULO {blockIndex + (recommendations ? 2 : 1)}</p>
                 <h2 className="mt-1.5 mb-4 text-lg">{block.title}</h2>
                 <div className="flex flex-col gap-5">{groupByArtist(block.lessons).map(group => <div key={`${group.artist}-${group.category}`} className="flex flex-col gap-3">
-                {group.artist ? <ArtistHeader id={group.artist}/> : group.category ? <h3 className="flex items-center gap-3 text-sm font-bold text-fg-soft"><span className="shrink-0">{group.category}</span><span aria-hidden className="h-px flex-1 bg-line"/></h3> : block.lessons.some(lesson => lesson.artist) && <b className="text-sm text-fg">De la comunidad</b>}
+                {group.artist ? <ArtistHeader id={group.artist}/> : group.category ? <h3 className="flex items-center gap-3 text-sm font-bold text-fg-soft"><span className="min-w-0">{group.category}</span><span aria-hidden className="h-px min-w-6 flex-1 bg-line"/></h3> : block.lessons.some(lesson => lesson.artist) && <b className="text-sm text-fg">De la comunidad</b>}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{group.lessons.map(lesson => {
                     const stats = statsOf(lesson.id);
                     return <Link key={lesson.id} to={practiceUrl(block.moduleId, lesson.id)} className="flex items-start gap-3 rounded-lg border border-line px-4 py-3.5 transition hover:bg-white/3">

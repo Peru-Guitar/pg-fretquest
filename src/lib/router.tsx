@@ -65,7 +65,8 @@ const patchHistory = () => {
         const original = window.history[method].bind(window.history);
         window.history[method] = (...args: Parameters<History['pushState']>) => {
             original(...args);
-            window.dispatchEvent(new Event(HISTORY_EVENT));
+            // Next llama a pushState dentro de useInsertionEffect, donde no se puede actualizar estado: se avisa después.
+            queueMicrotask(() => window.dispatchEvent(new Event(HISTORY_EVENT)));
         };
     }
 };

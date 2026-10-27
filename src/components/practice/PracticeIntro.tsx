@@ -14,7 +14,7 @@ const POINTS = [
 
 /**
  * Aviso antes de la primera práctica: qué va a pasar al empezar. Se muestra hasta que se marca
- * «No volver a mostrar»; cancelar no inicia nada.
+ * «No volver a mostrar esta semana»; cancelar no inicia nada.
  */
 export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: boolean) => void; onCancel: () => void }) {
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -49,7 +49,7 @@ export function PracticeIntro({ onStart, onCancel }: { onStart: (dontShowAgain: 
                 <p className="mt-6 text-xs text-muted">Antes de sonar hay una cuenta de entrada. Pulsa <kbd className="rounded border border-line-strong px-1.5 font-mono">Esc</kbd> para cancelar en cualquier momento.</p>
                 <label className="mt-6 flex cursor-pointer items-center gap-2.5 text-sm text-fg-soft">
                     <input type="checkbox" checked={dontShowAgain} onChange={event => setDontShowAgain(event.target.checked)} className="size-4 accent-brand"/>
-                    No volver a mostrar
+                    No volver a mostrar esta semana
                 </label>
                 <div className="mt-6 flex flex-wrap gap-3">
                     <Button onClick={() => onStart(dontShowAgain)}><Play size={16} fill="currentColor"/>Comenzar práctica</Button>

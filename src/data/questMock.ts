@@ -1066,6 +1066,12 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggio
  skills: ['Posiciones', 'Secuencias', 'Púa alternada'],
  lessons: [1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-0${position}`, title: `Posición ${position} · desde ${PENTATONIC_G_START[position - 1]}`, category: 'Grupos de tres cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson)).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-sweep-0${position}`, title: `Posición ${position} · Patrón extendido con Sweep`, category: 'Patrones extendidos con Sweep', type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))),
 });
+// Púa alternada: por ahora solo «Una sola cuerda»; las demás lecciones llegan con su material.
+moduleFixtures.find(module => module.id === 'alternate-picking')!.lessons = [
+ { id: 'alternate-picking-single-01', title: 'Repetición de notas en la primera cuerda', category: 'Una sola cuerda', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'alternate-picking-single-02', title: 'Cromático en la primera cuerda', category: 'Una sola cuerda', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'alternate-picking-single-03', title: 'Secuencia de tres notas en la primera cuerda', category: 'Una sola cuerda', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+];
 // Primera del módulo: la más reciente.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
  id: 'licks-phrasing-romeo-01', title: 'Tresillos en string skipping sobre Em',
@@ -1107,6 +1113,9 @@ Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
 });
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
 const ADDED: Record<string, string> = {
+ 'alternate-picking-single-01': '2026-10-26',
+ 'alternate-picking-single-02': '2026-10-26',
+ 'alternate-picking-single-03': '2026-10-26',
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, '2026-10-24'])),
  'licks-phrasing-romeo-01': '2026-10-25',
@@ -1134,7 +1143,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing'].includes(module.id),
+ available: ['recommendations', 'alternate-picking', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,

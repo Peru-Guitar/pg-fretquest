@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, tempos, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, SkipForward, Square, Target, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, SkipForward, Square, Target, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow, LinkButton } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
@@ -15,11 +15,12 @@ import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
 import { setLastExercise, setPracticeIntroSeen, usePracticeIntroSeen } from '@/lib/progress';
 import { PracticeIntro } from '@/components/practice/PracticeIntro';
-import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
+import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, todayKey, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
+import { weekStart } from '@/lib/domain/report';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
@@ -98,7 +99,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
     const planSession = usePlanSession();
     const account = useAccount();
-    const introSeen = usePracticeIntroSeen();
+    // «No volver a mostrar» dura la semana: cada lunes el aviso vuelve a salir.
+    const introSeen = usePracticeIntroSeen() === weekStart(todayKey());
     const [showIntro, setShowIntro] = useState(false);
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
@@ -136,6 +138,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     const startedAt = useRef(0);
     const [startedAtView, setStartedAtView] = useState(0);
     const closeSummary = useCallback(() => setFinished(null), []);
+    // Nota elegida en la tablatura: Reproducir empieza desde ahí (Practicar siempre toca el patrón completo).
+    const [from, setFrom] = useState<number | null>(null);
     // Al cambiar de ejercicio vuelve al valor por defecto de su tablatura.
     const [roundsFor, setRoundsFor] = useState(activeExercise.id);
     if (roundsFor !== activeExercise.id) {
@@ -143,6 +147,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         setBpm(study?.bpm ?? 100);
         setRounds(suggestedRounds);
         setFinished(null);
+        setFrom(null);
     }
     const roundsRef = useRef(rounds);
     useEffect(() => { roundsRef.current = rounds; }, [rounds]);
@@ -172,13 +177,14 @@ function PracticeView({ mode }: { mode: Mode }) {
         setStep(-1);
         setCount(-1);
         setPhase(listen ? 'playing' : 'countdown');
-        cancelRef.current = scheduleRound(bpmRef.current, pattern, {
+        const offset = listen ? from ?? 0 : 0;
+        cancelRef.current = scheduleRound(bpmRef.current, pattern.slice(offset), {
             // El metrónomo siempre marca negras (un clic por pulso), sin importar la figura de la tablatura.
             notesPerBeat: FIGURES[figure].notesPerBeat,
             guide: listen,
             countIn: !listen,
             onCount: value => { setCount(value); setPulse(beat => beat + 1); },
-            onStep: index => { setPhase('playing'); setStep(index); },
+            onStep: index => { setPhase('playing'); setStep(index + offset); },
             onEnd: () => {
                 if (listen) { stop(); return; }
                 const current = sessionRef.current;
@@ -245,10 +251,26 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [searchParams]);
     // Al salir de la página se corta el sonido.
     useEffect(() => () => stopRef.current(), []);
-    // Escape detiene la práctica.
+    // Espacio reproduce el ejercicio (desde la nota elegida, si hay una); Practicar se inicia solo con su botón.
+    // Escape quita la nota elegida: Reproducir vuelve a empezar desde el inicio.
+    useEffect(() => {
+        if (active) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') { setFrom(null); return; }
+            if (event.key !== ' ' || event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
+            event.preventDefault();
+            void startRef.current(true);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [active]);
+    // Escape detiene (al escuchar y al practicar). Espacio no hace nada mientras suena: no se detiene por accidente.
     useEffect(() => {
         if (!active) return;
-        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') userStopRef.current(); };
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === ' ' && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) event.preventDefault();
+            if (event.key === 'Escape') userStopRef.current();
+        };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [active]);
@@ -288,8 +310,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [showBar]);
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
-        <Button onClick={() => start(true)} className="min-w-40"><Headphones size={16}/>Escuchar ejercicio</Button>
-        <Button variant="secondary" onClick={() => introSeen ? start(false) : setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
+        <Button onClick={() => start(true)} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
+        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={() => introSeen ? start(false) : setShowIntro(true)}><Play size={16} fill="currentColor"/>Practicar</Button>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{bpm} BPM</b></span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
@@ -334,7 +356,7 @@ function PracticeView({ mode }: { mode: Mode }) {
             {/* Objetivo: una frase destacada y los datos clave en fichas. */}
             <section className="rounded-2xl border border-accent/30 bg-[linear-gradient(120deg,#232323,#151515)] p-5.5 xl:p-6.5">
                 <span className="flex items-center gap-2 text-3xs font-bold tracking-[0.2em] text-accent"><Target size={15}/>OBJETIVO</span>
-                <p className="mt-3 max-w-3xl text-lg leading-snug font-bold text-balance text-fg md:text-xl">{activeExercise.goal}</p>
+                <p className="mt-3 text-base leading-relaxed text-fg-soft">{activeExercise.goal}</p>
                 <div className="mt-5 flex flex-wrap gap-2 text-xs">{[
                     [Gauge, `${study?.bpm ?? 100} BPM sugeridos`],
                     [Repeat, `${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}`],
@@ -398,7 +420,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         : phase === 'loading'
                             ? <Button disabled className="min-w-40"><Loader2 size={17} className="animate-spin"/>Cargando sonido…</Button>
                             : playingInfo}
-                    {!active && <div className="ml-auto flex flex-wrap items-center gap-3 text-sm text-muted">{session ? <span>Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</span> : roundsGroup}</div>}
+                    {!active && <div className="-mx-4 flex w-[calc(100%+2rem)] flex-wrap items-center justify-center gap-3 border-t border-line px-4 pt-3 text-sm text-muted sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:border-0 sm:p-0">{session ? <span>Sesión de <b className="text-fg-soft">{session.minutes} min</b>: las rondas se repiten hasta completar el tiempo</span> : roundsGroup}</div>}
                 </div>
                 </div>
                 {showBar && createPortal(<div style={{ left: barBox.left, width: barBox.width }} className="fixed top-16 z-20 rounded-b-xl border border-t-0 border-line bg-card/90 shadow-[0_8px_30px_#0007] backdrop-blur-md">
@@ -412,9 +434,21 @@ function PracticeView({ mode }: { mode: Mode }) {
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={dontShowAgain => { setShowIntro(false); if (dontShowAgain) setPracticeIntroSeen(true); start(false); }}/>}
+                {showIntro && <PracticeIntro onCancel={() => setShowIntro(false)} onStart={dontShowAgain => { setShowIntro(false); if (dontShowAgain) setPracticeIntroSeen(weekStart(todayKey())); start(false); }}/>}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
-                <p className="border-t border-line px-5 py-3 text-xs text-muted"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
+                {/* En móvil la nota elegida va en su propia fila, separada con una línea como el resto de la tarjeta. */}
+                <div className="flex flex-col border-t border-line text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-3">
+                    <p className="px-5 py-3 sm:p-0"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
+                    {/* Nota elegida en la tablatura: se quita con Esc, con «Quitar» o tocándola otra vez. */}
+                    {from !== null && !active && <p className="flex items-center gap-2 border-t border-line px-5 py-3 sm:ml-auto sm:shrink-0 sm:border-0 sm:p-0">
+                        <span>Comenzar desde la nota <b className="text-accent">{pattern[from].fret}</b></span>
+                        <span aria-hidden>·</span>
+                        <button type="button" onClick={() => setFrom(null)} className="inline-flex items-center gap-1.5 text-fg-soft hover:text-fg">
+                            <kbd className="hidden rounded border border-line-strong px-1.5 font-mono text-3xs lg:inline">Esc</kbd>
+                            <span className="lg:hidden">Quitar</span><span className="hidden lg:inline">para quitar</span>
+                        </button>
+                    </p>}
+                </div>
                 <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
                     <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${FIGURES[figure].label}.`}>
                         {bars.map((bar, barIndex) => <div key={barIndex} ref={element => { rowRefs.current[barIndex] = element; }}>
@@ -439,7 +473,10 @@ function PracticeView({ mode }: { mode: Mode }) {
                                     return <span key={index} className="relative grid justify-items-center">
                                         {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
-                                        <span className={cn('z-10 px-1 text-base', note.string === row + 1 ? (playing ? 'rounded-[5px] bg-blue text-white' : 'bg-sunken text-fg-soft') : 'invisible')}>{note.fret}</span>
+                                        {note.string === row + 1
+                                            ? <button type="button" disabled={active} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
+                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : !active && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && 'cursor-pointer hover:text-fg', !active && from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
+                                            : <span className="invisible z-10 px-1 text-base">{note.fret}</span>}
                                     </span>;
                                 })}
                             </div>)}
@@ -460,5 +497,22 @@ function PracticeView({ mode }: { mode: Mode }) {
                 </div>, document.body)}
             </section>
         </div>}
+        {!active && !session && <LessonPager moduleId={activeModule.id} moduleTitle={activeModule.title} lessons={practiceLessons} current={activeExercise} mode={mode}/>}
     </>;
+}
+
+/** Anterior / siguiente ejercicio del módulo, en el mismo modo (Objetivo o Práctica). En el último, vuelve al módulo. */
+function LessonPager({ moduleId, moduleTitle, lessons, current, mode }: { moduleId: string; moduleTitle: string; lessons: PracticeLesson[]; current: PracticeLesson; mode: Mode }) {
+    const index = lessons.indexOf(current);
+    const [previous, next] = [lessons[index - 1], lessons[index + 1]];
+    const urlOf = (lesson: PracticeLesson) => mode === 'goal' ? lessonUrl(moduleId, lesson.id) : exerciseUrl(moduleId, lesson.id);
+    const card = 'group flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-line bg-card px-4 py-3.5 transition hover:border-accent/60';
+    const label = (text: string, lesson?: PracticeLesson) => <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-2xs font-bold tracking-wide text-muted uppercase">{text}{lesson?.category && lesson.category !== current.category && <> · {lesson.category}</>}</span>
+        <span className="line-clamp-2 font-bold text-fg-soft group-hover:text-fg">{lesson ? lesson.title : moduleTitle}</span>
+    </span>;
+    return <nav aria-label="Otros ejercicios del módulo" className="mt-8 flex flex-col gap-3 sm:flex-row">
+        {previous ? <Link to={urlOf(previous)} className={card}><ChevronLeft size={20} className="shrink-0 text-muted group-hover:text-accent"/>{label('Anterior', previous)}</Link> : <span className="hidden flex-1 sm:block"/>}
+        <Link to={next ? urlOf(next) : moduleUrl(moduleId)} className={cn(card, 'justify-end text-right')}>{label(next ? 'Siguiente' : 'Volver a', next)}<ChevronRight size={20} className="shrink-0 text-muted group-hover:text-accent"/></Link>
+    </nav>;
 }
