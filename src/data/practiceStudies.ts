@@ -341,7 +341,7 @@ const rightHandOpen: PracticeStudy = {
     criterion: 'Cuando los cuatro golpes de cada cuerda suenen parejos y sin ruido de las demás cuerdas, sube el BPM.',
     perRow: 24,
     figure: 'corcheas',
-    bpm: 60,
+    bpm: 80,
     pattern: openStrings([6, 5, 4, 3, 2, 1]),
 };
 const rightHandSkip: PracticeStudy = {
@@ -352,7 +352,7 @@ const rightHandSkip: PracticeStudy = {
     mistakes: [...RIGHT_HAND_MISTAKES, 'Rozar la cuerda que saltas.'],
     criterion: 'Cuando los dos recorridos suenen parejos y sin que suene la cuerda que saltas, sube el BPM.',
     figure: 'corcheas',
-    bpm: 60,
+    bpm: 80,
     ...withSections([
         { title: 'Primer recorrido', pattern: openStrings([6, 4, 5, 3, 4, 2, 3, 1]) },
         { title: 'Segundo recorrido', pattern: openStrings([1, 3, 2, 4, 3, 5, 4, 6]) },
