@@ -115,12 +115,12 @@ export function play(string: number, fret: number, durationSec: number): void {
   sampler.triggerAttackRelease(frequency, Math.max(0.15, durationSec), tone.now(), 0.85);
 }
 
-/** Toca una nota en un instante del reloj de audio (para programar con antelación). */
-export function playAt(string: number, fret: number, durationSec: number, time: number): void {
+/** Toca una nota en un instante del reloj de audio (para programar con antelación). `velocity` baja el volumen (0.85 por defecto). */
+export function playAt(string: number, fret: number, durationSec: number, time: number, velocity = 0.85): void {
   if (!sampler) return;
   const open = OPEN_STRINGS[string - 1];
   if (open === undefined) return;
-  sampler.triggerAttackRelease(tone.Frequency(open + fret, "midi").toFrequency(), Math.max(0.05, durationSec), time, 0.85);
+  sampler.triggerAttackRelease(tone.Frequency(open + fret, "midi").toFrequency(), Math.max(0.05, durationSec), time, velocity);
 }
 
 /** Semitonos que suena un armónico natural sobre la cuerda al aire, según el traste. */
