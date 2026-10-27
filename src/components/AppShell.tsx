@@ -53,16 +53,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="mx-3.5 mt-3 mb-3 text-3xs tracking-[0.2em] text-subtle">TU ENTRENAMIENTO</p>
             <nav aria-label="Principal">
                 {navigation(links, sidebarLink)}
+                <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
+                    <UserPlus size={19}/><span>Invitar a un amigo</span>
+                </a>
                 {admin && navigation([{ to: ROUTES.analytics, label: 'Analytics', icon: BarChart3 }], sidebarLink)}
             </nav>
             {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
             <nav aria-label="Ayuda" className="mt-auto mb-3">
                 <NavLink to={ROUTES.guide} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
                 <a href="https://chat.whatsapp.com/BqVeyGhXMGO2XkdD424Z7o?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
-                    <MessageCircle size={19}/><span>PG Skool</span>
-                </a>
-                <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
-                    <UserPlus size={19}/><span>Invitar a un amigo</span>
+                    <MessageCircle size={19} className="text-[#25D366]"/><span>Unirse al Grupo</span>
                 </a>
                 <SupportButton className={cn(linkBase, sidebarLink.base, 'w-full')}/>
             </nav>
