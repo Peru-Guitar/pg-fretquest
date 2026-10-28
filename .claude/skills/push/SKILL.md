@@ -23,8 +23,10 @@ Antes de subir, revisa lo que se va a publicar (`git log origin/main..HEAD`, `gi
 
 | Tipo | Cuándo | Ejemplo |
 |---|---|---|
-| **minor** | Algo nuevo: lección, artista, modo, pantalla o función nueva; o un cambio grande (progreso guardado incompatible, rediseño) | `0.9.2 → 0.10.0` |
-| **patch** | Arreglos, ajustes de lecciones (BPM, notas, textos), retoques visuales | `0.9.2 → 0.9.3` |
+| **minor** | Pantalla o función nueva, o un cambio grande (progreso guardado incompatible, rediseño) | `0.9.2 → 0.10.0` |
+| **patch** | **Lecciones nuevas** (también artistas o modos), ajustes de lecciones (BPM, notas, textos), arreglos y retoques visuales | `0.9.2 → 0.9.3` |
+
+Las lecciones nuevas **siempre son patch**, aunque sean muchas. Igual propón la versión y espera la confirmación: el usuario decide. Si el usuario dice "minor" o "patch" junto con el push, repite la versión resultante antes de tocar nada si hay duda.
 
 Formato de la respuesta:
 

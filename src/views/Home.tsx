@@ -12,6 +12,14 @@ import { CommunityPulse } from '@/components/CommunityPulse';
 import { useCommunity } from '@/lib/community';
 import { levelLabel, planFor, suggestion, useAccount } from '@/lib/account';
 
+// Lo que hay para practicar en los módulos activos: se actualiza solo al agregar lecciones.
+const practiceModules = courses.filter(course => course.available && course.lessons.some(lesson => lesson.type === 'practice'));
+const CATALOG = [
+ { value: practiceModules.reduce((total, course) => total + course.lessons.filter(lesson => lesson.type === 'practice').length, 0), label: 'ejercicios' },
+ { value: practiceModules.length, label: 'módulos' },
+ { value: new Set(practiceModules.flatMap(course => course.lessons.filter(lesson => lesson.type === 'practice').map(lesson => lesson.difficulty))).size, label: 'niveles' },
+];
+
 export default function HomePage() {
  // Con sesión: el último ejercicio practicado; si aún no hay ninguno, el que sigue en su plan. Sin sesión: el último abierto.
  const account = useAccount();
@@ -71,6 +79,13 @@ export default function HomePage() {
    <section className="relative flex min-h-97 flex-col overflow-hidden rounded-xl border border-line-strong bg-[linear-gradient(120deg,#232323,#151515_55%,#111111)] 2xl:min-h-105">
     <img src={currentModule.image} alt="" width={960} height={640} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[65%_center] xs:left-[25%] xs:w-3/4"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#151515f5_0%,#151515e6_38%,#15151580_65%,#15151520_100%)] max-xs:bg-[#151515cc]"/>
+    {/* Lo que hay para practicar: solo en escritorio, donde el banner tiene espacio a la derecha. */}
+    <dl className="absolute top-5 right-5 z-10 hidden gap-5 rounded-xl border border-white/10 bg-[#151515b3] px-5 py-4 backdrop-blur-sm lg:flex xl:top-6 xl:right-6">{CATALOG.map(({ value, label }) =>
+     <div key={label} className="text-center">
+      <dt className="sr-only">{label}</dt>
+      <dd><b className="block font-mono text-3xl leading-none text-fg">{value}</b><span className="mt-1.5 block text-2xs tracking-[0.15em] text-muted uppercase">{label}</span></dd>
+     </div>)}
+    </dl>
     <div className="relative z-10 flex flex-1 items-center"><div className="w-full max-w-180 p-6 xs:p-7 sm:w-[80%] lg:w-[80%] lg:p-8 xl:w-[85%] xl:p-6.5 2xl:w-[75%] 2xl:p-10">
      {/* Con sesión: tu semana primero y, debajo, la lección para hoy. */}
      {account && community && <p className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-soft">
