@@ -1,5 +1,6 @@
 'use client';
 
+import { lessonTabHash } from '@/data/artists';
 import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { FIGURES, pickingOf, practiceStudies, speedName, speedPlan, type Speed, type Stroke } from '@/data/practiceStudies';
@@ -16,7 +17,6 @@ import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practi
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
 import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
-import { createLocalStore } from '@/lib/localStore';
 import { InputLevel, RoundRecordings } from '@/components/practice/RoundRecordings';
 import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
 import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
@@ -96,9 +96,6 @@ function Remaining({ until }: { until: number }) {
     }, [until]);
     return <span className="flex items-baseline gap-1.5 font-mono text-lg font-bold text-accent tabular-nums" aria-label="Tiempo restante de la sesión">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}<small className="font-sans text-2xs font-normal text-muted">restantes</small></span>;
 }
-
-/** Guitarra de guía al practicar: se recuerda en este navegador. */
-const guideStore = createLocalStore('fretquest.practiceGuide', false);
 
 export default function PracticePage({ mode }: { mode: Mode }) {
     // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
@@ -197,8 +194,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [step, setStep] = useState(-1);
     const [listening, setListening] = useState(false);
     // Guitarra de guía al practicar: opcional y muy bajita (al escuchar suena normal).
-    const practiceGuide = guideStore.use();
-    const setPracticeGuide = guideStore.set;
+    // Guitarra de guía al practicar: siempre arranca apagada, no se recuerda.
+    const [practiceGuide, setPracticeGuide] = useState(false);
     const practiceGuideRef = useRef(practiceGuide);
     useEffect(() => { practiceGuideRef.current = practiceGuide; }, [practiceGuide]);
     const active = phase !== 'idle';
@@ -393,7 +390,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         : content;
 
     return <>
-        <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id), label: activeModule.title }} eyebrow="Práctica" title={activeExercise.title} text={activeExercise.description}
+        <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id) + lessonTabHash(activeModule.lessons, activeExercise.id), label: activeModule.title }} eyebrow="Práctica" title={activeExercise.title} text={activeExercise.description}
             stats={[['Lección', `${activeModule.lessons.indexOf(activeExercise) + 1} de ${activeModule.lessons.length}`], ['Dificultad', levelLabel(activeExercise.difficulty)]]}/>
         {activeExercise.artist && <ArtistCredit id={activeExercise.artist} transcribedBy={activeExercise.transcribedBy}/>}
 

@@ -1,4 +1,4 @@
-import { MODAL_ARPEGGIO_LESSONS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
+import { INTERVAL_PENTATONICS, MODAL_ARPEGGIO_LESSONS, MODAL_PENTATONICS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -1055,7 +1055,7 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggio
  description: 'Aprende a usar la pentatónica en diferentes patrones: secuencias que recorren cada posición por grupos de cuerdas y cambian de dirección para que la escala deje de sonar de arriba abajo.',
  art: 'solo', level: 'Intermedio', icon: '11', completedLessons: 0,
  skills: ['Posiciones', 'Secuencias', 'Púa alternada'],
- lessons: [1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-0${position}`, title: `Posición ${position} · desde ${PENTATONIC_G_START[position - 1]}`, category: 'Grupos de tres cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson)).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-sweep-0${position}`, title: `Posición ${position} · Patrón extendido con Sweep`, category: 'Patrones extendidos con Sweep', type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))),
+ lessons: [1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-0${position}`, title: `Posición ${position} · desde ${PENTATONIC_G_START[position - 1]}`, category: 'Grupos de tres cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson)).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-sweep-0${position}`, title: `Posición ${position} · Patrón extendido con Sweep`, category: 'Patrones extendidos con Sweep', type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-horizontal-0${position}`, title: `Pentatónica de Am · Posición horizontal ${['I', 'II', 'III', 'IV', 'V'][position - 1]}`, category: 'Horizontales', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson))).concat([1, 2, 3, 4, 5].map(position => ({ id: `pentatonic-horizontal-blues-0${position}`, title: `Pentatónica blues de Am · Posición horizontal ${['I', 'II', 'III', 'IV', 'V'][position - 1]}`, category: 'Horizontales blues', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 } as Lesson))).concat(MODAL_PENTATONICS.map(({ id, mode, root }): Lesson => ({ id, title: `Pentatónica ${mode} de ${root}`, category: 'Pentatónicas modales', type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))).concat(INTERVAL_PENTATONICS.map(({ id, title, difficulty }): Lesson => ({ id, title, category: 'Interválicas', type: 'practice', difficulty, minutes: 8, xp: difficulty === 'intermedio' ? 60 : 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }))),
 });
 // Púa alternada: por ahora solo «Mano derecha»; las demás lecciones llegan con su material.
 moduleFixtures.find(module => module.id === 'alternate-picking')!.lessons = [
@@ -1118,6 +1118,10 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(TWO_STRING_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(SKIP_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
+ ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-horizontal-0${position}`, '2026-10-28'])),
+ ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-horizontal-blues-0${position}`, '2026-10-28'])),
+ ...Object.fromEntries(MODAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
+ ...Object.fromEntries(INTERVAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
  'licks-phrasing-howe-01': '2026-10-26',
  'licks-phrasing-romeo-01': '2026-10-25',

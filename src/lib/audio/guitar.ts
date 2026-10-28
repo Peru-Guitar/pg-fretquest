@@ -200,20 +200,31 @@ export function getTone(): Tone {
   return tone;
 }
 
+/** Corta en seco las notas de un Sampler: Tone no expone sus fuentes activas, así que se acortan antes de detenerlas. */
+function cut(instrument: Tone, time: number): void {
+  const active: Map<number, { fadeOut: number }[]> | undefined = instrument?._activeSources;
+  active?.forEach((sources) => sources.forEach((source) => (source.fadeOut = 0.01)));
+  instrument?.releaseAll(time);
+}
+
 /**
  * Corta el sonido al instante (al pulsar Detener o Esc). Además de soltar las notas, baja la salida a 0:
  * Tone programa los eventos con unos milisegundos de antelación y, si no, aún sonaría un clic o una nota.
- * La salida vuelve a su nivel poco después, lista para la siguiente práctica.
+ * La salida queda en 0 hasta el siguiente `prepare`, que la vuelve a su nivel antes de sonar.
  */
 export function silence(): void {
   if (!tone || !master) return;
   const now = tone.now();
-  sampler?.releaseAll(now);
-  harmonics?.releaseAll(now);
+  // Sin su release (0,25–0,8 s): si no, la cola seguiría sonando y se oiría al volver a reproducir.
+  for (const instrument of [sampler, harmonics]) cut(instrument, now);
+  const release = bell?.get().envelope.release;
+  bell?.set({ envelope: { release: 0.01 } });
   bell?.releaseAll(now);
+  if (release !== undefined) bell?.set({ envelope: { release } });
   for (const src of slides) src.stop();
   slides.clear();
+  // Rampa de 10 ms (sin «clic») y se queda en 0: las colas de las notas ya no se oyen. `prepare` la vuelve a subir.
   master.gain.cancelScheduledValues(now);
-  master.gain.setValueAtTime(0, now);
-  master.gain.setValueAtTime(1, now + 0.25);
+  master.gain.setValueAtTime(master.gain.value, now);
+  master.gain.linearRampToValueAtTime(0, now + 0.01);
 }

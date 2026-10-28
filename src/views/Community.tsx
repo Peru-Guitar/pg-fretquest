@@ -34,12 +34,15 @@ const hoursLabel = (seconds: number) => {
 };
 
 
+// «ROBERTO» → «Roberto»: hay nombres guardados en mayúsculas.
+const titleCase = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+
 function RankRow({ row, place }: { row: RankEntry; place: number }) {
-    return <li><Link to={userProfileUrl(row.uid)} className={cn('group flex items-center gap-3 rounded-lg border px-3.5 py-3 transition-colors', row.you ? 'border-blue/50 bg-blue/10 hover:bg-blue/15' : 'border-line bg-white/2 hover:border-line-strong hover:bg-white/5')}>
-        <span className="w-7 font-mono text-sm text-muted">{place}</span>
+    return <li className="min-w-0"><Link to={userProfileUrl(row.uid)} className={cn('group flex items-center gap-3 rounded-lg border px-3 py-3 sm:px-3.5 transition-colors', row.you ? 'border-blue/50 bg-blue/10 hover:bg-blue/15' : 'border-line bg-white/2 hover:border-line-strong hover:bg-white/5')}>
+        <span className="w-5 shrink-0 font-mono text-sm text-muted sm:w-7">{place}</span>
         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', row.tone)}>{initials(row.name)}</span>
         <span className={cn('min-w-0 flex-1 truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
-        <span className="text-right text-2xs leading-tight text-muted"><b className="block font-mono text-base text-fg">{hoursLabel(row.seconds)}</b>{row.active} días</span>
+        <span className="shrink-0 text-right text-2xs leading-tight text-muted"><b className="block font-mono text-sm text-fg sm:text-base">{hoursLabel(row.seconds)}</b>{row.active} días</span>
     </Link></li>;
 }
 
@@ -88,20 +91,21 @@ export default function CommunityPage() {
             <Caption>Por tiempo practicado en la semana, sin importar el nivel; en empate, por días distintos. Se reinicia cada lunes · actualizado {timeAgo(data.at)}.</Caption>
 
             {/* Podio: 2º · 1º · 3º */}
-            <ol className="mt-8 grid grid-cols-3 items-end gap-3 md:gap-5">{[1, 0, 2].map(place => {
+            <ol className="mt-8 grid grid-cols-3 items-end gap-2 sm:gap-3 md:gap-5">{[1, 0, 2].map(place => {
                 const row = ranking[place];
                 if (!row) return <li key={place}/>;
-                return <li key={row.uid}><Link to={userProfileUrl(row.uid)} className="group flex flex-col items-center text-center">
+                return <li key={row.uid} className="min-w-0"><Link to={userProfileUrl(row.uid)} className="group flex flex-col items-center text-center">
                     {place === 0 && <Crown size={24} className="mb-1 fill-gold text-gold"/>}
-                    <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-20 text-xl ring-gold/60' : 'size-16 text-lg ring-line-strong')}>{initials(row.name)}</span>
-                    <b className={cn('mt-2.5 max-w-full truncate group-hover:underline', row.you ? 'text-accent' : 'text-fg')}>{row.you ? `${row.name} (tú)` : row.name}</b>
-                    <span className="text-xs text-muted"><b className="font-mono text-fg-soft">{hoursLabel(row.seconds)}</b> · {row.active} días</span>
+                    <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-16 text-lg ring-gold/60 sm:size-20 sm:text-xl' : 'size-13 text-base ring-line-strong sm:size-16 sm:text-lg')}>{initials(row.name)}</span>
+                    {/* En mobile solo el primer nombre: el completo no entra en un tercio de pantalla. */}
+                    <b className={cn('mt-2.5 max-w-full truncate text-sm group-hover:underline sm:text-base', row.you ? 'text-accent' : 'text-fg')}><span className="sm:hidden">{titleCase(row.name.split(' ')[0])}</span><span className="hidden sm:inline">{row.name}</span>{row.you && ' (tú)'}</b>
+                    <span className="text-xs text-muted"><b className="block font-mono text-fg-soft sm:inline">{hoursLabel(row.seconds)}</b><span className="hidden sm:inline"> · </span>{row.active} días</span>
                     <span className={cn('mt-3 grid w-full place-items-center rounded-t-xl font-mono text-2xl font-black', PODIUM[place])}>{place + 1}</span>
                 </Link></li>;
             })}</ol>
 
             {/* Del 4º al 12º */}
-            <ol className="mt-1 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{ranking.slice(3, TOP).map((row, index) => <RankRow key={row.uid} row={row} place={index + 4}/>)}</ol>
+            <ol className="mt-1 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{ranking.slice(3, TOP).map((row, index) => <RankRow key={row.uid} row={row} place={index + 4}/>)}</ol>
             {ranking.length === 0 && <p className="mt-2 text-sm text-muted">Todavía nadie practicó esta semana. ¡Sé el primero!</p>}
             {WEEK.people > TOP && <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-white/3 px-4 py-1.5 text-sm text-fg-soft"><Users size={15} className="text-accent"/><b className="font-mono text-fg">+{WEEK.people - TOP}</b> guitarristas más entrenaron esta semana</p>}
         </Card>

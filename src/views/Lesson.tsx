@@ -1,11 +1,11 @@
 'use client';
 
-import { ROUTES, lessonUrl, moduleIdFromSlug, slugify } from '@/lib/routes';
+import { ROUTES, lessonUrl, moduleIdFromSlug } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Link, useParams } from '@/lib/router';
 import { lessonMeta } from '@/components/quest/lessonMeta';
 import { ArtistHeader, CategoryHeader } from '@/components/quest/ArtistCredit';
-import { artists, groupByArtist } from '@/data/artists';
+import { moduleGroups } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { ReadStatus } from '@/components/quest/LessonStatus';
 import { useProgress } from '@/lib/progressDb';
@@ -45,18 +45,11 @@ export default function LessonPage() {
     const range = levels.length ? [...new Set([levels[0], levels.at(-1)!])].map(levelLabel).join(' – ') : '';
 
     const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && (lesson.artist || lesson.category));
-    const groups = groupByArtist(course.lessons.map(lesson => ({ ...lesson, artist: lesson.type === 'practice' ? lesson.artist : undefined, category: lesson.type === 'practice' ? lesson.category : undefined })));
     // Con varios grupos, una pestaña por grupo; se recuerda la última abierta en cada módulo.
     // El hash de la URL manda (enlace compartido); si no hay, la última pestaña abierta.
-    const groupLabel = (group: typeof groups[number]) => {
-        const label = group.artist ? artists[group.artist]?.name ?? group.artist : group.category?.replace(/^Modos de la /, '') ?? 'De la comunidad';
-        return label.charAt(0).toLocaleUpperCase('es') + label.slice(1);
-    };
-    const slugs = groups.map(group => slugify(groupLabel(group)));
+    const { groups, labels, slugs, tabbed } = moduleGroups(course.lessons);
     const hash = useHash();
     const tabs = moduleTabs.use();
-    // Pestañas solo cuando la lista se hace larga: más de 12 lecciones repartidas en al menos 2 grupos.
-    const tabbed = groups.length > 1 && course.lessons.length > 12;
     const fromHash = slugs.indexOf(hash);
     const current = fromHash >= 0 ? fromHash : Math.min(tabs[course.id] ?? 0, groups.length - 1);
     const pickTab = (index: number) => {
@@ -75,7 +68,7 @@ export default function LessonPage() {
         {tabbed && <label className="relative mb-6 block md:hidden">
             <span className="sr-only">Grupo de lecciones</span>
             <select value={current} onChange={event => pickTab(Number(event.target.value))} className="w-full appearance-none rounded-lg border border-line bg-card py-3 pr-10 pl-4 text-sm font-bold text-accent-strong focus:border-violet focus:outline-none">
-                {groups.map((group, index) => <option key={slugs[index]} value={index}>{groupLabel(group)} · {group.lessons.length}</option>)}
+                {groups.map((group, index) => <option key={slugs[index]} value={index}>{labels[index]} · {group.lessons.length}</option>)}
             </select>
             <ChevronDown size={18} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-muted"/>
         </label>}
@@ -83,7 +76,7 @@ export default function LessonPage() {
             {groups.map((group, index) => <button key={slugs[index]} type="button" role="tab" aria-selected={index === current} onClick={() => pickTab(index)} className={cn(
                 '-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition',
                 index === current ? 'border-violet text-accent-strong' : 'border-transparent text-muted hover:text-fg',
-            )}>{groupLabel(group)}<span className="font-mono text-2xs opacity-70">{group.lessons.length}</span></button>)}
+            )}>{labels[index]}<span className="font-mono text-2xs opacity-70">{group.lessons.length}</span></button>)}
         </div>}
         <div className="flex flex-col gap-6">
             <div>
