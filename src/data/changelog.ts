@@ -2,6 +2,21 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.7.0',
+        date: '2026-10-28',
+        notes: [
+            'Pentatónica: nuevas posiciones horizontales, también en versión blues.',
+            'Pentatónicas modales en caja: eólica, locria, jónica, dórica, frigia, lidia y mixolidia.',
+            'Pentatónicas interválicas: en cuartas, quintas y séptimas.',
+            'Las subcategorías de cada módulo se ordenan de la más fácil a la más difícil.',
+            'Al volver de una lección regresas a su pestaña del módulo.',
+            'Al detener la tablatura el sonido se corta en seco, sin eco.',
+            'La guía de la práctica empieza apagada.',
+            'En el inicio, «Para tu nivel» muestra 3 módulos al azar.',
+            'Mejor lectura en celular del inicio, la comunidad y las estadísticas.',
+        ],
+    },
+    {
         version: '0.6.0',
         date: '2026-10-28',
         notes: [

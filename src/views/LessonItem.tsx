@@ -1,5 +1,6 @@
 'use client';
 
+import { lessonTabHash } from '@/data/artists';
 import { ROUTES, lessonIdFromSlug, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
 import { Navigate, useParams } from '@/lib/router';
@@ -33,7 +34,7 @@ export default function LessonItemPage({ view = 'goal' }: { view?: Mode }) {
     const readAt = progress.readings[lesson.id]?.readAt?.toMillis();
 
     return <>
-        <ModuleHero image={course.image} back={{ to: moduleUrl(course.id), label: course.title }} eyebrow="Lectura" title={lesson.title} text={lesson.summary}
+        <ModuleHero image={course.image} back={{ to: moduleUrl(course.id) + lessonTabHash(course.lessons, lesson.id), label: course.title }} eyebrow="Lectura" title={lesson.title} text={lesson.summary}
             stats={[['Lección', `${index + 1} de ${course.lessons.length}`], ['Puntos', lesson.points.length]]}/>
         <Card as="section" className="md:px-10 md:py-9 xl:px-12">
             <article className="flex flex-col gap-8">

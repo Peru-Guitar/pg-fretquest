@@ -1,5 +1,7 @@
 import type { PatternNote } from '@/lib/audio/practiceRound';
 
+import type { Difficulty } from './questMock';
+
 export type Figure = 'negras' | 'corcheas' | 'tresillos' | 'semicorcheas' | 'sextillos';
 
 /** Notas por pulso y nombre visible de cada figura. */
@@ -636,6 +638,177 @@ const skipStudy = ({ low, high, from, key, scale, description }: typeof SKIP_PAT
         ...withSections(bars),
     };
 };
+// Pentatónica horizontal: la escala de corrido, de la sexta a la primera cuerda, con dos y tres notas por cuerda alternadas
+// (2-3-2-3-2-3 = tres octavas). La tercera nota de cada cuerda llega con slide y deja la mano en la siguiente posición.
+// Notas de Am (A C D E G); cada posición empieza en la nota siguiente de la sexta cuerda.
+const OPEN_STRINGS = [64, 59, 55, 50, 45, 40]; // MIDI de la 1.ª a la 6.ª cuerda al aire
+const AM_PENTATONIC = [0, 3, 5, 7, 10].map(step => (step + 9) % 12); // A C D E G
+const HORIZONTAL_START_FRETS = [3, 5, 8, 10, 12]; // G, A, C, D, E en la sexta cuerda
+const STRING_NAMES = ['', 'primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta'];
+const HORIZONTAL_TEXT = [
+    'La pentatónica deja la caja y cruza el mástil del traste 3 al 12: dos y tres notas por cuerda, con slides que te llevan de una posición a la siguiente.',
+    'El mismo recorrido, ahora desde A en el traste 5. La digitación cambia: los slides caen en otras cuerdas y la mano termina más arriba del mástil.',
+    'Arranca en C, en el traste 8, y sube hasta la zona aguda. Cada slide te deja en otra caja de la pentatónica sin cortar la frase.',
+    'Desde D en el traste 10: el recorrido entra en la parte alta del mástil, donde los trastes se juntan y los slides piden más precisión.',
+    'La última posición sale de E en el traste 12 y llega casi al final del mástil. Cierra el ciclo: ya puedes cruzar la pentatónica desde cualquier nota.',
+];
+const BLUE_NOTE = 3; // E♭, la quinta disminuida de Am
+// Con blues, la blue note entra en la cuerda de la D, justo después de ella: el recorrido y los slides no cambian.
+const HORIZONTAL_BLUES_TEXT = [
+    'La posición horizontal I con la blue note: el E♭ aparece en cada octava y la línea que cruza el mástil del traste 3 al 12 ya suena a blues.',
+    'Desde A en el traste 5, ahora con la blue note. Al cambiar la digitación, el E♭ cae en otras cuerdas y te obliga a ubicarlo de nuevo.',
+    'Arranca en C, en el traste 8, con el E♭ entre cada D y E. Cada slide te lleva a otra caja y la blue note sigue el camino.',
+    'Desde D en el traste 10: la blue note aparece apenas empiezas y le da tensión a la subida por la zona alta del mástil.',
+    'La última posición sale de E en el traste 12 y llega casi al final del mástil, con la blue note en cada octava. Cierra el ciclo blues.',
+];
+const pentatonicHorizontalUp = (position: number, blues = false): PatternNote[] => {
+    const pitches: number[] = [];
+    for (let pitch = OPEN_STRINGS[5] + HORIZONTAL_START_FRETS[position - 1]; pitches.length < 15; pitch++) if (AM_PENTATONIC.includes(pitch % 12)) pitches.push(pitch);
+    let at = 0;
+    return [6, 5, 4, 3, 2, 1].flatMap(string => Array.from({ length: string % 2 === 0 ? 2 : 3 }, (_, index) => {
+        const pitch = pitches[at++];
+        const fret = pitch - OPEN_STRINGS[string - 1];
+        const note = index === 2 ? slideTo(string, fret) : { string, fret };
+        return blues && pitch % 12 === (BLUE_NOTE + 11) % 12 && at < pitches.length ? [note, { string, fret: fret + 1 }] : [note];
+    }).flat());
+};
+// La bajada repite el camino al revés, también con slide en la tercera nota de cada cuerda. La última nota de la subida y
+// la de la bajada duran el doble (una corchea): cada parte llena un compás de 4/4.
+const pentatonicHorizontalStudy = (position: number, blues = false): PracticeStudy => {
+    const up = pentatonicHorizontalUp(position, blues);
+    // En la bajada el slide va a la tercera nota de la escala en cada cuerda; la blue note no cuenta.
+    const down = [1, 2, 3, 4, 5, 6].flatMap(string => {
+        let scaleIndex = 0;
+        return up.filter(note => note.string === string).reverse().map(({ fret }) => {
+            const blue = (OPEN_STRINGS[string - 1] + fret) % 12 === BLUE_NOTE;
+            return !blue && scaleIndex++ === 2 ? slideTo(string, fret) : { string, fret };
+        });
+    });
+    // Con blues van en sextillos y la última nota se alarga hasta cerrar el compás de 4/4 (son 17 o 18 notas).
+    const last = (notes: PatternNote[]) => notes.map((note, index) => index === notes.length - 1 ? { ...note, beats: blues ? 4 - (notes.length - 1) / 6 : 0.5 } : note);
+    const slides = (notes: PatternNote[]) => notes.filter(note => note.slide).map(note => `${notes[notes.indexOf(note) - 1].fret} a ${note.fret} en la ${STRING_NAMES[note.string]}`).join(', ');
+    return {
+        description: blues ? HORIZONTAL_BLUES_TEXT[position - 1] : HORIZONTAL_TEXT[position - 1],
+        notation: blues ? 'Pentatónica blues de Am (A C D E♭ E G) · Sextillos · Púa alternada; en los slides (s) no hay púa' : 'Pentatónica de Am (A C D E G) · Semicorcheas · Púa alternada; en los slides (s) no hay púa',
+        goal: blues
+            ? 'Sumar la blue note al recorrido horizontal: el mismo camino por el mástil, pero con el E♭ que le da a la pentatónica el color del blues. Así lo tienes a mano en cualquier zona del mástil.'
+            : position === 1
+            ? 'Ver la pentatónica de otra manera: recorrer todo el mástil en una sola línea en vez de quedarte en una caja, para conectarla con otras escalas y con las demás posiciones.'
+            : `Recorrer el mástil desde otra nota de la escala. El objetivo es el mismo, pero la digitación cambia: los slides caen en otros lugares y conectas otras cajas de la pentatónica.`,
+        steps: [
+            `Subida: dos notas en la sexta, tres en la quinta, dos en la cuarta, tres en la tercera, dos en la segunda y tres en la primera. La tercera nota de cada cuerda va con slide (${slides(up)}).`,
+            blues
+                ? `Todo va en sextillos. El ${up.at(-1)!.fret}/1 del final de la subida y el ${up[0].fret}/6 del final de la bajada se sostienen hasta cerrar el compás.`
+                : `El ${up.at(-1)!.fret}/1 del final de la subida y el ${up[0].fret}/6 del final de la bajada duran el doble: una corchea.`,
+            `Bajada: el mismo camino al revés, con slide en la tercera nota de cada cuerda (${slides(down)}).`,
+            ...(blues ? ['La blue note (E♭) va justo después de cada D, en la misma cuerda y un traste más arriba: pásala rápido, es una nota de paso.'] : []),
+            'Después de cada slide la mano ya quedó en la nueva posición: no regreses.',
+        ],
+        mistakes: ['Atacar con púa la nota del slide.', 'Que el slide se coma el tiempo de la nota: llega a tiempo, no antes.', 'Mirar la mano en cada cambio de posición en vez de sentir la distancia.'],
+        criterion: 'Toca la subida y la bajada de corrido, con los slides limpios y a tiempo. Sube el BPM cuando no dudes en ningún cambio de posición.',
+        figure: blues ? 'sextillos' : 'semicorcheas',
+        speed: 1,
+        perRow: up.length, // un compás por fila
+        ...withSections([{ title: 'Subida', pattern: last(up) }, { title: 'Bajada', pattern: last(down) }]),
+    };
+};
+// Pentatónicas modales de C menor (C eólico), en el orden de sus grados: cada modo toma la pentatónica mayor o menor (según
+// su tercera) con una nota cambiada por su nota de color. Se tocan en caja vertical: arrancan en la tónica de la quinta
+// cuerda y suben hasta la primera sin salir de la posición (un traste atrás y tres adelante de la tónica).
+export const MODAL_PENTATONICS = [
+    { id: 'pentatonic-modal-01', root: 'C', fret: 3, mode: 'eólica', steps: [0, 3, 5, 7, 8], names: 'C Eb F G Ab', color: 'la b6 (Ab)', description: 'La menor de siempre con la b6 en lugar de la b7: más dramática y melancólica, con el Ab cayendo sobre el G. Es la base de los demás modos.' },
+    { id: 'pentatonic-modal-02', root: 'D', fret: 5, mode: 'locria', steps: [0, 3, 5, 6, 10], names: 'D F G Ab C', color: 'la b5 (Ab)', description: 'La más inestable: menor con la b5 que no deja descansar el oído. Tensión pura para frases oscuras y disonantes.' },
+    { id: 'pentatonic-modal-03', root: 'Eb', fret: 6, mode: 'jónica', steps: [0, 4, 5, 7, 11], names: 'Eb G Ab Bb D', color: 'la 7 mayor (D)', description: 'La pentatónica mayor con la 7 mayor en lugar de la 6: brillante y abierta, con el semitono D–Eb empujando siempre hacia la tónica.' },
+    { id: 'pentatonic-modal-04', root: 'F', fret: 8, mode: 'dórica', steps: [0, 3, 5, 7, 9], names: 'F Ab Bb C D', color: 'la 6 mayor (D)', description: 'Una pentatónica menor con la 6 mayor: el color de Santana y del funk. Suena a menor, pero sin tristeza y con un punto de luz.' },
+    { id: 'pentatonic-modal-05', root: 'G', fret: 10, mode: 'frigia', steps: [0, 1, 5, 7, 10], names: 'G Ab C D F', color: 'la b2 (Ab)', description: 'Menor y oscura, con la b2 pegada a la tónica: suena española y metalera desde la primera nota de la caja.' },
+    { id: 'pentatonic-modal-06', root: 'Ab', fret: 11, mode: 'lidia', steps: [0, 4, 6, 7, 11], names: 'Ab C D Eb G', color: 'la #4 (D)', description: 'Mayor y flotante: la #4 le da ese aire de banda sonora y de Steve Vai. Cinco notas que suenan a sueño, no a rock.' },
+    { id: 'pentatonic-modal-07', root: 'Bb', fret: 13, mode: 'mixolidia', steps: [0, 2, 4, 7, 10], names: 'Bb C D F Ab', color: 'la b7 (Ab)', description: 'La pentatónica dominante: mayor con b7, el sonido del blues y del rock clásico sobre un acorde de séptima.' },
+] as const;
+// Cada nota va en la cuerda más grave donde entra en la caja. La última de la subida y la de la bajada se sostienen hasta
+// cerrar el compás de 4/4 (son 9 o 10 semicorcheas).
+const modalPentatonicUp = ({ fret: rootFret, steps }: typeof MODAL_PENTATONICS[number]): PatternNote[] => {
+    const root = OPEN_STRINGS[4] + rootFret;
+    const notes: PatternNote[] = [];
+    for (let pitch = root, string = 5; ; pitch++) {
+        if (!(steps as readonly number[]).includes((pitch - root) % 12)) continue;
+        while (pitch - OPEN_STRINGS[string - 1] > rootFret + 3 && string > 1) string--;
+        const fret = pitch - OPEN_STRINGS[string - 1];
+        if (fret > rootFret + 3) return notes;
+        notes.push({ string, fret });
+    }
+};
+const modalPentatonicStudy = (item: typeof MODAL_PENTATONICS[number]): PracticeStudy => {
+    const { root, fret, mode, names, color, description } = item;
+    const up = modalPentatonicUp(item);
+    const hold = (notes: PatternNote[]) => notes.map((note, index) => index === notes.length - 1 ? { ...note, beats: 4 - (notes.length - 1) / 4 } : note);
+    return {
+        description,
+        notation: `Pentatónica ${mode} de ${root} (${names}) · Semicorcheas · Púa alternada`,
+        goal: `Escuchar el color del modo ${mode.replace(/a$/, 'o')} en solo cinco notas, dentro de una caja: ${color} es la nota que lo hace sonar distinto de la pentatónica de siempre.`,
+        steps: [
+            `Arranca en ${root}, traste ${fret} de la quinta cuerda, y sube hasta la primera sin mover la mano: la caja va del traste ${fret - 1} al ${fret + 3}.`,
+            'Un dedo por traste: el índice cubre el traste de atrás y el meñique el último.',
+            `La bajada es el mismo camino al revés. La última nota de cada parte se sostiene hasta cerrar el compás.`,
+            `Marca ${color} cada vez que aparece: es el color del modo.`,
+        ],
+        mistakes: ['Mover la mano en vez de estirar los dedos.', 'Pasar por la nota de color sin escucharla.', 'Dejar sonar dos notas de la misma cuerda a la vez.'],
+        criterion: 'Toca la subida y la bajada de corrido y parejas. Sube el BPM cuando reconozcas la nota de color sin pensarla.',
+        figure: 'semicorcheas',
+        speed: 1,
+        ...withSections([{ title: 'Subida', pattern: hold(up) }, { title: 'Bajada', pattern: hold([...up].reverse()) }]),
+    };
+};
+// Pentatónica interválica: el recorrido horizontal I (Am desde G, del 3/6 al 12/1) tocado por saltos en vez de nota por
+// nota. Cada nota va con la que está `skip` lugares más arriba en la escala (2 = cuartas, 3 = quintas, 4 = séptimas), en zigzag:
+// un grupo sube y el siguiente baja, que es lo que mejor suena.
+// La última nota de cada parte se sostiene hasta cerrar el compás.
+const INTERVAL_ROUTE: PatternNote[] = pentatonicHorizontalUp(1).map(({ string, fret }) => ({ string, fret }));
+const at = (index: number, down: boolean) => INTERVAL_ROUTE[down ? INTERVAL_ROUTE.length - 1 - index : index];
+const intervalPairs = (skip: number, count: number, down: boolean, zigzag = false) => Array.from({ length: count }, (_, k) => {
+    const pair = [at(k, down), at(k + skip, down)];
+    return zigzag && k % 2 ? pair.reverse() : pair;
+}).flat();
+const closing = (from: number, down: boolean) => Array.from({ length: INTERVAL_ROUTE.length - from }, (_, k) => at(from + k, down));
+const held = (notes: PatternNote[], beats: number) => notes.map((note, index) => index === notes.length - 1 ? { ...note, beats } : note);
+type IntervalLesson = { id: string; title: string; difficulty: Difficulty; figure: Figure; description: string; goal: string; build: (down: boolean) => PatternNote[]; steps: string[]; mistakes: string[] };
+export const INTERVAL_PENTATONICS: IntervalLesson[] = [
+    {
+        id: 'pentatonic-intervals-01', title: 'Pentatónica en cuartas', difficulty: 'intermedio', figure: 'semicorcheas',
+        description: 'La pentatónica en cuartas y en zigzag: un par sube y el siguiente baja. Casi todas caen en el mismo traste de dos cuerdas vecinas y suenan a frase, no a ejercicio.',
+        goal: 'Cambiar de dirección en cada par sin perder la púa alternada: la mano derecha cruza las cuerdas hacia arriba y hacia abajo todo el tiempo.',
+        build: down => [...intervalPairs(2, 12, down, true), at(14, down)],
+        steps: ['Primer par hacia arriba, el siguiente hacia abajo, y así todo el recorrido.', 'La púa alternada no se reinicia: en los pares que bajan cruzas la cuerda con púa arriba.', 'Casi todas las cuartas caen en el mismo traste de dos cuerdas vecinas: aplana el dedo o rueda la yema para no dejar sonar las dos.'],
+        mistakes: ['Volver a la dirección de siempre sin darte cuenta.', 'Reiniciar la púa con un golpe abajo en cada par.', 'Dejar sonar las dos notas del mismo traste.'],
+    },
+    {
+        id: 'pentatonic-intervals-02', title: 'Pentatónica en quintas', difficulty: 'intermedio', figure: 'semicorcheas',
+        description: 'Quintas en zigzag: cada nota salta tres lugares en la escala, un par sube y el siguiente baja. La forma del power chord dentro de la escala, con sonido de riff.',
+        goal: 'Tocar la pentatónica con el peso de las quintas y reconocer la forma del power chord dentro de la escala en todo el mástil.',
+        build: down => [...intervalPairs(3, 11, down, true), ...closing(12, down)],
+        steps: ['Cada par: una nota y la que está tres lugares más arriba en la escala. Un par sube y el siguiente baja.', 'La mayoría tiene la forma del power chord: cuerda vecina, dos trastes más arriba.', 'Al final cierras con tres notas seguidas de la escala.'],
+        mistakes: ['Dejar sonar las dos notas como un acorde.', 'Mover toda la mano en cada par en vez de estirar los dedos.', 'Perder la púa alternada al cruzar de cuerda.'],
+    },
+    {
+        id: 'pentatonic-intervals-03', title: 'Pentatónica en séptimas', difficulty: 'avanzado', figure: 'semicorcheas',
+        description: 'Saltos de cuatro lugares en la escala, un par sube y el siguiente baja: séptimas y sextas en zigzag, el sonido angular de Holdsworth y Greg Howe.',
+        goal: 'Sacar el sonido de la fusión de la pentatónica de siempre: saltos amplios, cambios de dirección y saltos de cuerda con la púa precisa.',
+        build: down => [...intervalPairs(4, 11, down, true), ...closing(12, down)],
+        steps: ['Cada par: una nota y la que está cuatro lugares más arriba. Un par sube y el siguiente baja.', 'Varios pares saltan una cuerda: silencia la del medio con la mano izquierda.', 'Al final cierras con tres notas seguidas de la escala.'],
+        mistakes: ['Rozar la cuerda que saltas.', 'Perder la púa alternada en los saltos.', 'Volver a tocar los pares siempre hacia arriba.'],
+    },
+];
+const intervalStudy = ({ figure, description, goal, build, steps, mistakes }: IntervalLesson): PracticeStudy => ({
+    description,
+    notation: 'Pentatónica de Am (A C D E G) · Semicorcheas · Púa alternada',
+    goal,
+    steps: [...steps, 'Bajada: el mismo recorrido desde el 12/1 hasta el 3/6.'],
+    mistakes,
+    criterion: 'Toca la subida y la bajada de corrido, con cada salto limpio y sin notas que se mezclen. Sube el BPM cuando no dudes en ningún salto.',
+    figure,
+    speed: 1,
+    perRow: 16, // un compás por fila
+    ...withSections([{ title: 'Subida', pattern: held(build(false), 2) }, { title: 'Bajada', pattern: held(build(true), 2) }]),
+});
 export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(SKIP_PATTERNS.map(pattern => [pattern.id, skipStudy(pattern)])),
     ...Object.fromEntries(TWO_STRING_PATTERNS.map(pattern => [pattern.id, twoStringStudy(pattern)])),
@@ -931,6 +1104,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(MODAL_ARPEGGIOS.map(arpeggio => [`arpeggios-modal-${arpeggio.id}`, modalArpeggioStudy(arpeggio)])),
     ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-0${position}`, pentatonicStudy(position)])),
     ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, pentatonicSweepStudy(position)])),
+    ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-horizontal-0${position}`, pentatonicHorizontalStudy(position)])),
+    ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-horizontal-blues-0${position}`, pentatonicHorizontalStudy(position, true)])),
+    ...Object.fromEntries(MODAL_PENTATONICS.map(item => [item.id, modalPentatonicStudy(item)])),
+    ...Object.fromEntries(INTERVAL_PENTATONICS.map(item => [item.id, intervalStudy(item)])),
 };
 
 /** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h), pull-off (p) o tapping (T). */

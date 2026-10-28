@@ -142,7 +142,7 @@ function Buckets({ title, caption, rows, unit }: { title: string; caption: React
     return <Card>
         <SectionTitle title={title} className="mb-1"/>
         <p className="mb-4 text-xs text-muted">{caption}</p>
-        <ul className="grid gap-2.5">{rows.map(row => <li key={row.label} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 text-xs">
+        <ul className="grid grid-cols-1 gap-2.5">{rows.map(row => <li key={row.label} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 text-xs">
             <span className="text-muted">{row.label}</span>
             <span className="h-2 overflow-hidden rounded-full bg-line-soft"><span className="block h-full rounded-full bg-blue" style={{ width: `${row.count / max * 100}%` }}/></span>
             <span className="w-20 text-right"><b className="tabular-nums text-fg">{row.count}</b> <span className="text-muted">{row.count === 1 ? unit[0] : unit[1]}</span></span>
@@ -154,7 +154,7 @@ function LevelCard({ data }: { data: AnalyticsData }) {
     return <Card>
         <SectionTitle title="Por nivel" className="mb-1"/>
         <p className="mb-4 text-xs text-muted">Qué practica cada nivel: si a uno le falta contenido, aquí se nota.</p>
-        <ul className="grid gap-3">{data.byLevel.map(row => <li key={row.level ?? 'none'} className="flex items-center gap-3 border-t border-line-soft pt-3 first:border-0 first:pt-0">
+        <ul className="grid grid-cols-1 gap-3">{data.byLevel.map(row => <li key={row.level ?? 'none'} className="flex items-center gap-3 border-t border-line-soft pt-3 first:border-0 first:pt-0">
             <span className="w-24 shrink-0 text-sm font-bold text-fg-soft">{row.level ? levelLabel(row.level) : 'Sin nivel'}</span>
             <span className="min-w-0 flex-1 text-2xs text-muted">{row.top ? <>Lo más practicado: <b className="text-fg-soft">{row.top.title}</b></> : '—'}</span>
             <span className="shrink-0 text-right text-2xs text-muted"><b className="block text-sm tabular-nums text-fg">{time(row.seconds)}</b>{row.people} {row.people === 1 ? 'persona' : 'personas'}</span>
@@ -167,7 +167,7 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
     return <Card>
         <SectionTitle title="Quiénes practicaron" className="mb-1"/>
         <p className="mb-3 text-xs text-muted">Por tiempo esta semana. Toca a alguien para ver su perfil.</p>
-        <ul className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">{data.people.map(person => <li key={person.uid}>
+        <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">{data.people.map(person => <li key={person.uid} className="min-w-0">
             <Link to={userProfileUrl(person.uid)} className="group flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/4">
                 <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>
                 <span className="min-w-0 flex-1">
@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
             {data && data.people.length > 0 && <PeopleCard data={data}/>}
         </div>}
         {tab !== 'usuarios' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid grid-cols-1 gap-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
                 <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo practicado" detail={`${data.sessions.avg} min por persona y día`}/>
@@ -267,7 +267,7 @@ export default function AnalyticsPage() {
             </div>
             {data.people.length > 0 ? <>
                 <Heatmap heat={data.heat}/>
-                <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     <Buckets title="Sesión típica" caption={<>Minutos por persona en un día. Promedio: <b className="text-fg-soft">{data.sessions.avg} min</b>.</>} rows={data.sessions.buckets} unit={['día', 'días']}/>
                     <Buckets title="Constancia" caption={<><CalendarCheck size={12} className="mr-1 inline text-accent"/>Cuántos días practicó cada persona esta semana.</>} rows={data.consistency} unit={['persona', 'personas']}/>
                 </div>

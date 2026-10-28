@@ -43,11 +43,11 @@ export function CommunityPulse({ embedded = false }: { embedded?: boolean }) {
             </li>)}
             {rest > 0 && <li><Link to={ROUTES.community} className="relative grid size-9 place-items-center rounded-full bg-raised text-2xs font-black text-fg-soft ring-2 ring-raised hover:text-fg">+{rest}</Link></li>}
         </ul>
-        <p className="min-w-0 flex-1 text-sm text-fg-soft">
-            <b className="text-fg">{data.people} {data.people === 1 ? 'guitarrista practicando' : 'guitarristas practicando'}</b> esta semana
+        <p className="order-first min-w-0 basis-full text-sm text-fg-soft sm:order-none sm:basis-auto sm:flex-1">
+            <b className="block text-fg sm:inline">{data.people} {data.people === 1 ? 'guitarrista practicando' : 'guitarristas practicando'}</b> esta semana
             {data.today > 0 && <span className="text-muted"> · <span className="inline-block size-1.5 -translate-y-0.5 animate-pulse rounded-full bg-success"/> {data.today} hoy</span>}
         </p>
-        <Link to={ROUTES.community} className="group flex shrink-0 items-center gap-2 text-sm">
+        <Link to={ROUTES.community} className="group ml-auto flex shrink-0 items-center gap-2 text-sm sm:ml-0">
             {mine
                 ? <span className="text-muted">Ver <b className="text-accent">ranking</b></span>
                 : <span className="text-muted">¡Practica hoy y <b className="text-accent">entra al ranking</b>!</span>}
