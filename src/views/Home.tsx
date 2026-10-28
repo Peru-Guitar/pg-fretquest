@@ -127,8 +127,7 @@ export default function HomePage() {
     <img src={basics.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover"/>
     <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(0deg,#080b14f2_15%,#080b1466_100%)]"/>
     <div className="relative">
-     <Eyebrow>{basics.category.toUpperCase()}</Eyebrow>
-     <h3 className="mt-1.5 text-xl font-black md:text-2xl">{basics.title}</h3>
+     <h3 className="text-xl font-black md:text-2xl">{basics.title}</h3>
      <p className="mt-2 text-sm leading-relaxed text-fg-soft">Dale un repaso: la base que sostiene todo lo demás.</p>
      <LinkButton to={moduleUrl(basics.id)} variant="secondary" className="mt-5">Ver el módulo<ArrowRight size={16}/></LinkButton>
     </div>

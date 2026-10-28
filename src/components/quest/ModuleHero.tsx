@@ -5,7 +5,7 @@ import { BackLink } from '@/components/ui';
 export function ModuleHero({ image, back, eyebrow, title, text, stats, children }: {
     image: string;
     back: { to: string; label: string };
-    eyebrow: string;
+    eyebrow?: string;
     title: string;
     text?: string;
     /** Datos cortos bajo el texto (etiqueta → valor). */
@@ -17,7 +17,7 @@ export function ModuleHero({ image, back, eyebrow, title, text, stats, children 
         <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,#080b14f5_0%,#080b14e6_38%,#080b1480_65%,#080b1420_100%)] max-xs:bg-[#080b14cc]"/>
         <div className="relative z-10 mx-auto w-full max-w-365 px-4.5 py-8 md:px-6 xl:px-9.5"><div className="max-w-180">
             <BackLink to={back.to}>{back.label}</BackLink>
-            <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{eyebrow.toUpperCase()}</p>
+            {eyebrow && <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{eyebrow.toUpperCase()}</p>}
             <h1 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.75rem]">{title}</h1>
             {text && <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{text}</p>}
             {stats.length > 0 && <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-4">{stats.map(([label, value]) => <div key={label}>

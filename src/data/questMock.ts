@@ -1,4 +1,4 @@
-import { MODAL_ARPEGGIO_LESSONS, PENTATONIC_G_START, SCALE_MODES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
+import { MODAL_ARPEGGIO_LESSONS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -8,13 +8,12 @@ export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; poi
 export type Difficulty = 'base' | 'intermedio' | 'avanzado' | 'experto';
 export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; /** Quién transcribió el patrón. */ transcribedBy?: string; /** Categoría del patrón dentro del módulo (p. ej. «Grupos de tres cuerdas»): agrupa las lecciones. */ category?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
 export type Lesson = ReadingLesson | PracticeLesson;
-export type TechniqueModule = { id: string; title: string; category: string; description: string; art: string; level: string; icon: string; completedLessons: number; skills: string[]; lessons: Lesson[] };
+export type TechniqueModule = { id: string; title: string; description: string; art: string; level: string; icon: string; completedLessons: number; skills: string[]; lessons: Lesson[] };
 // Visual fixtures for guitarists with basic playing experience. No teaching, evaluation or persistence.
 const moduleFixtures: TechniqueModule[] = [
   {
     "id": "recommendations",
     "title": "Recomendaciones",
-    "category": "FUNDAMENTOS",
     "description": "Aprende a preparar, ejecutar y revisar una práctica con criterio, priorizando limpieza, control y constancia.",
     "art": "chord",
     "level": "Antes de empezar",
@@ -206,7 +205,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "fingering",
     "title": "Digitación y coordinación",
-    "category": "DIGITACIÓN",
     "description": "Fortalece la mano izquierda y sincroniza ambas manos con patrones cromáticos y de cuatro dedos.",
     "art": "riff",
     "level": "Base técnica",
@@ -300,7 +298,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "alternate-picking",
     "title": "Alternate picking",
-    "category": "PÚA",
     "description": "Alterna ataques abajo y arriba con regularidad, también en los cambios y saltos de cuerda.",
     "art": "rhythm",
     "level": "Base técnica",
@@ -408,7 +405,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "economy-picking",
     "title": "Economy picking",
-    "category": "PÚA",
     "description": "Aprovecha la dirección de la púa en los cambios de cuerda para tocar con menos movimiento.",
     "art": "rhythm",
     "level": "Intermedio",
@@ -530,7 +526,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "scales",
     "title": "Escalas y patrones",
-    "category": "ESCALAS",
     "description": "Recorre los siete modos y las pentatónicas en todas sus posiciones, tocadas con alternate picking.",
     "art": "solo",
     "level": "Base técnica",
@@ -682,7 +677,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "bending-vibrato",
     "title": "Bending y vibrato",
-    "category": "EXPRESIÓN",
     "description": "Controla la afinación de cada bending y da vida a las notas largas con vibrato.",
     "art": "chord",
     "level": "Intermedio",
@@ -804,7 +798,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "legato",
     "title": "Legato",
-    "category": "LEGATO",
     "description": "Une notas con hammer-ons y pull-offs para frases fluidas y parejas en volumen.",
     "art": "solo",
     "level": "Intermedio",
@@ -911,7 +904,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "tapping",
     "title": "Tapping",
-    "category": "TAPPING",
     "description": "Suma la mano derecha sobre el diapasón para ampliar el alcance de tus frases.",
     "art": "rhythm",
     "level": "Avanzado",
@@ -1018,7 +1010,6 @@ const moduleFixtures: TechniqueModule[] = [
   {
     "id": "licks-phrasing",
     "title": "Estudios",
-    "category": "ESTUDIOS",
     "description": "Combina digitación, picking, ligados, arpegios y saltos de cuerda en estudios musicales de distintos estilos.",
     "art": "riff",
     "level": "Avanzado",
@@ -1044,7 +1035,7 @@ function difficultyRange(lessons: Lesson[], fallback: string) {
 // Módulo de arpegios (guía «No más arpegios aburridos»): va justo después de Digitación.
 const arpeggioLesson = (id: string, title: string, difficulty: Difficulty = 'intermedio', category = 'Arpegios de séptima'): Lesson => ({ id, title, category, type: 'practice', difficulty, minutes: 8, xp: 60, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 });
 moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingering') + 1, 0, {
- id: 'arpeggios', title: 'Sweep picking y arpegios', category: 'ARPEGIOS',
+ id: 'arpeggios', title: 'Sweep picking y arpegios',
  description: 'Arpegios de séptima y modales sobre la escala mayor de C: el color de cada grado y la tensión que define cada modo.',
  art: 'sweep', level: 'Intermedio', icon: '10', completedLessons: 0,
  skills: ['Armonía', 'Cruce de cuerdas', 'Fórmulas'],
@@ -1060,7 +1051,7 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'fingerin
 });
 // Módulo de pentatónica: las cinco posiciones de Gm en grupos de tres cuerdas. Va después de Arpegios.
 moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggios') + 1, 0, {
- id: 'pentatonic', title: 'Pentatónica', category: 'ESCALAS',
+ id: 'pentatonic', title: 'Pentatónica',
  description: 'Aprende a usar la pentatónica en diferentes patrones: secuencias que recorren cada posición por grupos de cuerdas y cambian de dirección para que la escala deje de sonar de arriba abajo.',
  art: 'solo', level: 'Intermedio', icon: '11', completedLessons: 0,
  skills: ['Posiciones', 'Secuencias', 'Púa alternada'],
@@ -1070,6 +1061,9 @@ moduleFixtures.splice(moduleFixtures.findIndex(module => module.id === 'arpeggio
 moduleFixtures.find(module => module.id === 'alternate-picking')!.lessons = [
  { id: 'alternate-picking-right-hand-01', title: 'Cuerdas al aire de la sexta a la primera', category: 'Mano derecha', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
  { id: 'alternate-picking-right-hand-02', title: 'Salto de cuerda con cuerdas al aire', category: 'Mano derecha', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ ...OCTAVE_MODES.map(({ id, title }): Lesson => ({ id, title: `${title} por octavas`, category: 'Modos por octavas', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
+ ...TWO_STRING_PATTERNS.map(({ id, title }): Lesson => ({ id, title, category: 'Patrones de dos cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
+ ...SKIP_PATTERNS.map(({ id, title }): Lesson => ({ id, title, category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
 ];
 // Primera del módulo: la más reciente.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
@@ -1109,18 +1103,22 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
 });
 // Escalas y patrones: los modos de C mayor, C menor armónica y C menor melódica, en el orden de sus grados (ver SCALE_MODES).
 Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
- description: 'Los modos de la escala mayor de C, de C menor armónica y de C menor melódica, uno por grado y en orden. Conoce sus posiciones en el mástil y mejora el picking.',
+ description: 'Domina las escalas por todo el mástil con patrones prácticos: aprende dónde vive cada sonido, escucha el color que lo hace único y conviértelo en frases que suenan a música, no a ejercicio. Cada patrón te hace más rápido, más limpio y más libre para improvisar.',
  skills: ['Modos', 'Posiciones', 'Púa alternada'],
  lessons: [
   ...SCALE_MODES.map((scaleMode): Lesson => ({ id: scaleMode.id, title: modeTitle(scaleMode), category: modeCategory(scaleMode), type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
+  ...SYMMETRIC_SCALES.map(({ id, title }): Lesson => ({ id, title, category: 'Escalas simétricas', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
  ],
 });
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
 const ADDED: Record<string, string> = {
  'alternate-picking-right-hand-01': '2026-10-26',
  'alternate-picking-right-hand-02': '2026-10-26',
+ ...Object.fromEntries(OCTAVE_MODES.map(({ id }) => [id, '2026-10-28'])),
+ ...Object.fromEntries(TWO_STRING_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
+ ...Object.fromEntries(SKIP_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
- ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : '2026-10-27'])),
+ ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
  'licks-phrasing-howe-01': '2026-10-26',
  'licks-phrasing-romeo-01': '2026-10-25',
  'licks-phrasing-yngwie-02': '2026-10-24',

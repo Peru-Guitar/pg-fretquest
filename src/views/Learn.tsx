@@ -16,7 +16,7 @@ export default function LearnPage() {
     const normalizedQuery = query.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g, '');
     // Los módulos sin contenido todavía («próximamente») no se listan: siguen en el temario, escondidos.
     const filteredCourses = courses.filter(course => course.available).filter(course => {
-        const searchable = [course.title, course.category, ...course.skills, ...course.lessons.map(lesson => lesson.title)].join(' ').toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const searchable = [course.title, ...course.skills, ...course.lessons.map(lesson => lesson.title)].join(' ').toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g, '');
         return searchable.includes(normalizedQuery);
     });
     return <>
