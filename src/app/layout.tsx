@@ -5,6 +5,7 @@ import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/geist-mono";
 import "@/styles/globals.css";
 import { AppShell } from "@/components/AppShell";
+import { CopyGuard } from "@/components/CopyGuard";
 import { pageMetadata, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return <html lang="es">
     <body className="font-sans antialiased">
       <AppShell>{children}</AppShell>
+      <CopyGuard/>
       <Script src="https://cloud.umami.is/script.js" data-website-id="29b1233a-223e-4588-aa58-96caea920b7b" data-domains="fretquest.peruguitar.com" strategy="afterInteractive"/>
     </body>
   </html>;

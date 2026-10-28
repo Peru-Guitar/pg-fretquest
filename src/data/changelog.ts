@@ -2,6 +2,14 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.7.1',
+        date: '2026-10-28',
+        notes: [
+            'En el inicio ves cuántos ejercicios, módulos y niveles hay para practicar.',
+            'Pentatónica: las subcategorías ahora se llaman Modales y Extendidos.',
+        ],
+    },
+    {
         version: '0.7.0',
         date: '2026-10-28',
         notes: [
