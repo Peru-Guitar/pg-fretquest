@@ -1,9 +1,0 @@
-{
-  "tool": "image_gen (built-in)",
-  "file": "public/images/join-hero.webp",
-  "references": [
-    "public/images/modules/alternate-picking.webp",
-    "public/images/modules/legato.webp"
-  ],
-  "prompt": "Use case: photorealistic-natural. Asset type: wide website hero background for Fret Quest guitar training invitation page /unirse. Create a NEW original photograph matching the visual style of the two reference images: cinematic realistic electric guitar practice, glossy black figured-wood electric guitar, detailed steel strings, moody deep navy shadows, electric cyan blue and violet rim lighting. Show a seated guitarist's torso and both hands naturally practicing a black six-string electric guitar, right hand holding a pick near the bridge and left hand fretting on the neck. No face. Horizontal 16:9 wide composition, instrument stretches across lower half, hands near outer thirds; leave the central upper area dark and uncluttered to support centered HTML heading and button. Keep interest visible in a centered mobile crop. Authentic anatomy and plausible instrument construction. Premium editorial macro photography, shallow depth of field, crisp realistic textures, subtle atmospheric background. No text, logos, watermarks, interface, or collage. References are style only; create a distinct scene."
-}
