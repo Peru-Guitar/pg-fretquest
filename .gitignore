@@ -9,3 +9,6 @@ coverage
 out
 next-env.d.ts
 public/version.json
+
+# Material de trabajo (prompts, imágenes fuente, borradores, MusicXML): solo local
+docs/
