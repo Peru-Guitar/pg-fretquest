@@ -65,8 +65,7 @@ export function CourseCard({ course, practicing = [] }: { course: typeof courses
             {!course.available && <span className="absolute top-3 right-3 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-xs font-bold text-white">Próximamente</span>}
         </div>
         <div className="flex flex-1 flex-col p-4 xl:p-5">
-            <p className="text-4xs leading-relaxed font-black tracking-[0.15em] text-accent">{course.category}</p>
-            <h3 className="mt-2 mb-2 text-base md:text-[1.0625rem] xl:text-lg">{course.title}</h3>
+            <h3 className="mb-2 text-base md:text-[1.0625rem] xl:text-lg">{course.title}</h3>
             <p className="text-xs leading-relaxed text-muted xs:min-h-9.5">{course.description}</p>
             {/* El conteo y el pie van siempre abajo, alineados entre tarjetas de distinta altura. */}
             <div className="mt-auto pt-4.5 pb-3.5 text-3xs text-muted">{course.lessonCount} lecciones</div>

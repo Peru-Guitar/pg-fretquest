@@ -1,76 +1,69 @@
 ---
 name: new-lesson
-description: Crea o edita una lección de FretQuest (lectura o práctica con tablatura) a partir de las ideas del usuario. Úsalo cuando pida "nueva lección", "nuevo ejercicio", "agrega una práctica", "nueva lectura" o comparta un patrón o lick para practicar.
+description: Crea o edita una lección de FretQuest (lectura o práctica con tablatura) a partir de las ideas del usuario. Úsalo cuando pida "nueva lección", "nuevo ejercicio", "agrega una práctica", "nueva lectura", "agrega escalas/modos/patrones" o comparta un patrón, lick o archivo de Guitar Pro (MusicXML) para practicar.
 ---
 
 # Lección nueva en FretQuest
 
-El usuario da la idea: un patrón, un lick, una técnica o unos consejos. Tú la completas con el formato de las lecciones existentes. La idea y el patrón son del usuario. Tú redactas, ordenas y propones las variantes.
+La idea y el patrón son del usuario; tú los pasas al formato de la app, redactas los textos y propones variantes (marcadas como propuesta).
 
-## 1. Dónde vive cada cosa
+## Dónde vive cada cosa
 
-- `src/data/questMock.ts` → `moduleFixtures`: módulos y su lista de `lessons`. Cada lección de práctica necesita aquí su ficha básica.
-- `src/data/practiceStudies.ts` → `practiceStudies[lessonId]`: el contenido real de una práctica (texto + patrones que suenan).
-- Solo se ven los módulos listados en `available` (al final de `questMock.ts`). Si la lección va en un módulo "Próximamente", avisa al usuario.
+| Archivo | Qué va ahí |
+|---|---|
+| `src/data/questMock.ts` | Ficha de cada lección dentro de su módulo (`moduleFixtures`), y la fecha en `ADDED`. |
+| `src/data/practiceStudies.ts` | El contenido de cada práctica: textos y tablatura (`practiceStudies[id]`). |
 
-Pregunta en qué módulo va si no es obvio. Usa el siguiente id libre del módulo (`fingering-07`, `legato-03`…).
+- Solo se ven los módulos de la lista `available` (al final de `questMock.ts`). Si el módulo no está, avisa.
+- Si no es obvio en qué módulo va, pregunta.
+- Para series (modos, posiciones, parejas de cuerdas), usa una lista de datos + una función que genere el estudio, como `SCALE_MODES`, `OCTAVE_MODES` o `TWO_STRING_PATTERNS`. No copies el mismo objeto a mano.
 
-## 2. Lección de lectura
+## Ficha en `questMock.ts`
 
-En `lessons` del módulo:
+```ts
+{ id: 'modulo-tema-01', title: 'G menor por octavas', category: 'Modos por octavas', type: 'practice',
+  difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }
+```
+
+- **Título único en toda la app.** El slug de la URL sale del título (`tests/slugs.test.ts` lo comprueba).
+- **`difficulty`:** escalas y patrones van en `intermedio` salvo que el usuario pida otra.
+- **`category`:** agrupa las lecciones dentro del módulo. Con más de 12 lecciones y 2 grupos o más, la página del módulo las muestra en pestañas.
+- **Fecha:** agrega el id a `ADDED` con la fecha de hoy, para que salga en «Últimas lecciones agregadas».
+- `minutes` se guarda pero nunca se muestra.
+
+## Estudio en `practiceStudies.ts`
 
 ```ts
 {
-  "id": "modulo-NN", "title": "...", "minutes": 3, "xp": 20, "type": "reading",
-  "summary": "Una frase que diga de qué trata.",
-  "points": [{ "title": "Idea en forma de instrucción", "text": "2–4 frases que expliquen el porqué y el cómo." }],
-  "note": "Opcional: criterio final, una frase."
+    description: 'Lo que transmite el ejercicio (ver «Textos»).',
+    notation: 'G menor (G A Bb C D Eb F) · Semicorcheas · Púa alternada continua',
+    goal: 'Qué debe lograr quien practica.',
+    steps: ['Cómo se recorre.', 'Digitación y púa.', 'Detalle clave.'],
+    mistakes: ['Error típico.', 'Otro error típico.'],
+    criterion: 'Cuándo subir el BPM.',
+    figure: 'semicorcheas',   // negras | corcheas | tresillos | semicorcheas | sextillos
+    speed: 2,                 // 1–5, velocidad sugerida
+    ...withSections([{ title: 'Subida', pattern }, { title: 'Bajada', pattern }]),
 }
 ```
 
-Usa de 3 a 5 `points`. Toma como modelo `recommendations-01`.
+- **Tablatura:** lista de `{ string, fret }`; cuerda 1 = e aguda, 6 = E grave. Cada sección empieza en una fila nueva.
+- **`picking`:** `alternate` por defecto; `legato` para arpegios/sweep; `tapping` con `tap: true` en las notas de la mano derecha.
+- **Patrón del usuario (tab o MusicXML):** transcríbelo tal cual y muéstraselo en texto para confirmar. Si algo parece un error, pregunta; no lo corrijas.
+- **Patrones generados:** imprime los trastes y revisa que ninguno pase del ~traste 18. Si se pasa, propón otra tónica o cuerda.
+- Si el usuario quiere escucharlo antes, genera un `.musicxml` (cuerda/traste en `<technical>`) y déjalo en el Escritorio.
 
-## 3. Lección de práctica
+## Textos
 
-**a) Ficha en `questMock.ts`:**
+- **`description`: describe el sonido, no la técnica.** Qué color o sensación tiene, a qué suena, quién lo usa, para qué sirve. Trastes, fórmulas y notas van en `notation` y `steps`. Modelo:
+  > Un patrón para ganar velocidad: dos cuerdas, tres notas en cada una y la misma forma siempre. Cada compás sube una nota y la escala menor se abre en horizontal.
+- **Máximo 200 caracteres** (el test lo comprueba).
+- **Cada descripción es única**, aunque la lección sea una variante de otra: di qué la hace distinta (otra cuerda, otra zona del mástil, otro color). El test lo comprueba.
+- Español, tuteo, frases cortas. Notas en sistema americano (C D E…, Bb), nunca Do Re Mi.
+- Sin motivación vacía ni puntos, niveles o récords.
 
-```ts
-{
-  "id": "modulo-NN", "title": "...", "minutes": 5, "xp": 50, "type": "practice",
-  "difficulty": "base" | "intermedio" | "avanzado",   // de ESTA lección, no del módulo
-  "description": "", "goal": "", "variants": [],       // los rellena practiceStudies
-  "tempo": { "min": 40, "max": 160 }, "rounds": 1
-}
-```
+## Al terminar
 
-`xp`, `rounds` y `record` quedan del sistema de progreso, que está desactivado. Pon los valores por defecto y no agregues `record`.
-
-**b) Estudio en `practiceStudies.ts`** (modelo: `fingering-01` … `fingering-06`):
-
-```ts
-'modulo-NN': {
-    description: 'Qué se toca, en una o dos frases.',
-    goal: 'Qué debe lograr quien practica (medible: limpieza, pulso, digitación).',
-    steps: ['Posición y digitación.', 'Cómo se recorre el patrón y con qué púa.', 'Detalle técnico clave.'],
-    mistakes: ['Error típico 1.', 'Error típico 2.'],
-    criterion: 'Cuándo está listo para subir la velocidad o pasar a otra variante.',
-    variants: [variant('Nombre corto', patrón), /* 2–3 en total, de menor a mayor exigencia */],
-},
-```
-
-- **Patrón:** lista de `{ string, fret }`, donde la cuerda 1 es la e aguda y la 6 la E grave. Una nota por clic, y la tablatura se dibuja en compases de 16 notas, así que conviene que el largo sea múltiplo de 16.
-- Usa los helpers del archivo: `line(cuerda, dedos)` (dedo 1 = traste 5) y `across(dedos, cuerdas)`. Si el patrón no está en quinta posición, escribe los `{ string, fret }` directamente o define un helper como `neoclassicalCell`.
-- La púa se muestra alternada (⊓ V) siempre. Si el ejercicio usa legato o sweep, dilo en `steps`.
-- Si el usuario da el patrón en tablatura, transcríbelo exactamente y muéstraselo de vuelta en texto para que lo confirme. No "corrijas" sus notas. Si algo parece un error, pregunta.
-- **Rondas:** la app calcula sola cuántas rondas se pueden elegir (`MAX_ROUNDS`, `ROUNDS_BUDGET_SECONDS` y `ROUNDS_REFERENCE_BPM` en `src/views/Practice.tsx`). El máximo es el menor entre el tope por `difficulty` (base 10, intermedio 5, avanzado 3, experto 1) y las rondas que caben en 90 s: `notas ÷ notas por pulso (figure) ÷ 100 × 60` es lo que dura una ronda, medida siempre a 100 BPM sin importar el `bpm` de la lección. El selector se ve siempre, y las opciones que pasan del máximo salen desactivadas. Al elegir `difficulty`, `figure` y el largo del patrón, avisa al usuario cuántas rondas quedarán disponibles. Ejemplo: Becker, 260 notas en semicorcheas, dura ~39 s por ronda a 100 BPM: caben 2, así que de las opciones solo queda activa la de 1.
-- Las variantes que propongas tú deben salir del patrón del usuario (otra cuerda, otra digitación, mitad del recorrido). Indícalas como propuesta.
-
-## 4. Estilo del texto
-
-Español, tuteo, frases cortas e instrucciones concretas: dedo, traste, cuerda, dirección de púa. Sin motivación vacía. La velocidad es siempre consecuencia de la limpieza. No menciones puntos, niveles, récords ni planes diarios: la app es solo de práctica libre por ahora.
-
-## 5. Al terminar
-
-- Ejecuta `npx tsc --noEmit` y `npx eslint src`.
-- Dile al usuario la ruta para probarla: `/practice/<moduloId>?exercise=<lessonId>` o `/modules/<moduloId>/<lessonId>`.
-- No hagas commit si no te lo piden. **Nunca hagas push**: eso solo pasa con la skill `push` y un pedido explícito.
+- `npx tsc --noEmit`, `npx eslint src` y `npx vitest run tests/slugs.test.ts`.
+- Da la ruta para probarla: `/ejercicios/<slug-del-módulo>/<slug-del-título>` (slugs de módulo en `src/lib/routes.ts`).
+- No hagas commit si no te lo piden. **Nunca hagas push**: solo con la skill `push` y un pedido explícito.

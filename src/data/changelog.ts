@@ -2,6 +2,16 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.6.0',
+        date: '2026-10-28',
+        notes: [
+            'Nuevas escalas: los 8 modos de la bebop dominante, la tonal, la disminuida y la semitono disminuida.',
+            'Púa alternada: modos por octavas, patrones de velocidad en dos cuerdas y string skipping, en menor natural y armónica.',
+            'Descripciones más cortas y sobre el sonido de cada ejercicio.',
+            'Los módulos con muchas lecciones se ordenan en pestañas, con enlace propio para compartir.',
+        ],
+    },
+    {
         version: '0.5.0',
         date: '2026-10-27',
         notes: [

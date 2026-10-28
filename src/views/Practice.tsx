@@ -393,7 +393,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         : content;
 
     return <>
-        <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id), label: activeModule.title }} eyebrow={`${activeModule.category} · Práctica`} title={activeExercise.title} text={activeExercise.description}
+        <ModuleHero image={activeModule.image} back={{ to: moduleUrl(activeModule.id), label: activeModule.title }} eyebrow="Práctica" title={activeExercise.title} text={activeExercise.description}
             stats={[['Lección', `${activeModule.lessons.indexOf(activeExercise) + 1} de ${activeModule.lessons.length}`], ['Dificultad', levelLabel(activeExercise.difficulty)]]}/>
         {activeExercise.artist && <ArtistCredit id={activeExercise.artist} transcribedBy={activeExercise.transcribedBy}/>}
 
