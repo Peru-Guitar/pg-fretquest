@@ -24,6 +24,7 @@ Es para los **alumnos**, en el grupo de WhatsApp. Cuenta qué pueden practicar a
 
 Formato de WhatsApp, no Markdown: `*negrita*`, `_cursiva_`, listas con `- `. Sin `#` ni enlaces con corchetes. Entrégalo dentro de un bloque de código para copiarlo tal cual.
 
+- Los enlaces siempre con `https://` (WhatsApp solo los vuelve clicables así).
 - Notas en notación americana (C, Eb, Am), nunca Do Re Mi.
 - Nunca la duración de las lecciones.
 - Frases cortas, en segunda persona, sobre cómo suena o para qué sirve cada grupo de lecciones.
@@ -46,7 +47,7 @@ Formato de WhatsApp, no Markdown: `*negrita*`, `_cursiva_`, listas con `- `. Sin
 *✨ Además*
 - <Mejora visible para el alumno.>
 
-👉 fretquest.peruguitar.com
+👉 https://fretquest.peruguitar.com
 ```
 
 Ejemplo real (0.7.0):
@@ -75,7 +76,7 @@ La pentatónica por saltos y en zigzag, para que no suene a escalera:
 - Las subcategorías de cada módulo ahora van de la más fácil a la más difícil.
 - Al volver de una lección regresas directo a su pestaña del módulo.
 
-👉 fretquest.peruguitar.com
+👉 https://fretquest.peruguitar.com
 ```
 
 Después del bloque, di en una línea qué dejaste fuera (arreglos, sonido, mobile…) para que el usuario lo confirme.
