@@ -1,4 +1,4 @@
-import { INTERVAL_PENTATONICS, MODAL_ARPEGGIO_LESSONS, MODAL_PENTATONICS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
+import { INTERVAL_PENTATONICS, TAPPING_FOUR_NOTES, TAPPING_ONE_STRING, TAPPING_SKIPS, TAPPING_SYMMETRIC, TAPPING_TWO_STRINGS, MODAL_ARPEGGIO_LESSONS, MODAL_PENTATONICS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
 export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
@@ -1009,8 +1009,8 @@ const moduleFixtures: TechniqueModule[] = [
   },
   {
     "id": "licks-phrasing",
-    "title": "Estudios",
-    "description": "Combina digitación, picking, ligados, arpegios y saltos de cuerda en estudios musicales de distintos estilos.",
+    "title": "Artistas",
+    "description": "Toca como los grandes: licks y pasajes de guitarristas de distintos estilos, con su digitación, picking, ligados, arpegios y tapping.",
     "art": "riff",
     "level": "Avanzado",
     "icon": "09",
@@ -1065,13 +1065,31 @@ moduleFixtures.find(module => module.id === 'alternate-picking')!.lessons = [
  ...TWO_STRING_PATTERNS.map(({ id, title }): Lesson => ({ id, title, category: 'Patrones de dos cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
  ...SKIP_PATTERNS.map(({ id, title }): Lesson => ({ id, title, category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
 ];
+// Tapping: una cuerda, dos cuerdas, string skipping y escalas simétricas.
+Object.assign(moduleFixtures.find(module => module.id === 'tapping')!, {
+ description: 'Suma la mano derecha sobre el diapasón: tap, pull-off y hammer-on en una cuerda, luego en dos, con saltos de cuerda y, al final, las escalas simétricas en todas las cuerdas.',
+ skills: ['Mano derecha', 'Legato', 'Cruce de cuerdas'],
+ lessons: [
+  ...TAPPING_ONE_STRING.map(({ id, title }): Lesson => ({ id, title, category: 'Una cuerda', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 100 }, rounds: 1 })),
+  ...TAPPING_TWO_STRINGS.map(({ id, title }): Lesson => ({ id, title, category: 'Dos cuerdas', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 120 }, rounds: 1 })),
+  ...TAPPING_SKIPS.map(({ id, title }): Lesson => ({ id, title, category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 120 }, rounds: 1 })),
+  ...TAPPING_FOUR_NOTES.map(({ id, title }): Lesson => ({ id, title, category: 'Diagonales', type: 'practice', difficulty: 'avanzado', minutes: 5, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
+  ...TAPPING_SYMMETRIC.map(({ id, title }): Lesson => ({ id, title, category: 'Escalas simétricas', type: 'practice', difficulty: 'avanzado', minutes: 5, xp: 90, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 })),
+ ],
+});
 // Primera del módulo: la más reciente.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
  id: 'licks-phrasing-howe-01', title: 'Abrupt Terminal: secuencia de arpegios',
  type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
-moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.splice(1, 0, {
+// La más reciente va primera.
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-romeo-02', title: 'Of Sins And Shadows: Tapping Solo',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.splice(2, 0, {
  id: 'licks-phrasing-romeo-01', title: 'Tresillos en string skipping sobre Em',
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
@@ -1115,6 +1133,7 @@ const ADDED: Record<string, string> = {
  'alternate-picking-right-hand-01': '2026-10-26',
  'alternate-picking-right-hand-02': '2026-10-26',
  ...Object.fromEntries(OCTAVE_MODES.map(({ id }) => [id, '2026-10-28'])),
+ ...Object.fromEntries(moduleFixtures.find(module => module.id === 'tapping')!.lessons.map(lesson => [lesson.id, '2026-10-29'])),
  ...Object.fromEntries(TWO_STRING_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(SKIP_PATTERNS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries([1, 2, 3, 4, 5].map(position => [`pentatonic-sweep-0${position}`, '2026-10-24'])),
@@ -1124,6 +1143,7 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(INTERVAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
  'licks-phrasing-howe-01': '2026-10-26',
+ 'licks-phrasing-romeo-02': '2026-10-29',
  'licks-phrasing-romeo-01': '2026-10-25',
  'licks-phrasing-yngwie-02': '2026-10-24',
  'licks-phrasing-gilbert-01': '2026-10-24',
@@ -1150,7 +1170,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'alternate-picking', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing'].includes(module.id),
+ available: ['recommendations', 'alternate-picking', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing', 'tapping'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,

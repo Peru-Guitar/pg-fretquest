@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Clock3, Music2, Play, Target, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -20,17 +21,16 @@ const POINTS = [
 export function PracticeIntro({ children, canStart = true, onStart, onCancel }: { children: ReactNode; canStart?: boolean; onStart: () => void; onCancel: () => void }) {
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
+    useScrollLock();
     useEffect(() => {
-        const overflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
         const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel(); };
         window.addEventListener('keydown', onKey);
-        return () => { document.body.style.overflow = overflow; window.removeEventListener('keydown', onKey); };
+        return () => window.removeEventListener('keydown', onKey);
     }, [onCancel]);
 
     // Va en <body> porque el `transform` animado de <main> encerraría un `fixed`.
-    return createPortal(<div role="dialog" aria-modal="true" aria-labelledby="practice-intro-title" className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-sunken/70 p-4 backdrop-blur-md">
-        <div className="relative grid w-full max-w-4xl animate-pop xl:max-w-5xl overflow-hidden rounded-2xl border border-line-strong bg-raised shadow-[0_30px_90px_#000b] md:grid-cols-[2fr_3fr]">
+    return createPortal(<div role="dialog" aria-modal="true" aria-labelledby="practice-intro-title" className="fixed inset-0 z-50 flex overflow-y-auto bg-sunken/70 p-4 backdrop-blur-md">
+        <div className="m-auto relative grid w-full max-w-4xl animate-pop xl:max-w-5xl overflow-hidden rounded-2xl border border-line-strong bg-raised shadow-[0_30px_90px_#000b] md:grid-cols-[2fr_3fr]">
             {/* Imagen del profesor. Si aún no existe, queda el degradado de la marca. */}
             <div className="relative h-44 overflow-hidden bg-raised md:h-auto">
                 {imageOk && <img src={INTRO_IMAGE} alt="" width={800} height={1000} decoding="async" onError={() => setImageOk(false)} className="absolute inset-0 size-full object-cover object-[center_25%] md:object-center"/>}

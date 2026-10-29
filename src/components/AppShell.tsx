@@ -4,13 +4,14 @@ import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
-import { BarChart3, BookOpen, CircleHelp, House, ListChecks, Menu, MessageCircle, UserPlus, Users, Wrench, X } from 'lucide-react';
+import { BarChart3, BookOpen, CircleHelp, House, Info, ListChecks, Menu, MessageCircle, UserPlus, Users, Wrench, X } from 'lucide-react';
 import { isAdmin, useAccount } from '@/lib/account';
 import { AccountBar } from '@/components/AccountBar';
 import { SupportButton } from '@/components/SupportButton';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { VersionInfo } from '@/components/VersionInfo';
 import { cn } from '@/lib/cn';
+import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
 const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan, label: 'Mi plan', icon: ListChecks }, { to: ROUTES.exercises, label: 'Ejercicios', icon: BookOpen }, { to: ROUTES.community, label: 'Comunidad', icon: Users }, { to: ROUTES.tools, label: 'Herramientas', icon: Wrench }];
 
@@ -19,6 +20,8 @@ const inviteUrl = `https://wa.me/?text=${encodeURIComponent('¡Estoy aprendiendo
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
 const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-accent';
 const sidebarLink = { base: 'mb-1 min-h-11.5 gap-3 px-3.5 text-md', active: 'before:inset-y-2.5 before:-left-px before:w-[3px]' };
+// Enlaces informativos: más compactos y discretos que la navegación principal, para que no compitan con ella.
+const infoLink = { base: 'min-h-9 gap-2.5 px-3.5 text-sm [&>svg]:size-4', active: 'before:inset-y-2 before:-left-px before:w-0.5' };
 
 export function AppShell({ children }: { children: ReactNode }) {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -68,13 +71,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </a>
                 {admin && navigation([{ to: ROUTES.analytics, label: 'Analytics', icon: BarChart3 }], sidebarLink)}
             </nav>
-            {/* Abajo: ayuda y comunidad externa, con el mismo estilo que la navegación (en móvil, desde el menú). */}
-            <nav aria-label="Ayuda" className="mt-auto mb-3">
-                <NavLink to={ROUTES.guide} onClick={() => setMenuOpen(false)} className={({ isActive: active }) => cn(linkBase, sidebarLink.base, active && cn(linkActive, sidebarLink.active))}><CircleHelp size={19}/><span>Cómo funciona</span></NavLink>
-                <a href="https://chat.whatsapp.com/BqVeyGhXMGO2XkdD424Z7o?mode=gi_t" target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
+            {/* Abajo: información, ayuda y comunidad externa, en un estilo más discreto que la navegación (en móvil, desde el menú). */}
+            <nav aria-label="Información" className="mt-auto mb-3 border-t border-line-soft pt-3">
+                <p className="mx-3.5 mb-1.5 text-3xs tracking-[0.2em] text-subtle">INFORMACIÓN</p>
+                {navigation([{ to: ROUTES.about, label: 'Acerca de', icon: Info }, { to: ROUTES.guide, label: 'Cómo funciona', icon: CircleHelp }], infoLink)}
+                <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className={cn(linkBase, infoLink.base)}>
                     <MessageCircle size={19} className="text-[#25D366]"/><span>Unirse al Grupo</span>
                 </a>
-                <SupportButton className={cn(linkBase, sidebarLink.base, 'w-full')}/>
+                <SupportButton className={cn(linkBase, infoLink.base, 'w-full')}/>
             </nav>
             <div className="flex flex-col gap-1 border-t border-line-soft px-3.5 pt-4 text-xs text-subtle">
                 <a href="https://peruguitar.com" className="mb-2 inline-flex min-h-8 items-center text-xs text-muted transition-colors hover:text-fg">Volver a Peru Guitar →</a>

@@ -1,6 +1,7 @@
 import type { PatternNote } from '@/lib/audio/practiceRound';
 
 import type { Difficulty } from './questMock';
+import { TABS } from './tabs/tabs.generated';
 
 export type Figure = 'negras' | 'corcheas' | 'tresillos' | 'semicorcheas' | 'sextillos';
 
@@ -47,7 +48,6 @@ export const speedFromBpm = (figure: Figure, bpm: number): Speed => {
 
 export type PracticeStudy = {
     description: string;
-    notation?: string;
     goal: string;
     steps: string[];
     mistakes: string[];
@@ -127,11 +127,10 @@ const MODAL_FEEL: Record<string, string> = {
     eólico: 'El eólico es la escala menor natural: triste, nostálgica y emotiva.',
     locrio: 'El locrio es el modo más inestable: tenso, sombrío y siempre a punto de resolver.',
 };
-const modalArpeggioStudy = ({ mode, degree, chord, formula, color, pattern, fromSeventh }: typeof MODAL_ARPEGGIOS[number]): PracticeStudy => ({
+const modalArpeggioStudy = ({ mode, degree, chord, color, pattern, fromSeventh }: typeof MODAL_ARPEGGIOS[number]): PracticeStudy => ({
     description: fromSeventh
         ? `${MODAL_FEEL[mode]} Su arpegio es el mismo ${chord} que ya practicaste, así que puedes concentrarte en escuchar su color.`
         : `${MODAL_FEEL[mode]} El arpegio ${chord} encierra ese color en pocas notas, para que lo uses directamente en tus solos.`,
-    notation: `${chord} (${formula}) · ${ARPEGGIO_TEXT}`,
     goal: fromSeventh
         ? `Escuchar el arpegio de séptima como el color del modo ${mode}: no se le suma ninguna tensión.`
         : `Escuchar el color del modo ${mode}: la cuatriada del grado más su intervalo característico.`,
@@ -144,47 +143,10 @@ const modalArpeggioStudy = ({ mode, degree, chord, formula, color, pattern, from
     picking: 'legato',
     ...withSections([{ title: `${chord} · ${mode} · grado ${degree}`, pattern }]),
 });
-const ARPEGGIO_TEXT = 'Escala mayor de C · Púa solo al cambiar de cuerda (⊓ al subir, V al bajar) · En la misma cuerda: h hammer-on, p pull-off';
 
 const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
-// Lick 1 de Yngwie Malmsteen: cada acorde es una célula de tres notas en una cuerda (aguda, grave, media, aguda, media, grave)
-// tocada dos veces en sextillos. Alterna segunda y primera cuerda por el ciclo de cuartas de Bm armónica.
-const sextuplet = (string: number, [high, low, middle]: number[]): PatternNote[] =>
-    [high, low, middle, high, middle, low].map(fret => ({ string, fret }));
-const chord = (string: number, frets: number[]) => [...sextuplet(string, frets), ...sextuplet(string, frets)];
-// Arpegio de Bm en sweep desde 14/5: sube hasta 14/1 y vuelve a 14/5.
-const bmSweepUp: PatternNote[] = [{ string: 5, fret: 14 }, { string: 4, fret: 12 }, { string: 3, fret: 11 }, { string: 2, fret: 12 }, { string: 1, fret: 10 }, { string: 1, fret: 14 }];
-const bmSweep = [...bmSweepUp, ...bmSweepUp.slice(0, -1).reverse()];
-// Lick de Vinnie Moore: Am natural de bajada, tres notas por cuerda. Baja de dos en dos cuerdas y vuelve a subir una
-// (1-2, 3-4, 3-4, 5-6) para seguir la escala en la posición de abajo, y resuelve en A (5/6) con una negra.
-const descent = (string: number, frets: number[]) => frets.map(fret => ({ string, fret }));
-const vinnieDescent: PatternNote[] = [
-    ...descent(1, [13, 12, 10]), ...descent(2, [13, 12, 10]),
-    ...descent(3, [12, 10, 9]), ...descent(4, [12, 10, 9]),
-    ...descent(3, [10, 9, 7]), ...descent(4, [10, 9, 7]),
-    ...descent(5, [10, 8, 7]), ...descent(6, [10, 8, 7]),
-    { string: 6, fret: 5, beats: 1 },
-];
-// Lick 2 de Yngwie Malmsteen: bajada estilo neoclásico en Em armónica en la primera cuerda. Cada célula de cuatro notas
-// (nota, salto arriba, paso abajo, nota) baja por la escala; el D# (11) lleva de vuelta a E (12). Sigue un arpegio de
-// D#dim7 (C A F# D#) que baja de 3 en 3 trastes: baja a la tercera cuerda, slide a 5/3, sube hasta 5/1, slide a 2/1,
-// vuelve a bajar y termina en 5/2 (E) con una negra.
-const dimCell = (fret: number): PatternNote[] => [{ string: 1, fret }, { string: 2, fret: fret + 2 }, { string: 3, fret: fret + 3 }, { string: 3, fret }];
 const slideTo = (string: number, fret: number): PatternNote => ({ string, fret, slide: true });
-const yngwieDescent: PatternNote[] = [
-    ...[19, 22, 20, 19, 17, 20, 19, 17, 15, 19, 17, 15, 14, 17, 15, 14, 12, 15, 14, 12, 11, 12, 14, 11, 12].map(fret => ({ string: 1, fret })),
-    ...dimCell(8),
-    slideTo(3, 5), { string: 3, fret: 8 }, { string: 2, fret: 7 }, { string: 1, fret: 5 },
-    slideTo(1, 2), ...dimCell(2).slice(1),
-    { string: 2, fret: 5, beats: 1 },
-];
-const yngwieBars: PatternNote[][] = [
-    [...chord(2, [15, 12, 14]), ...chord(1, [15, 12, 14])],
-    [...chord(2, [14, 10, 12]), ...chord(1, [14, 10, 12])],
-    [...chord(2, [12, 8, 10]), ...chord(1, [12, 8, 10])],
-    [...chord(2, [11, 7, 9]), { string: 2, fret: 12 }, { string: 2, fret: 11 }, { string: 2, fret: 12 }, { string: 3, fret: 11 }, { string: 4, fret: 12 }, ...bmSweep],
-];
 
 // Pentatónica de Gm (G Bb C D F): dos notas por cuerda en cada posición, de la sexta a la primera cuerda.
 const PENTATONIC_G = [
@@ -215,7 +177,6 @@ const pentatonicStudy = (position: number): PracticeStudy => {
     const frets = PENTATONIC_G[position - 1];
     return {
         description: PENTATONIC_TEXT[position - 1],
-        notation: 'Pentatónica de Gm (G Bb C D F) · Tresillos: un grupo de tres cuerdas cada dos pulsos · Púa alternada continua',
         goal: 'Salir de tocar la escala de arriba abajo. El patrón obliga a ver la posición por bloques de cuerdas y a cambiar de dirección sin perder el pulso.',
         steps: [
             `Aprende primero la posición ${position}: dos notas por cuerda, de la sexta a la primera.`,
@@ -259,7 +220,6 @@ const pentatonicSweepStudy = (position: number): PracticeStudy => {
     const [first, , middle, , last] = up;
     return {
         description: PENTATONIC_SWEEP_TEXT[position - 1],
-        notation: 'Pentatónica de Gm (G Bb C D F) · Semicorcheas · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
         goal: 'Salir de la caja de una sola posición: estirar la mano para unir dos posiciones de la escala y barrer tres cuerdas en cada grupo, con la púa en una sola dirección al cambiar de cuerda y las notas de la misma cuerda ligadas.',
         steps: [
             `La mano se queda en los trastes ${low}–${high}: índice en el ${low} y meñique en el ${high}; abre la mano en vez de desplazarla.`,
@@ -333,7 +293,6 @@ const modeStudy = ({ scale: parentId, degree, mode, color }: ScaleMode): Practic
     const root = parent.names[degree];
     const steps: readonly number[] = parent.steps;
     const size = steps.length;
-    const notes = parent.names.map((_, step) => parent.names[(degree + step) % size]);
     // La tónica va en la quinta cuerda entre los trastes 1 y 12.
     const rootMidi = 45 + (((parent.tonic + steps[degree] - 9 + 24) % 12) || 12);
     const scale = (offset: number) => { const index = degree + offset; return rootMidi - steps[degree] + steps[((index % size) + size) % size] + Math.floor(index / size) * 12; };
@@ -343,7 +302,6 @@ const modeStudy = ({ scale: parentId, degree, mode, color }: ScaleMode): Practic
     const start = up[0].fret;
     return {
         description: color,
-        notation: `${root} ${mode} (${notes.join(' ')}) · Púa alternada`,
         goal: `Conocer las posiciones de ${root} ${mode} en el mástil, escuchar su color frente a los otros modos de ${parent.short} y mejorar el picking.`,
         steps: [
             `Antes del patrón, toca la escala completa: de ${root} en el traste ${start} de la quinta cuerda ${size === 7 ? `a ${root} en el traste ${up[14].fret} de la primera, dos octavas más arriba` : `hasta el traste ${up[14].fret} de la primera`}.`,
@@ -372,7 +330,7 @@ export const SYMMETRIC_SCALES = [
     { id: 'scales-symmetric-03', title: 'C semitono disminuida', shift: 3, steps: [0, 1, 3, 4, 6, 7, 9, 10], names: ['C', 'Db', 'Eb', 'E', 'F#', 'G', 'A', 'Bb'], color: 'Jazz y blues con picante: brillante y chirriante a la vez. Crea mucha tensión antes de resolver, por eso suena sobre el dominante que está por caer en su tónica.' },
 ] as const;
 type SymmetricScale = typeof SYMMETRIC_SCALES[number];
-const symmetricStudy = ({ title, shift, steps, names, color }: SymmetricScale): PracticeStudy => {
+const symmetricStudy = ({ title, shift, steps, color }: SymmetricScale): PracticeStudy => {
     // Tres notas por cuerda desde C en el traste 3 de la quinta cuerda.
     const scale = (index: number) => 48 + steps[((index % steps.length) + steps.length) % steps.length] + Math.floor(index / steps.length) * 12;
     const up = Array.from({ length: 15 }, (_, index) => note(5 - Math.floor(index / 3), scale(index)));
@@ -380,7 +338,6 @@ const symmetricStudy = ({ title, shift, steps, names, color }: SymmetricScale): 
     const part = (strings: number) => [...up.slice(0, strings * 3), ...up.slice(1, strings * 3 - 1).reverse()];
     return {
         description: color,
-        notation: `${title} (${names.join(' ')}) · Púa alternada`,
         goal: `Conocer la digitación de ${title} en el mástil, escuchar su color simétrico y mejorar el picking.`,
         steps: [
             `Antes del patrón, toca la escala completa: tres notas por cuerda desde C en el traste 3 de la quinta cuerda hasta el traste ${up[14].fret} de la primera.`,
@@ -402,76 +359,11 @@ const symmetricStudy = ({ title, shift, steps, names, color }: SymmetricScale): 
     };
 };
 
-// Estudio de Jason Becker: arpegios de tres cuerdas en sweep con pull-off en la primera cuerda. Un compás por línea, «traste/cuerda».
-const BECKER_BARS = [
-    '12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 10/1',
-    '14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
-    '12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 11/3 12/2 10/1 12/1 10/1 12/2 10/1',
-    '9/1 10/1 9/1 12/2 11/3 12/2 9/1 10/1 9/1 12/2 11/3 12/2 9/1 10/1 9/1 12/2 9/1',
-    '14/1 10/1 12/2 11/3 12/2 10/1 19/1 14/1 15/2 16/3 15/2 14/1 19/1 14/1 15/2 14/1',
-    '19/1 15/1 15/2 16/3 15/2 19/1 22/1 15/1 15/2 16/3 15/2 15/1 19/1 15/1 15/2 15/1',
-    '17/1 15/1 15/2 14/3 15/2 15/1 17/1 15/1 15/2 14/3 15/2 15/1 17/1 15/1 15/2 15/1',
-    '17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 12/1',
-    '15/1 12/1 14/2 14/3 14/2 12/1 15/1 12/1 14/2 14/3 12/3 14/4 16/5 14/4 12/3 14/3',
-    '10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
-    '14/1 12/1 12/2 11/3 12/2 12/1 14/1 12/1 12/2 11/3 12/2 12/1 14/1 12/1 12/2 12/1',
-    '14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 11/3 12/2 10/1 14/1 10/1 12/2 10/1',
-    '16/1 13/1 15/2 16/3 15/2 13/1 19/1 16/1 18/2 19/3 18/2 16/1 22/1 19/1 21/2 19/1',
-    '21/1 17/1 17/2 18/3 19/4 17/2 17/1 12/1 14/2 14/3 14/2 12/1 17/1 12/1 14/2 12/1',
-    '15/1 12/1 14/2 15/3 12/3 14/4 12/1 9/1 11/2 12/3 9/3 11/4 14/2 11/2 12/3 11/2',
-    '15/1 12/1 14/2 15/3 12/3 14/4 16/5 13/5 10/5 12/6 9/6 12/6 10/5 13/5 11/4 9/3 12/3 11/2',
-];
-const beckerBars = BECKER_BARS.map(bar => bar.split(' ').map(note => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
-// Lick de Paul Gilbert en string skipping: cada figura sube un arpegio en la tercera cuerda, salta a la primera
-// y vuelve, ligando las notas de cada cuerda, y baja de posición en cada figura (traste 10 → 2). La última termina en 5/1 sostenida con una negra.
-const GILBERT_FIGURES = [
-    '10/3 12/3 14/3 10/1 14/3 12/3 10/3 12/3 14/3 10/1 12/1 13/1 12/1 13/1 12/1 10/1 14/3 10/3',
-    '9/3 10/3 12/3 8/1 12/3 10/3 9/3 10/3 12/3 8/1 10/1 12/1 10/1 12/1 10/1 8/1 12/3 9/3',
-    '7/3 9/3 10/3 7/1 10/3 9/3 7/3 9/3 10/3 7/1 8/1 10/1 8/1 10/1 8/1 7/1 10/3 7/3',
-    '5/3 7/3 9/3 5/1 9/3 7/3 5/3 7/3 9/3 5/1 7/1 8/1 7/1 8/1 7/1 5/1 9/3 5/3',
-    '4/3 5/3 7/3 4/1 7/3 5/3 4/3 5/3 7/3 4/1 5/1 7/1 5/1 7/1 5/1 4/1 7/3 4/3',
-    '2/3 4/3 5/3 1/1 5/3 4/3 2/3 4/3 5/3 1/1 3/1 5/1',
-];
-const gilbertFigures = GILBERT_FIGURES.map(figure => figure.split(' ').map((note): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret }; }));
-gilbertFigures[gilbertFigures.length - 1].at(-1)!.beats = 1;
-
-/** Michael Romeo: secuencia de tresillos con tapping en Em saltando entre la tercera y la primera cuerda. Cada compás son dos vueltas de la misma figura. */
-const romeoBar = (top: string, low: number, end: string) => {
-    const half = `${top} ${low}/3 12/3 11/3 9/3 11/3 12/3 ${low}/3`;
-    return `${half} 12/1 14/1 ${half} ${end}`;
-};
-const ROMEO_BARS = [
-    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
-    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
-    romeoBar('15/1 14/1 12/1', 17, '12/1 14/1'),
-    romeoBar('15/1 14/1 12/1', 17, '10/1 12/1'),
-    romeoBar('14/1 12/1 10/1', 14, '10/1 12/1').replace('14/3 12/1 14/1', '14/3 10/1 12/1'),
-    romeoBar('14/1 12/1 10/1', 14, '12/1 14/1').replace('14/3 12/1 14/1', '14/3 10/1 12/1'),
-    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
-    romeoBar('15/1 14/1 12/1', 16, '12/1 14/1'),
-];
-// La primera nota de cada grupo de tres va con tapping.
-const romeoBars = ROMEO_BARS.map(bar => bar.split(' ').map((note, index): PatternNote => { const [fret, string] = note.split('/').map(Number); return { string, fret, tap: index % 3 === 0 }; }));
-
-/** Greg Howe, «Abrupt Terminal»: sección de arpegios (transcripción de Koko Rengifo). Un compás de 3/4 en semicorcheas por línea; «T» marca el tapping. */
-const HOWE_BARS = [
-    '18/3 14/1 17/1 14/1 18/3 14/3 16/4 17/5 16/4 14/3 18/3 17/2',
-    '17/1 21/1 19/1 16/1 17/2 16/3 16/1 12/1 16/3 13/3 15/4 13/3',
-    '16/3 15/2 13/3 16/3 15/2 13/1 14/1 15/2 14/3 16/4 14/4 16/5',
-    '12/5 16/5 14/4 13/3 16/3 12/1 16/1 12/1 16/3 13/3 16/4 14/3',
-    '16/3 16/2 14/1 11/1 13/2 14/3 13/3 14/2 13/1 16/1 21/1T 16/1',
-    '13/1 16/3 19/1 16/1 17/2 16/3 18/4 19/5 18/4 16/3 19/3 18/2',
-    '16/1 19/1 22/1T 19/1 16/1 18/2 21/1 17/1 19/2 18/3 19/4 21/5',
-    '16/5 17/6 14/6 12/5 16/5 16/4 14/3 14/2 17/2 15/2 14/2 17/2',
-    '15/2 14/2 16/3 15/2 14/2 16/3 14/3 16/3 13/3 15/4 16/4 11/4',
-    '12/5 14/6 12/5 11/4 11/3 13/3 14/3 11/3 12/4 12/5 11/4 14/4',
-    '14/3 14/2 12/1 17/1 12/1 14/2 15/2 22/2T 15/2 12/2 14/2 22/2T',
-    '14/2 10/2 12/2 22/2T 12/2 9/2 10/2 12/2 10/2 9/2 11/3 9/2',
-    '10/3 12/4 11/4 10/3 11/3',
-];
-const howeBars = HOWE_BARS.map(bar => bar.split(' ').map((note): PatternNote => { const [fret, string] = note.replace('T', '').split('/').map(Number); return { string, fret, ...(note.endsWith('T') && { tap: true }) }; }));
-// La nota final (F#) dura un pulso.
-howeBars[howeBars.length - 1].at(-1)!.beats = 1;
+// Transcripciones (licks de artistas): se escriben en alphaTex en data/tabs y `npm run tabs` las convierte. Cada
+// sección del .alphatex (separada por «|») es un compás o una parte de la lección. La duración se deja solo en las notas
+// que no van en la figura del estudio, para que la velocidad pueda cambiar la figura (lecciones en corcheas).
+const tabBars = (id: string, figure: Figure): PatternNote[][] => TABS[id].map(bar => bar.map(({ beats, ...note }) =>
+    beats !== undefined && Math.abs(beats - 1 / FIGURES[figure].notesPerBeat) > 1e-9 ? { ...note, beats } : note));
 
 // Mano derecha (lección «Ejercicio de mano derecha» de ERP Skool): cuerdas al aire, cuatro golpes por cuerda con púa alternada.
 const openStrings = (strings: number[]): PatternNote[] => strings.flatMap(string => [0, 0, 0, 0].map(fret => ({ string, fret })));
@@ -484,7 +376,6 @@ const RIGHT_HAND_STEPS = [
 const RIGHT_HAND_MISTAKES = ['Reiniciar con púa abajo al cambiar de cuerda: la alternancia no se interrumpe.', 'Dejar sonando las cuerdas que ya tocaste.', 'Atacar más fuerte con púa abajo que con púa arriba.'];
 const rightHandOpen: PracticeStudy = {
     description: 'Todo empieza por la mano derecha. Antes de pensar en notas, la púa aprende a bajar y subir con el mismo peso, como un péndulo. Es la base de toda la velocidad.',
-    notation: 'Cuerdas al aire · Púa alternada continua',
     goal: 'Ejercitar la mano derecha por separado antes de coordinarla con la izquierda: golpes parejos, abajo y arriba, y cambios de cuerda sin cortar la alternancia.',
     steps: RIGHT_HAND_STEPS,
     mistakes: RIGHT_HAND_MISTAKES,
@@ -496,7 +387,6 @@ const rightHandOpen: PracticeStudy = {
 };
 const rightHandSkip: PracticeStudy = {
     description: 'Saltar cuerdas hace que los solos suenen abiertos y grandes. Aquí entrenas ese salto con cuerdas al aire, para cruzar sin perder el ritmo ni tocar la cuerda equivocada.',
-    notation: 'Cuerdas al aire · Púa alternada continua · Salto de cuerda',
     goal: 'Mantener la púa alternada y el control al saltar cuerdas: la púa llega justo a la cuerda que toca sin rozar la que salta.',
     steps: RIGHT_HAND_STEPS,
     mistakes: [...RIGHT_HAND_MISTAKES, 'Rozar la cuerda que saltas.'],
@@ -520,7 +410,7 @@ export const OCTAVE_MODES = [
     { id: 'alternate-picking-octaves-06', color: "Sueño y cielo abierto: ese es el color del lidio. Tocado por octavas, su figura sube muy alto por el mástil y la mano aprende a moverse cómoda en la zona aguda, donde este modo brilla más.", degree: 3, title: 'Eb lidio' },
     { id: 'alternate-picking-octaves-07', color: "Mayor con actitud, con sabor a rock y a blues: el mixolidio. Empieza abajo, cerca de la cejuela, y la figura sube octava a octava hasta el centro del mástil, con ese color de dominante en cada paso.", degree: 4, title: 'F mixolidio' },
 ] as const;
-const octaveShape = ({ degree, title, color }: typeof OCTAVE_MODES[number]): PracticeStudy => {
+const octaveShape = ({ degree, color }: typeof OCTAVE_MODES[number]): PracticeStudy => {
     const { steps, names } = BB_MAJOR;
     // Tónica en la sexta cuerda entre los trastes 1 y 12 (Bb = traste 6).
     const rootMidi = 40 + ((steps[degree] + 6) % 12 || 12);
@@ -531,7 +421,6 @@ const octaveShape = ({ degree, title, color }: typeof OCTAVE_MODES[number]): Pra
     const down = [...at(1, 2, [4, 5, 4, 3]), ...at(2, 2, [2, 1, 0]), ...at(3, 1, [5, 4, 3]), ...at(4, 1, [2, 1, 0]), ...at(5, 0, [5, 4, 3])];
     return {
         description: color,
-        notation: `${title} (${notes.join(' ')}) · Semicorcheas · Púa alternada continua`,
         goal: 'Ver la escala de forma horizontal: reconocer la misma digitación en cada octava y mover la mano por el mástil sin perder la púa alternada.',
         steps: [
             'En cada par de cuerdas tocas la misma figura: tres notas en una cuerda y tres en la siguiente. Al pasar al siguiente par, la figura se repite una octava más arriba.',
@@ -574,7 +463,7 @@ export const TWO_STRING_PATTERNS = [
 ] as const;
 const twoStringStudy = ({ low, high, key, scale, description }: typeof TWO_STRING_PATTERNS[number]): PracticeStudy => {
     // El recorrido arranca en la tónica más grave de la cuerda de abajo.
-    const { label, names, midi } = minorOnString(low, key, scale);
+    const { names, midi } = minorOnString(low, key, scale);
     const bars = [0, 1, 2, 3, 4, 5, 6, 7].map(start => {
         const cell = [0, 1, 2, 3, 4, 5].map(step => note(step < 3 ? low : high, midi(start + step)));
         return { title: `Desde ${names[start % 7]}`, pattern: [0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 5, 4, 3].map(index => cell[index]) };
@@ -582,7 +471,6 @@ const twoStringStudy = ({ low, high, key, scale, description }: typeof TWO_STRIN
     const [first, last] = [bars[0].pattern[0].fret, Math.max(...bars[7].pattern.map(n => n.fret))];
     return {
         description,
-        notation: `${label} (${names.join(' ')}) · Semicorcheas · Grupos de cuatro · Púa alternada continua`,
         goal: 'Ganar velocidad y precisión con la púa alternada en dos cuerdas, recorriendo la escala de forma horizontal.',
         steps: [
             'Cada compás usa seis notas: tres en la cuerda de abajo y tres en la de arriba.',
@@ -611,7 +499,7 @@ export const SKIP_PATTERNS = [
     { id: 'alternate-picking-skipping-08', low: 3, high: 1, from: 1, key: 'A', scale: 'harmonic', title: 'A menor armónica con string skipping en las cuerdas 1 y 3', description: 'El salto más exigente con la escala más dramática: de la primera cuerda a la tercera, con el tono y medio entre F y G# en el camino. Limpio, suena a solo neoclásico.' },
 ] as const;
 const skipStudy = ({ low, high, from, key, scale, description }: typeof SKIP_PATTERNS[number]): PracticeStudy => {
-    const { label, names, midi } = minorOnString(low, key, scale);
+    const { names, midi } = minorOnString(low, key, scale);
     const bars = [0, 1, 2, 3, 4, 5, 6, 7].map(start => {
         const grave = [0, 1, 2].map(step => note(low, midi(start + step)));
         const aguda = [0, 1, 2].map(step => note(high, midi(start + step) + 12));
@@ -622,7 +510,6 @@ const skipStudy = ({ low, high, from, key, scale, description }: typeof SKIP_PAT
     const to = from === low ? high : low;
     return {
         description,
-        notation: `${label} (${names.join(' ')}) · Semicorcheas · Grupos de cuatro · Salto de cuerda · Púa alternada continua`,
         goal: 'Saltar una cuerda con la púa alternada sin perder el ritmo ni rozar la cuerda del medio, recorriendo la escala de forma horizontal.',
         steps: [
             `Cada compás usa seis notas: tres en la cuerda ${from} y las mismas tres, a una octava, en la cuerda ${to}. La cuerda ${skipped} no suena nunca.`,
@@ -689,7 +576,6 @@ const pentatonicHorizontalStudy = (position: number, blues = false): PracticeStu
     const slides = (notes: PatternNote[]) => notes.filter(note => note.slide).map(note => `${notes[notes.indexOf(note) - 1].fret} a ${note.fret} en la ${STRING_NAMES[note.string]}`).join(', ');
     return {
         description: blues ? HORIZONTAL_BLUES_TEXT[position - 1] : HORIZONTAL_TEXT[position - 1],
-        notation: blues ? 'Pentatónica blues de Am (A C D E♭ E G) · Sextillos · Púa alternada; en los slides (s) no hay púa' : 'Pentatónica de Am (A C D E G) · Semicorcheas · Púa alternada; en los slides (s) no hay púa',
         goal: blues
             ? 'Sumar la blue note al recorrido horizontal: el mismo camino por el mástil, pero con el E♭ que le da a la pentatónica el color del blues. Así lo tienes a mano en cualquier zona del mástil.'
             : position === 1
@@ -738,12 +624,11 @@ const modalPentatonicUp = ({ fret: rootFret, steps }: typeof MODAL_PENTATONICS[n
     }
 };
 const modalPentatonicStudy = (item: typeof MODAL_PENTATONICS[number]): PracticeStudy => {
-    const { root, fret, mode, names, color, description } = item;
+    const { root, fret, mode, color, description } = item;
     const up = modalPentatonicUp(item);
     const hold = (notes: PatternNote[]) => notes.map((note, index) => index === notes.length - 1 ? { ...note, beats: 4 - (notes.length - 1) / 4 } : note);
     return {
         description,
-        notation: `Pentatónica ${mode} de ${root} (${names}) · Semicorcheas · Púa alternada`,
         goal: `Escuchar el color del modo ${mode.replace(/a$/, 'o')} en solo cinco notas, dentro de una caja: ${color} es la nota que lo hace sonar distinto de la pentatónica de siempre.`,
         steps: [
             `Arranca en ${root}, traste ${fret} de la quinta cuerda, y sube hasta la primera sin mover la mano: la caja va del traste ${fret - 1} al ${fret + 3}.`,
@@ -799,7 +684,6 @@ export const INTERVAL_PENTATONICS: IntervalLesson[] = [
 ];
 const intervalStudy = ({ figure, description, goal, build, steps, mistakes }: IntervalLesson): PracticeStudy => ({
     description,
-    notation: 'Pentatónica de Am (A C D E G) · Semicorcheas · Púa alternada',
     goal,
     steps: [...steps, 'Bajada: el mismo recorrido desde el 12/1 hasta el 3/6.'],
     mistakes,
@@ -809,7 +693,246 @@ const intervalStudy = ({ figure, description, goal, build, steps, mistakes }: In
     perRow: 16, // un compás por fila
     ...withSections([{ title: 'Subida', pattern: held(build(false), 2) }, { title: 'Bajada', pattern: held(build(true), 2) }]),
 });
+// Tapping: celdas de tres notas en tresillos, tap (T), pull-off (p) y hammer-on (h). En cada cuerda van las notas 1, 3 y 5
+// desde un grado de la escala (una tríada): la mano izquierda toma las dos graves y el tap la aguda.
+const NATURAL_MINOR = { steps: [0, 2, 3, 5, 7, 8, 10], names: { G: ['G', 'A', 'Bb', 'C', 'D', 'Eb', 'F'], A: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], C: ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb'] } };
+const TAPPING_TONICS = { G: 7, A: 9, C: 0 };
+/** Grados de la menor natural desde la tónica más grave de la cuerda `string` (índice 0 = tónica). */
+const tappingMinor = (string: number, key: keyof typeof TAPPING_TONICS) => {
+    const tonic = OPEN_MIDI[string - 1] + (TAPPING_TONICS[key] - OPEN_MIDI[string - 1] % 12 + 12) % 12;
+    return (index: number) => tonic + NATURAL_MINOR.steps[index % 7] + Math.floor(index / 7) * 12;
+};
+/** Una celda T-p-h: tap en la nota aguda, pull-off a la grave y hammer-on a la del medio. */
+const tapCell = (string: number, [low, mid, high]: number[]): PatternNote[] => [{ ...note(string, high), tap: true }, note(string, low), note(string, mid)];
+const repeat = (cell: PatternNote[], times: number) => Array.from({ length: times }, () => cell).flat();
+const triad = (scale: (index: number) => number, degree: number) => [degree, degree + 2, degree + 4].map(scale);
+const TAPPING_STEPS = [
+    'Cada celda tiene tres notas en la misma cuerda: tap con la mano derecha en la aguda (T), pull-off a la grave (p) y hammer-on a la del medio (h).',
+    'La mano izquierda deja los dos dedos listos en sus trastes antes del tap: el pull-off sale de la uña del dedo que tapea, tirando la cuerda hacia el piso.',
+];
+const TAPPING_MISTAKES = ['Que el tap suene más fuerte que el pull-off y el hammer-on.', 'Dejar sonar las cuerdas que no tocas: apoya la palma derecha sobre las graves.', 'Correr en el tap y llegar tarde al hammer-on.'];
+
+export const TAPPING_ONE_STRING = [
+    { id: 'tapping-one-string-01', string: 1, key: 'G', title: 'Gm · cuerda 1', description: 'El primer paso del tapping: la tríada de G menor en la primera cuerda, en tres posiciones que suben por el mástil. Tres notas que suenan a solo desde el primer tap.' },
+    { id: 'tapping-one-string-02', string: 3, key: 'A', title: 'Am · cuerda 3', description: 'La misma idea en la tercera cuerda con A menor: la cuerda es más gruesa, el tap pide más firmeza y hay que callar las cuerdas de alrededor.' },
+    { id: 'tapping-one-string-03', string: 5, key: 'C', title: 'Cm · cuerda 5', description: 'C menor en la quinta cuerda: tapping en los graves, con un sonido grueso de riff. La cuerda vibra más, así que el control de los pull-offs se nota en cada nota.' },
+] as const;
+const tappingOneStringStudy = ({ string, key, description }: typeof TAPPING_ONE_STRING[number]): PracticeStudy => {
+    const scale = tappingMinor(string, key);
+    // Tríada en posición fundamental y sus dos inversiones: 1-3-5, 3-5-1 y 5-1-3.
+    // Subida: grave, media y tap (3-6-10 en G). Bajada: media, grave y tap (6-3-10), con dos pull-offs seguidos del tap:
+    // así el giro no repite el tap y cada compás sigue al anterior sin cortes.
+    const degrees = [[0, 2, 4], [2, 4, 7], [4, 7, 9]];
+    const cells = degrees.map(position => tapCell(string, position.map(scale)));
+    const up = cells.map(([tap, low, mid]) => [low, mid, tap]);
+    const down = cells.map(([tap, low, mid]) => [mid, low, tap]);
+    const frets = (cell: PatternNote[]) => cell.map(n => n.fret).join('–');
+    return {
+        description,
+        goal: 'Coordinar las dos manos en una sola cuerda: el tap, el pull-off y el hammer-on parejos y a tiempo, y cambiar de posición sin cortar el ritmo.',
+        steps: [
+            'Cada celda tiene tres notas en la misma cuerda: dos con la mano izquierda y una con tap de la mano derecha (T). En la tablatura, p es pull-off y h es hammer-on.',
+            TAPPING_STEPS[1],
+            `De subida, cada celda va de la grave al tap: ${frets(up[0])}, ${frets(up[1])} y ${frets(up[2])}. Hammer-on a la del medio y tap en la aguda.`,
+            `De bajada, cada celda baja con dos pull-offs y cierra con el tap: ${frets(down[2])}, ${frets(down[1])} y ${frets(down[0])}. El tap nunca se repite: después de cada tap viene un pull-off.`,
+            'Cada posición se repite cuatro veces, un compás.',
+        ],
+        mistakes: TAPPING_MISTAKES,
+        criterion: 'Cuando las tres posiciones suenen parejas y los cambios no corten el pulso, sube el BPM.',
+        figure: 'tresillos',
+        speed: 1,
+        perRow: 12, // un compás por fila
+        picking: 'tapping',
+        ...withSections([
+            { title: 'Subida · posición 1', pattern: repeat(up[0], 4) },
+            { title: 'Subida · posición 2', pattern: repeat(up[1], 4) },
+            { title: 'Subida · posición 3', pattern: repeat(up[2], 4) },
+            { title: 'Bajada · posición 3', pattern: repeat(down[2], 4) },
+            { title: 'Bajada · posición 2', pattern: repeat(down[1], 4) },
+            { title: 'Bajada · posición 1', pattern: repeat(down[0], 4) },
+        ]),
+    };
+};
+
+// Dos cuerdas: tríada desde un grado en la cuerda grave y desde la cuarta de ese grado en la aguda, que cae casi en los
+// mismos trastes. Cada compás sube un grado, de la tónica a su octava.
+export const TAPPING_TWO_STRINGS = [
+    { id: 'tapping-two-strings-01', low: 2, high: 1, key: 'C', down: false, title: 'Cm subiendo · cuerdas 2 y 1', description: 'El tapping cruza de cuerda: una tríada en la segunda y otra en la primera, casi en los mismos trastes. Cada compás sube un grado y la escala menor aparece en el mástil.' },
+    { id: 'tapping-two-strings-02', low: 3, high: 2, key: 'A', down: false, title: 'Am subiendo · cuerdas 3 y 2', description: 'Entre la tercera y la segunda la afinación corre la forma un traste: el tap de la segunda cae uno más arriba y la mano derecha aprende a medir la distancia.' },
+    { id: 'tapping-two-strings-03', low: 5, high: 4, key: 'C', down: false, title: 'Cm subiendo · cuerdas 5 y 4', description: 'Las dos cuerdas en los graves: el tapping suena oscuro y pesado, como un riff. Las cuerdas gruesas piden taps firmes y la palma callando lo que sobra.' },
+    { id: 'tapping-two-strings-down-01', low: 2, high: 1, key: 'C', down: true, title: 'Cm bajando · cuerdas 2 y 1', description: 'El camino de vuelta: de C en la octava hasta C abajo, con la celda de la primera cuerda primero. Bajar con tapping pide que el tap encuentre cada posición nueva.' },
+    { id: 'tapping-two-strings-down-02', low: 3, high: 2, key: 'A', down: true, title: 'Am bajando · cuerdas 3 y 2', description: 'A menor de bajada en las cuerdas 3 y 2: la segunda va primero y la forma corrida un traste se siente distinta cuando la mano retrocede por el mástil.' },
+    { id: 'tapping-two-strings-down-03', low: 5, high: 4, key: 'C', down: true, title: 'Cm bajando · cuerdas 5 y 4', description: 'La bajada en los graves: de la octava a la tónica con la cuarta cuerda primero. Suena a riff que cae, y los taps en cuerdas gruesas piden firmeza al retroceder.' },
+] as const;
+const tappingTwoStringStudy = ({ low, high, key, down, description }: typeof TAPPING_TWO_STRINGS[number]): PracticeStudy => {
+    // Las dos cuerdas usan la misma escala (desde la tónica de la grave): en la aguda, la tríada empieza tres grados arriba.
+    const scale = tappingMinor(low, key);
+    const names = NATURAL_MINOR.names[key];
+    // Subida: de la tónica a su octava, primero la cuerda grave. Bajada (lección aparte): de la octava a la tónica,
+    // primero la aguda.
+    const bars = (down ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]).map(start => {
+        const cells = [tapCell(low, triad(scale, start)), tapCell(high, triad(scale, start + 3))];
+        return { title: `Desde ${names[start % 7]}`, pattern: repeat((down ? cells.reverse() : cells).flat(), 2) };
+    });
+    return {
+        description,
+        goal: 'Llevar el tapping a dos cuerdas: cambiar de cuerda con las dos manos a la vez y recorrer la escala de forma horizontal.',
+        steps: [
+            ...TAPPING_STEPS,
+            'Cada compás tiene dos celdas: una en la cuerda de abajo y otra en la de arriba, y se repiten dos veces.',
+            down
+                ? `Cada compás empieza en la nota anterior de la escala: de ${key} una octava arriba hasta ${key}, en el traste ${scale(0) - OPEN_MIDI[low - 1]}. La celda de la cuerda aguda va primero.`
+                : `Cada compás empieza en la nota que sigue de la escala: de ${key}, en el traste ${scale(0) - OPEN_MIDI[low - 1]}, hasta ${key} una octava más arriba. La celda de la cuerda grave va primero.`,
+            'Al cambiar de cuerda, la mano izquierda ya está puesta: el tap llega a la cuerda nueva sin mirar.',
+        ],
+        mistakes: [...TAPPING_MISTAKES, 'Tapear la cuerda equivocada al cruzar.'],
+        criterion: 'Cuando los ocho compases suenen parejos y los cruces de cuerda no se noten, sube el BPM.',
+        figure: 'tresillos',
+        speed: 1,
+        perRow: 12,
+        picking: 'tapping',
+        ...withSections(bars),
+    };
+};
+
+// String skipping: la misma tríada en la cuerda grave y una octava arriba en la aguda, saltando la cuerda del medio.
+// `from` es la cuerda por la que empieza cada compás.
+export const TAPPING_SKIPS = [
+    { id: 'tapping-skipping-01', low: 5, high: 3, from: 5, key: 'C', title: 'Cm · de la 5 a la 3', description: 'La tríada en la quinta y la misma una octava arriba en la tercera, saltando la cuarta. El tapping se abre y empieza a sonar a solo de verdad.' },
+    { id: 'tapping-skipping-02', low: 5, high: 3, from: 3, key: 'C', title: 'Cm · de la 3 a la 5', description: 'Las mismas notas, pero cada compás empieza en la tercera cuerda y cae a la quinta. El salto va de agudo a grave y las dos manos lo sienten distinto.' },
+    { id: 'tapping-skipping-03', low: 3, high: 1, from: 3, key: 'A', title: 'Am · de la 3 a la 1', description: 'El salto en las agudas, donde el tapping brilla: entre la tercera y la primera la octava queda tres trastes adelante y el tap tiene que encontrarla.' },
+    { id: 'tapping-skipping-04', low: 3, high: 1, from: 1, key: 'A', title: 'Am · de la 1 a la 3', description: 'Cada compás nace en la primera cuerda y salta a la tercera, pasando por encima de la segunda sin tocarla. El salto más incómodo, y el que más suena.' },
+] as const;
+const tappingSkipStudy = ({ low, high, from, key, description }: typeof TAPPING_SKIPS[number]): PracticeStudy => {
+    const scale = tappingMinor(low, key);
+    const octave = (index: number) => scale(index) + 12;
+    const names = NATURAL_MINOR.names[key];
+    const skipped = (low + high) / 2;
+    const to = from === low ? high : low;
+    // Seis compases: la octava aguda pasaría del traste 22.
+    const bars = [0, 1, 2, 3, 4, 5].map(start => {
+        const [grave, aguda] = [tapCell(low, triad(scale, start)), tapCell(high, triad(octave, start))];
+        return { title: `Desde ${names[start % 7]}`, pattern: repeat(from === low ? [...grave, ...aguda] : [...aguda, ...grave], 2) };
+    });
+    return {
+        description,
+        goal: 'Saltar una cuerda con el tapping sin rozar la del medio, con la misma tríada en dos octavas.',
+        steps: [
+            ...TAPPING_STEPS,
+            `Cada compás tiene la tríada en la cuerda ${from} y la misma, una octava arriba o abajo, en la cuerda ${to}. La cuerda ${skipped} no suena nunca.`,
+            `El compás siguiente empieza en la nota que sigue de la escala: de ${key} hasta ${names[5]}, subiendo por el mástil.`,
+            `Silencia la cuerda ${skipped} con la mano izquierda y la palma derecha.`,
+        ],
+        mistakes: [...TAPPING_MISTAKES, `Rozar la cuerda ${skipped} en el salto.`],
+        criterion: 'Cuando los seis compases suenen parejos y la cuerda del medio no suene nunca, sube el BPM.',
+        figure: 'tresillos',
+        speed: 1,
+        perRow: 12,
+        picking: 'tapping',
+        ...withSections(bars),
+    };
+};
+
+// Escalas simétricas en todas las cuerdas: de la sexta a la primera (6-5-4-3-2-1) o con salto de cuerdas (6-4-5-3-4-2-3-1).
+// En cada cuerda, la misma forma de la escala (desde C) en el primer traste desde el 7 donde entra. Solo de subida: grave,
+// media y tap, una vez por cuerda.
+const SYMMETRIC_TAPPING = [
+    { key: 'tonal', label: 'Tonal', shape: [0, 2, 4], steps: [0, 2, 4, 6, 8, 10], names: 'C D E F# G# A#' },
+    { key: 'diminished', label: 'Disminuida', shape: [0, 2, 3], steps: [0, 2, 3, 5, 6, 8, 9, 11], names: 'C D Eb F Gb Ab A B' },
+] as const;
+const SYMMETRIC_ORDERS = { horizontal: [6, 5, 4, 3, 2, 1], skipping: [6, 4, 5, 3, 4, 2, 3, 1] } as const;
+export const TAPPING_SYMMETRIC = [
+    { id: 'tapping-symmetric-03', scale: SYMMETRIC_TAPPING[0], order: 'horizontal', title: 'Tonal · seis cuerdas', description: 'La escala tonal de la sexta a la primera cuerda: la misma forma en cada cuerda y un sonido que flota y nunca resuelve. Con tapping sube como una cascada.' },
+    { id: 'tapping-symmetric-04', scale: SYMMETRIC_TAPPING[1], order: 'horizontal', title: 'Disminuida · seis cuerdas', description: 'La disminuida cuerda por cuerda, de la sexta a la primera: la misma forma en todas, oscura y tensa, como una escalera que sube sin llegar nunca.' },
+    { id: 'tapping-symmetric-01', scale: SYMMETRIC_TAPPING[0], order: 'skipping', title: 'Tonal · salto de cuerdas', description: 'La escala tonal saltando cuerdas de la sexta a la primera: la misma forma en cada cuerda y un sonido que flota y nunca resuelve. Con tapping se vuelve una cascada.' },
+    { id: 'tapping-symmetric-02', scale: SYMMETRIC_TAPPING[1], order: 'skipping', title: 'Disminuida · salto de cuerdas', description: 'La disminuida saltando cuerdas: la misma forma en cada cuerda, oscura y tensa como una escalera que nunca llega. Es el sonido del metal neoclásico.' },
+] as const;
+const tappingSymmetricStudy = ({ scale: { shape, steps }, order, description }: typeof TAPPING_SYMMETRIC[number]): PracticeStudy => {
+    const strings = SYMMETRIC_ORDERS[order];
+    const inScale = (midi: number) => (steps as readonly number[]).includes(midi % 12);
+    const cell = (string: number) => {
+        let fret = 7;
+        while (!shape.every(step => inScale(OPEN_MIDI[string - 1] + fret + step))) fret++;
+        const [tap, low, mid] = tapCell(string, shape.map(step => OPEN_MIDI[string - 1] + fret + step));
+        return [low, mid, tap];
+    };
+    const notes = strings.flatMap(cell);
+    // Seis cuerdas son 18 notas (seis pulsos): el último tap se sostiene hasta cerrar el segundo compás.
+    const pattern = notes.length % 12 ? notes.map((note, index) => index === notes.length - 1 ? { ...note, beats: 1 / 3 + (12 - notes.length % 12) / 3 } : note) : notes;
+    return {
+        description,
+        goal: 'Llevar el tapping a todas las cuerdas con la misma forma en cada una y escuchar el color simétrico de la escala.',
+        steps: [
+            'Cada celda tiene tres notas en la misma cuerda: la grave, hammer-on a la del medio y tap en la aguda (T).',
+            TAPPING_STEPS[1],
+            `Las cuerdas van en este orden: ${strings.join('-')}. Una celda por cuerda y pasas a la siguiente.`,
+            `La forma es la misma en todas las cuerdas: ${cell(6).map(n => n.fret).join('–')} en la sexta. Solo se corre un traste en algunas cuerdas para quedarse en la escala.`,
+            order === 'skipping' ? 'Silencia las cuerdas que saltas con la palma derecha y los dedos libres de la izquierda.' : 'Al cambiar de cuerda, la mano izquierda ya está puesta: el hammer-on de la cuerda nueva sale sin púa.',
+        ],
+        mistakes: order === 'skipping' ? [...TAPPING_MISTAKES, 'Rozar la cuerda que saltas.'] : TAPPING_MISTAKES,
+        criterion: 'Cuando todas las celdas suenen parejas y los cambios de cuerda no se noten, sube el BPM.',
+        figure: 'tresillos',
+        speed: 2,
+        perRow: 12,
+        picking: 'tapping',
+        ...withSections([{ title: 'Subida', pattern }]),
+    };
+};
+
+// Ráfagas: C jónico y C menor a cuatro notas por cuerda desde C en la quinta cuerda (traste 3): tres notas con la mano izquierda y una con
+// tap. Cada cuerda sigue la escala donde terminó la anterior, así que la forma sube por el mástil. Dos lecciones: la subida
+// (de la quinta a la primera, tap al final) y la bajada (de la primera a la quinta, tap al inicio y tres pull-offs).
+const BURST_SCALES = {
+    major: { label: 'C jónico', steps: [0, 2, 4, 5, 7, 9, 11], names: 'C D E F G A B' },
+    minor: { label: 'C menor', steps: [0, 2, 3, 5, 7, 8, 10], names: 'C D Eb F G Ab Bb' },
+};
+export const TAPPING_FOUR_NOTES = [
+    { id: 'tapping-four-notes-01', title: 'C jónico · subida', scale: 'major', down: false, description: 'C jónico a cuatro notas por cuerda, de la quinta a la primera: tres hammer-ons con la izquierda y la cuarta con tap. Una escalera que cruza el mástil hacia arriba.' },
+    { id: 'tapping-four-notes-02', title: 'C jónico · bajada', scale: 'major', down: true, description: 'C jónico a cuatro notas por cuerda, de la primera a la quinta: el tap abre cada cuerda y tres pull-offs la cierran. Una cascada que baja por todo el mástil.' },
+    { id: 'tapping-four-notes-03', title: 'C menor · subida', scale: 'minor', down: false, description: 'La ráfaga en C menor, de la quinta a la primera: tres hammer-ons y un tap por cuerda. El mismo recorrido de la jónica, ahora oscuro y dramático.' },
+    { id: 'tapping-four-notes-04', title: 'C menor · bajada', scale: 'minor', down: true, description: 'C menor cayendo de la primera a la quinta: tap y tres pull-offs por cuerda. Una ráfaga melancólica que baja por el mástil y termina en la tónica.' },
+] as const;
+const tappingFourNotes = ({ scale: key, down, description }: typeof TAPPING_FOUR_NOTES[number]): PracticeStudy => {
+    const { label, steps } = BURST_SCALES[key];
+    const scale = (index: number) => 48 + steps[index % 7] + Math.floor(index / 7) * 12; // C en el traste 3 de la quinta
+    const strings = [5, 4, 3, 2, 1].map((string, at) => [0, 1, 2, 3].map(step => note(string, scale(at * 4 + step))));
+    const notes = down
+        ? [...strings].reverse().flatMap(cell => [{ ...cell[3], tap: true }, cell[2], cell[1], cell[0]])
+        : strings.flatMap(cell => [...cell.slice(0, 3), { ...cell[3], tap: true }]);
+    // 20 notas son cinco pulsos: la última se sostiene hasta cerrar el segundo compás (32 semicorcheas).
+    const pattern = notes.map((n, index) => index === notes.length - 1 ? { ...n, beats: (32 - notes.length + 1) / 4 } : n);
+    const frets = (cells: PatternNote[][]) => cells.map(cell => cell.map(n => n.fret).join('-')).join(', ');
+    return {
+        description,
+        goal: `${down ? 'Bajar' : 'Subir'} por ${label} con tapping a cuatro notas por cuerda, cruzando el mástil sin cortar el ritmo.`,
+        steps: down
+            ? [
+                `En cada cuerda, tap en la nota más aguda y pull-offs por las tres de la mano izquierda: ${frets([...strings].reverse().map(cell => [...cell].reverse()))}.`,
+                'Cada cuerda empieza en la nota anterior de la escala, así que la mano izquierda baja por el mástil.',
+                'Una cuerda por pulso: el tap cae en el tiempo. La C final se sostiene hasta cerrar el compás.',
+                'Es más fácil que la subida: el tap hace sonar la cuerda y los pull-offs solo aprovechan esa vibración.',
+            ]
+            : [
+                `En cada cuerda, tres notas con la mano izquierda (hammer-on) y la cuarta con tap: ${frets(strings)}.`,
+                'Cada cuerda empieza en la nota que sigue de la escala, así que la mano izquierda sube por el mástil.',
+                'Una cuerda por pulso: la primera nota de cada cuerda cae en el tiempo. El tap final se sostiene hasta cerrar el compás.',
+                'Es la más difícil de las dos: la fuerza sale de la mano izquierda. Cada hammer-on, sobre todo el primero de cada cuerda, tiene que sonar igual de fuerte que el tap.',
+            ],
+        mistakes: ['Que el tap pise la nota de la mano izquierda, que queda muy cerca.', 'Correr en los cambios de cuerda.', 'Dejar sonar las cuerdas que ya tocaste.'],
+        criterion: `Cuando la ${down ? 'bajada' : 'subida'} suene de corrido y pareja, sube el BPM.`,
+        figure: 'semicorcheas',
+        speed: 2, // 80 BPM
+        perRow: 16,
+        picking: 'tapping',
+        ...withSections([{ title: down ? 'Bajada' : 'Subida', pattern }]),
+    };
+};
 export const practiceStudies: Record<string, PracticeStudy> = {
+    ...Object.fromEntries(TAPPING_FOUR_NOTES.map(item => [item.id, tappingFourNotes(item)])),
+    ...Object.fromEntries(TAPPING_ONE_STRING.map(item => [item.id, tappingOneStringStudy(item)])),
+    ...Object.fromEntries(TAPPING_TWO_STRINGS.map(item => [item.id, tappingTwoStringStudy(item)])),
+    ...Object.fromEntries(TAPPING_SKIPS.map(item => [item.id, tappingSkipStudy(item)])),
+    ...Object.fromEntries(TAPPING_SYMMETRIC.map(item => [item.id, tappingSymmetricStudy(item)])),
     ...Object.fromEntries(SKIP_PATTERNS.map(pattern => [pattern.id, skipStudy(pattern)])),
     ...Object.fromEntries(TWO_STRING_PATTERNS.map(pattern => [pattern.id, twoStringStudy(pattern)])),
     ...Object.fromEntries(OCTAVE_MODES.map(mode => [mode.id, octaveShape(mode)])),
@@ -870,7 +993,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'arpeggios-maj7': {
         description: 'El Maj7 es el sonido de la bossa nova y de las baladas elegantes: dulce y luminoso. Con él, tus solos empiezan a dibujar los acordes en vez de solo correr la escala.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Interiorizar el color de la séptima mayor. El recorrido de los dedos es exactamente el mismo para CMaj7 y FMaj7: solo cambia el traste de partida.',
         steps: ['Al armonizar la escala mayor obtenemos dos acordes Maj7, en el primer y cuarto grado: CMaj7 y FMaj7.', 'La característica de ambos es la séptima mayor en su estructura. Fórmula: 1 – 3 – 5 – 7.', 'Sube desde la quinta cuerda hasta la primera y vuelve. Resolvemos en la tercera mayor y no en la tónica para no dejar un silencio en el compás.', 'Una nota por subdivisión, con el metrónomo. Toca cada arpegio limpio antes de pasar al siguiente.'],
         mistakes: ['Dejar sonar dos notas a la vez al cruzar de cuerda.', 'Mover la mano entera en lugar de estirar el meñique para la séptima.', 'Acelerar en la bajada.'],
@@ -883,7 +1005,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'arpeggios-m7': {
         description: 'El m7 es un menor relajado, sin dramatismo: suena a soul, a funk y a jazz tranquilo. Sobre cada acorde menor de la escala tiene un matiz distinto.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Reconocer el color menor con séptima menor. Los tres arpegios usan el mismo recorrido de dedos: solo varía el traste.',
         steps: ['Al armonizar la escala mayor obtenemos tres acordes m7, en el segundo, tercer y sexto grado: Dm7, Em7 y Am7.', 'Su característica es la tercera menor y la séptima menor. Fórmula: 1 – b3 – 5 – b7.', 'Volvemos a resolver en la tercera, esta vez la tercera menor, para no dejar un silencio en el compás.', 'Una nota por subdivisión. Cambia de arpegio sin detenerte: es el mismo dibujo en otra posición.'],
         mistakes: ['Confundir el dibujo con el de Maj7 (la tercera y la séptima están un traste más abajo).', 'Perder el pulso al cambiar de posición entre arpegios.'],
@@ -896,7 +1017,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'arpeggios-dominant': {
         description: 'El dominante es la tensión que pide resolver, el motor del blues. Su arpegio te enseña a marcar ese momento en un solo, en dos formas distintas.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Escuchar la tensión del dominante: tercera mayor con séptima menor forman el tritono que pide resolver al primer grado.',
         steps: ['Al armonizar la escala mayor obtenemos un único acorde de séptima de dominante, en el quinto grado: G7.', 'Su característica es la tercera mayor junto a la séptima menor. Fórmula: 1 – 3 – 5 – b7.', 'La segunda parte es una variación de G7 para verlo de otra forma; para completar el compás se repiten las últimas notas.', 'Una nota por subdivisión. Escucha la tensión: es la que hace que la música avance.'],
         mistakes: ['Tocar la séptima mayor por costumbre de Maj7.', 'Perder el pulso en los saltos de cuerda de la variación.'],
@@ -909,7 +1029,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'arpeggios-half-diminished': {
         description: 'Oscuro, misterioso e inestable: el semidisminuido es el acorde del suspenso en el jazz. Su arpegio da a tus solos un color sombrío y elegante.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Dominar el color semidisminuido: tercera menor, quinta disminuida y séptima menor. La inversión amplía tu visión del mástil.',
         steps: ['Al armonizar la escala mayor obtenemos un único acorde m7b5, en el séptimo grado: Bm7b5.', 'Su característica es la tercera menor, la quinta disminuida y la séptima menor. Fórmula: 1 – b3 – b5 – b7.', 'La segunda parte es la primera inversión, Bm7b5/D: empieza desde la tercera.', 'Reto: encuentra tú las inversiones que faltan, desde la quinta o desde la séptima menor.'],
         mistakes: ['Tocar la quinta justa en lugar de la disminuida.', 'Tensar la mano en la posición baja del mástil.'],
@@ -922,7 +1041,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'arpeggios-harmonized': {
         description: 'Los siete arpegios de la escala de C, uno tras otro, subiendo sin parar. La escala se convierte en una progresión completa: un reto de resistencia y memoria.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Encadenar la escala armonizada completa, de la tónica a su octava. Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba: el cambio tiene que sonar continuo.',
         steps: ['El orden es el de la escala: I CMaj7, II Dm7, III Em7, IV FMaj7, V G7, VI Am7, VII Bm7b5 y cierra en la octava con CMaj7.', 'Todos usan el mismo recorrido: suben de la quinta a la primera cuerda, vuelven y resuelven en la tercera.', 'El paso de un arpegio al siguiente es corto y en la misma cuerda: prepara la mano mientras tocas las últimas notas.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por subdivisión, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
         mistakes: ['Detenerse o acentuar el primer tiempo de cada arpegio nuevo.', 'Perder la tercera o la séptima correcta al cambiar de tipo de acorde (mayor, menor, dominante, semidisminuido).', 'Tensar la mano en los trastes altos.'],
@@ -946,7 +1064,6 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     },
     'licks-phrasing-yngwie-01': {
         description: 'Puro Yngwie: elegante, dramático y rapidísimo, como un violinista de Bach con distorsión. Frases que dibujan los acordes y rematan en un arpegio barrido.',
-        notation: 'Metrónomo en negras · Púa alternada continua',
         goal: 'Que todas las notas suenen parejas y sin acentos raros mientras la mano cambia de cuerda y de posición.',
         steps: [
             'Sigue la tablatura: cada grupo de notas se repite dos veces antes de pasar al siguiente.',
@@ -960,12 +1077,11 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         artist: 'yngwie-malmsteen',
         speed: 1,
         // El arpegio final de Bm va en sweep: púa solo al cambiar de cuerda, hammer-on / pull-off en la primera.
-        legatoFrom: yngwieBars.flat().length - bmSweep.length,
-        pattern: yngwieBars.flat(),
+        legatoFrom: tabBars('licks-phrasing-yngwie-01', 'sextillos').flat().length - 11, // las 11 últimas: el sweep de Bm
+        pattern: tabBars('licks-phrasing-yngwie-01', 'sextillos').flat(),
     },
     'licks-phrasing-yngwie-02': {
         description: 'Una cascada neoclásica: la melodía cae por la primera cuerda y remata con un arpegio disminuido que baja como una escalera sin fin. Oscuro y veloz.',
-        notation: 'Em armónica · Semicorcheas: un grupo de cuatro notas por pulso · Púa alternada continua',
         goal: 'Desplazar la mano a lo largo de la cuerda sin perder el pulso: cada grupo empieza dos trastes más abajo que el anterior.',
         steps: [
             'Cada grupo es nota, salto arriba, paso abajo y la nota otra vez (19–22–20–19). El siguiente empieza en la nota de abajo de la escala.',
@@ -981,11 +1097,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         artist: 'yngwie-malmsteen',
         speed: 3,
-        pattern: yngwieDescent,
+        pattern: tabBars('licks-phrasing-yngwie-02', 'semicorcheas').flat(),
     },
     'licks-phrasing-becker-01': {
         description: 'Arpegios barridos que suenan como un arpa eléctrica y suben con una fluidez increíble. El estudio de Jason Becker es una gran puerta de entrada al sweep picking.',
-        notation: 'Semicorcheas: un compás por fila · Sweep: púa solo al cambiar de cuerda, ligado en la misma cuerda',
         goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición, con todas las notas parejas.',
         steps: [
             'Cada figura empieza en la primera cuerda con un pull-off (p) y barre la segunda y la tercera: la púa cae hacia abajo al bajar a las cuerdas graves y hacia arriba al volver.',
@@ -1001,11 +1116,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         picking: 'legato',
         artist: 'jason-becker',
         speed: 2,
-        ...withSections(beckerBars.map(pattern => ({ title: '', pattern }))),
+        ...withSections(tabBars('licks-phrasing-becker-01', 'semicorcheas').map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-gilbert-01': {
         description: 'Paul Gilbert convirtió el salto de cuerdas en su sello: frases amplias, como si tocaran dos guitarras. Este lick baja por el mástil con ese sonido abierto.',
-        notation: 'Semicorcheas: una figura por fila · String skipping: púa al cambiar de cuerda, ligado en la misma cuerda',
         goal: 'Saltar de la tercera a la primera cuerda sin que suene la segunda y sin perder el pulso, con los saltos tan parejos como las notas en la misma cuerda.',
         steps: [
             'Cada figura sube tres notas en la tercera cuerda, salta a la primera y vuelve: la púa pasa por encima de la segunda cuerda sin tocarla.',
@@ -1020,11 +1134,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         picking: 'legato',
         artist: 'paul-gilbert',
         speed: 3,
-        ...withSections(gilbertFigures.map(pattern => ({ title: '', pattern }))),
+        ...withSections(tabBars('licks-phrasing-gilbert-01', 'semicorcheas').map(pattern => ({ title: '', pattern }))),
     },
     'licks-phrasing-romeo-01': {
         description: 'Michael Romeo, de Symphony X, une la precisión del metal con lo sinfónico. Tapping y salto de cuerdas para un sonido épico, casi orquestal, en Em.',
-        notation: 'Em · Sextillos: dos figuras de tres notas por pulso · Tapping (T) + legato · String skipping',
         goal: 'Coordinar el tapping con el legato de la mano izquierda mientras saltas entre la tercera y la primera cuerda, con todas las notas al mismo volumen y sin que suene la segunda.',
         steps: [
             'Cada compás repite dos veces la misma figura: baja tres notas en la primera cuerda, salta a la tercera, baja hasta el 9 y vuelve a subir.',
@@ -1041,11 +1154,29 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         picking: 'tapping',
         artist: 'michael-romeo',
         speed: 1,
-        pattern: romeoBars.flat(),
+        pattern: tabBars('licks-phrasing-romeo-01', 'sextillos').flat(),
+    },
+    'licks-phrasing-romeo-02': {
+        description: 'En «Of Sins and Shadows», Michael Romeo encadena arpegios con tapping que suben de las cuerdas graves a las agudas: rápidos, oscuros y con un aire sinfónico.',
+        goal: 'Encadenar arpegios con tapping en varias cuerdas: el tap, los hammer-ons y los pull-offs al mismo volumen, y los cambios de cuerda sin cortes.',
+        steps: [
+            'Son tres frases. Las dos primeras cruzan de la quinta a la tercera y a la primera cuerda, con un giro en la sexta; la tercera se queda entre la tercera y la primera.',
+            'En cada cuerda, la mano izquierda pisa las notas graves y la derecha tapea la aguda (T). Después del tap, pull-off a las notas de la izquierda.',
+            'Al llegar a una cuerda nueva sin tap, la primera nota entra con un hammer-on desde la nada: pisa firme para que suene.',
+            'El 16–15–16 de la sexta cuerda es solo de la mano izquierda: pull-off y hammer-on, sin tap.',
+            'Practica cada frase por separado y luego encadénalas.',
+        ],
+        mistakes: ['Que el tap suene más fuerte que las notas ligadas.', 'Dejar sonar las cuerdas al aire: apágalas con la palma y los dedos libres.', 'Perder el pulso en los cambios de cuerda.'],
+        criterion: 'Toca las tres frases de corrido y con todas las notas parejas. Sube el BPM cuando los cambios de cuerda no se noten.',
+        figure: 'tresillos',
+        perRow: 12,
+        picking: 'tapping',
+        artist: 'michael-romeo',
+        speed: 5, // la velocidad original
+        ...withSections(tabBars('licks-phrasing-romeo-02', 'tresillos').map((pattern, index) => ({ title: `Frase ${index + 1}`, pattern }))),
     },
     'licks-phrasing-howe-01': {
         description: 'Greg Howe es pura fusión: rock con alma de jazz. En «Abrupt Terminal» los arpegios suben y bajan con tapping arriba, brillantes y llenos de energía.',
-        notation: 'A mayor · 3/4 · Semicorcheas · Púa alternada + tapping (T)',
         goal: 'Tocar los arpegios con púa alternada y meter el tapping sin cortar el pulso, con todas las notas al mismo volumen.',
         steps: [
             'Cada línea es un compás de 3/4: doce semicorcheas, cuatro por pulso.',
@@ -1062,11 +1193,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         artist: 'greg-howe',
         transcribedBy: 'Koko Rengifo',
         speed: 4,
-        pattern: howeBars.flat(),
+        pattern: tabBars('licks-phrasing-howe-01', 'semicorcheas').flat(),
     },
     'licks-phrasing-vinnie-01': {
         description: 'Vinnie Moore, de los grandes del shred de los 80: melódico y veloz. Este lick baja por Am, cambia de posición sin que se note y aterriza con fuerza en la tónica.',
-        notation: 'Am natural · Sextillos: dos cuerdas por pulso · Púa alternada continua',
         goal: 'Bajar la escala con púa alternada continua y cambiar de posición sin que se note un corte en el sonido.',
         steps: [
             'Cada cuerda tiene tres notas que bajan (13–12–10 en la primera). Cada dos cuerdas es un sextillo: un pulso.',
@@ -1079,11 +1209,10 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'sextillos',
         artist: 'vinnie-moore',
         speed: 2,
-        pattern: vinnieDescent,
+        pattern: tabBars('licks-phrasing-vinnie-01', 'sextillos').flat(),
     },
     'arpeggios-modal-chain': {
         description: 'Los siete arpegios modales encadenados: el brillo del jónico, la melancolía del dórico, lo oscuro del frigio, lo mágico del lidio… hasta volver a casa.',
-        notation: ARPEGGIO_TEXT,
         goal: 'Recorrer los siete modos en un solo pasaje y oír cómo cambia el color en cada grado: la trecena del dórico, la b9 del frigio y la #11 del lidio.',
         steps: ['El orden es el de la escala: I jónico, II dórico, III frigio, IV lidio, V mixolidio, VI eólico, VII locrio y cierra en la octava con CMaj7.', 'Cada arpegio termina en la quinta cuerda y el siguiente empieza en la misma cuerda, uno o dos trastes más arriba.', 'Solo tres arpegios cambian respecto a «Los arpegios de séptima encadenados»: Dm13 (dórico), Em7(b9) (frigio) y FMaj7(#11) (lidio). Jónico, mixolidio, eólico y locrio son los mismos arpegios de séptima, sin alteración.', 'Bm7b5 va una octava arriba (traste 14) para seguir subiendo sin saltos, y el CMaj7 final, en el traste 15.', 'Una nota por subdivisión, sin pausas entre acordes. Empieza lento: son 128 notas seguidas.'],
         mistakes: ['Detenerse o acentuar el primer tiempo de cada arpegio nuevo.', 'Tocar la séptima del arpegio de séptima en lugar de la tensión del modo.', 'Tensar la mano en los trastes altos.'],

@@ -14,7 +14,7 @@ const STEPS = [
     { icon: ListChecks, title: 'Un plan según tu nivel', text: 'Siete preguntas rápidas y te sugerimos qué practicar, de básico a experto.' },
     { icon: Gauge, title: 'Practica con metrónomo y tablatura', text: 'Cada ejercicio trae su patrón, digitación y tempos para subir la velocidad con control.' },
     { icon: TrendingUp, title: 'Mide tu progreso', text: 'Tu ritmo semanal, tus récords de BPM y tus sesiones quedan guardados.' },
-    { icon: Users, title: 'Entrena en comunidad', text: 'Mira cómo avanzan los demás y únete al grupo de WhatsApp.' },
+    { icon: Users, title: 'Entrena en comunidad', text: 'Es un gimnasio, no un curso: tú entrenas y, si quieres que te corrijan, la comunidad te ayuda en el grupo de WhatsApp.' },
 ];
 
 /** Landing de invitación (`/unirse`): el enlace que se comparte. Pública, también con sesión iniciada; al unirse (o si ya hay sesión, al pulsar el botón) sigue al onboarding. */
