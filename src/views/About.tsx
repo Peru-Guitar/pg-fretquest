@@ -1,8 +1,9 @@
 'use client';
 
-import { AtSign, Guitar, Mail, MessageCircle } from 'lucide-react';
+import { AtSign, Dumbbell, Guitar, Mail, MessageCircle } from 'lucide-react';
 import { Card, Caption, PageTitle } from '@/components/ui';
 import { VersionInfo } from '@/components/VersionInfo';
+import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
 // Datos de contacto de ejemplo: reemplazar por los reales.
 const contacts = [
@@ -22,7 +23,14 @@ export default function AboutPage() {
                 <p className="mt-4 text-base leading-relaxed text-fg-soft">Creemos que el progreso en la guitarra no viene de sesiones largas y esporádicas, sino de practicar un poco cada día, con atención y sin prisa por la velocidad.</p>
                 <VersionInfo className="mt-6 text-subtle"/>
             </Card>
-            <Card>
+            <Card className="lg:col-start-1">
+                <span className="mb-4 grid size-11 place-items-center rounded-lg bg-violet/15 text-accent-strong"><Dumbbell size={22}/></span>
+                <h2 className="mb-3">Un gimnasio, no una academia</h2>
+                <p className="text-base leading-relaxed text-fg-soft">Fret Quest no da clases. Es un gimnasio: aquí vienes a entrenar lo que ya sabes o estás aprendiendo, con ejercicios, metrónomo y constancia.</p>
+                <p className="mt-4 text-base leading-relaxed text-fg-soft">Si quieres que alguien te dé una mano o te corrija, únete al grupo de WhatsApp: ahí la comunidad te ayuda.</p>
+                <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#25D366] px-4 text-sm font-bold text-canvas transition hover:brightness-110"><MessageCircle size={18}/>Unirse al grupo de WhatsApp</a>
+            </Card>
+            <Card className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
                 <h2 className="mb-4 text-lg">Contacto</h2>
                 <ul className="flex flex-col gap-3">
                     {contacts.map(({ icon: Icon, label, value, href }) => <li key={label}>

@@ -32,15 +32,22 @@ export default function HomePage() {
  const opened = useLastExercise();
  const practicedId = account?.lastPractice?.lessonId;
  const practicedModule = practicedId ? courses.find(course => course.lessons.some(lesson => lesson.id === practicedId)) : undefined;
- const last = practicedModule ? { moduleId: practicedModule.id, exerciseId: practicedId } : plan ? { moduleId: plan.next.moduleId, exerciseId: plan.next.lesson.id } : opened;
  const isPractice = (lesson: { type: string }): lesson is PracticeLesson => lesson.type === 'practice';
+ // Recomendación del día: otra lección al azar de la misma subcategoría que tu última práctica (o del mismo módulo si
+ // la subcategoría no tiene más). Se elige tras hidratar para no chocar con el HTML estático.
+ const [seed] = useState(() => 1 + Math.floor(Math.random() * 2147483646));
+ const practiced = practicedModule?.lessons.filter(isPractice).find(lesson => lesson.id === practicedId);
+ const others = practicedModule?.lessons.filter(isPractice).filter(lesson => lesson.id !== practicedId) ?? [];
+ const sameCategory = others.filter(lesson => lesson.category === practiced?.category);
+ const pool = sameCategory.length ? sameCategory : others;
+ const recommended = pool.length ? pool[hydrated ? seed % pool.length : 0] : practiced;
+ const last = practicedModule && recommended ? { moduleId: practicedModule.id, exerciseId: recommended.id } : plan ? { moduleId: plan.next.moduleId, exerciseId: plan.next.lesson.id } : opened;
  const remembered = courses.find(course => course.id === last?.moduleId);
  const currentModule = remembered?.lessons.some(lesson => lesson.id === last?.exerciseId) ? remembered : courses.find(course => course.id === 'fingering')!;
  const basics = courses.find(course => course.id === 'fingering')!;
  const lastLesson = currentModule.lessons.filter(isPractice).find(lesson => lesson.id === last?.exerciseId) ?? currentModule.lessons.filter(isPractice)[0];
  // 3 módulos de tu nivel (sin nivel: base) al azar, con 4 ejercicios al azar cada uno. Se barajan tras hidratar para no chocar con el HTML estático.
  const level = hydrated ? account?.level ?? null : null;
- const [seed] = useState(() => 1 + Math.floor(Math.random() * 2147483646));
  const levelModules = useMemo(() => {
   const rng = { state: seed };
   const random = () => (rng.state = (rng.state * 48271) % 2147483647) / 2147483647;
@@ -92,7 +99,7 @@ export default function HomePage() {
       <span className="flex items-center gap-1.5"><Clock size={16} className="text-accent"/>Esta semana vas <b className="text-fg tabular-nums">{weekMinutes >= 60 ? `${Math.floor(weekMinutes / 60)} h ${weekMinutes % 60} min` : `${weekMinutes} min`}</b></span>
       {place >= 0 && <Link to={ROUTES.community} className="flex items-center gap-1.5 hover:text-fg"><Trophy size={16} className="text-accent"/>Puesto <b className="text-accent">{place + 1}.º</b></Link>}
      </p>}
-     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{account ? 'PRACTICA ESTO HOY' : practicedModule ? 'TU ÚLTIMO EJERCICIO' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
+     <p className="mb-2 text-3xs tracking-[0.2em] text-accent">{practicedModule ? 'HOY TE RECOMENDAMOS' : account ? 'PRACTICA ESTO HOY' : plan ? `TU PLAN · 1 DE ${plan.total}` : currentModule.title.toUpperCase()}</p>
      <h2 className="text-4xl leading-[1.08] font-black tracking-tighter xs:text-[2.375rem] lg:text-[2.5rem] xl:text-[2.3125rem] 2xl:text-[clamp(1.8125rem,3vw,2.9375rem)]">{lastLesson.title}</h2>
      <p className="mt-3.5 max-w-2xl text-sm leading-relaxed text-fg-soft md:text-base">{lastLesson.description}</p>
      <div className="mt-6 mb-4.5"/>

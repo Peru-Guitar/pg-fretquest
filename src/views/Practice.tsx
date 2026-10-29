@@ -3,8 +3,11 @@
 import { lessonTabHash } from '@/data/artists';
 import { exerciseUrl, lessonIdFromSlug, lessonUrl, moduleIdFromSlug, moduleUrl } from '@/lib/routes';
 import { ComingSoon } from '@/components/quest/ComingSoon';
+import { rhythmSummary } from '@/lib/rhythm';
+import { createLocalStore } from '@/lib/localStore';
 import { FIGURES, pickingOf, practiceStudies, speedName, speedPlan, type Speed, type Stroke } from '@/data/practiceStudies';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, type PracticeLesson } from '@/data/questMock';
@@ -29,6 +32,8 @@ import { PeopleThisWeek } from '@/components/quest/QuestUI';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
+/** Guitarra de guía al practicar: prendida por defecto y recordada en este navegador. */
+const practiceGuideStore = createLocalStore('fq-practice-guide', true);
 /** Marca de ataque sobre cada nota de la tablatura. */
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
 // Rondas por práctica; siempre empieza en 1.
@@ -144,13 +149,18 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [speed, setSpeed] = useState<Speed>(suggestedSpeed);
     const { figure, bpm } = speedPlan(baseFigure, speed);
     const perRow = study?.perRow ?? 16;
+    const rhythmLabel = rhythmSummary(pattern, FIGURES[figure].label.split(' · ')[0], FIGURES[figure].notesPerBeat);
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
     const bars: { notes: PatternNote[]; start: number; columns: number; part?: { number: number; title: string } }[] = [];
     let offset = 0;
     for (const [sectionIndex, section] of (study?.sections ?? [{ title: undefined, pattern }]).entries()) {
         for (let at = 0; at < section.pattern.length; at += perRow) {
-            const notes = section.pattern.slice(at, at + perRow);
+            // Una o dos notas sueltas al final no hacen fila propia: se suman a la anterior.
+            const rest = section.pattern.length - at - perRow;
+            const merge = rest > 0 && rest <= 2;
+            const notes = section.pattern.slice(at, merge ? section.pattern.length : at + perRow);
             bars.push({ notes, start: offset + at, columns: notes.length >= 6 ? notes.length : perRow, part: at === 0 && section.title ? { number: sectionIndex + 1, title: section.title } : undefined });
+            if (merge) break;
         }
         offset += section.pattern.length;
     }
@@ -185,28 +195,18 @@ function PracticeView({ mode }: { mode: Mode }) {
     useEffect(() => { roundsRef.current = rounds; }, [rounds]);
     const [count, setCount] = useState(-1);
     const [pulse, setPulse] = useState(0);
-    useEffect(() => {
-        if (phase !== 'countdown') return;
-        const overflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = overflow; };
-    }, [phase]);
+    useScrollLock(phase === 'countdown');
     const [step, setStep] = useState(-1);
     const [listening, setListening] = useState(false);
-    // Guitarra de guía al practicar: opcional y muy bajita (al escuchar suena normal).
-    // Guitarra de guía al practicar: siempre arranca apagada, no se recuerda.
-    const [practiceGuide, setPracticeGuide] = useState(false);
+    // Guitarra de guía al practicar: muy bajita (al escuchar suena normal). Prendida por defecto; se recuerda.
+    const practiceGuide = practiceGuideStore.use();
+    const setPracticeGuide = practiceGuideStore.set;
     const practiceGuideRef = useRef(practiceGuide);
     useEffect(() => { practiceGuideRef.current = practiceGuide; }, [practiceGuide]);
     const active = phase !== 'idle';
     // Practicar (no Reproducir) se muestra en su propia pantalla completa: la tablatura gana todo el espacio.
     const stage = active && !listening;
-    useEffect(() => {
-        if (!stage) return;
-        const overflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = overflow; };
-    }, [stage]);
+    useScrollLock(stage);
     const cancelRef = useRef<(() => void) | null>(null);
     const bpmRef = useRef(bpm);
     useEffect(() => {
@@ -254,9 +254,10 @@ function PracticeView({ mode }: { mode: Mode }) {
     const closeIntro = () => { setShowIntro(false); recorder.close(); };
     const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
     const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
-    // Una práctica nueva borra las tomas anteriores.
+    // Una práctica nueva borra las tomas anteriores y la nota elegida en la tablatura (practicar siempre es desde el inicio).
     const startPractice = () => {
         recorder.clear();
+        setFrom(null);
         setShowIntro(false);
         void start(false);
     };
@@ -386,7 +387,8 @@ function PracticeView({ mode }: { mode: Mode }) {
 
     // La misma tarjeta del ejercicio; al practicar va en una capa a pantalla completa (en <body>, por el `transform` de <main>).
     const inStage = (content: ReactNode) => stage
-        ? createPortal(<div role="region" aria-label="Modo práctica" className="fixed inset-0 z-40 overflow-y-auto bg-canvas p-3 md:p-6">{content}</div>, document.body)
+        // Mientras suena no hay scroll a mano: la tablatura baja sola siguiendo la nota (el scroll automático sí funciona).
+        ? createPortal(<div role="region" aria-label="Modo práctica" className={cn('fixed inset-0 z-40 bg-canvas p-3 md:p-6', phase === 'playing' ? 'overflow-hidden' : 'overflow-y-auto')}>{content}</div>, document.body)
         : content;
 
     return <>
@@ -416,7 +418,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 <div className="mt-5 flex flex-wrap gap-2 text-xs">{[
                     [Gauge, `Velocidad sugerida: ${speedName(suggestedSpeed)}`],
                     [Repeat, `${suggestedRounds} ${suggestedRounds === 1 ? 'ronda' : 'rondas'}`],
-                    [Music, FIGURES[figure].label.split(' · ')[0]],
+                    [Music, rhythmLabel],
                 ].map(([Icon, text]) => { const ChipIcon = Icon as typeof Gauge; return <span key={text as string} className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-white/3 px-3 py-1.5 text-fg-soft"><ChipIcon size={14} className="text-accent"/>{text as string}</span>; })}
                 </div>
             </section>
@@ -475,6 +477,15 @@ function PracticeView({ mode }: { mode: Mode }) {
                     {phase === 'idle'
                         ? <>
                             {startChoices}
+                            {/* Nota elegida en la tablatura: se quita con Esc, con «Quitar» o tocándola otra vez. En móvil baja a su propia línea. */}
+                            {from !== null && <p className="flex basis-full items-center gap-2 text-xs text-muted sm:ml-auto sm:basis-auto">
+                                <span>Comenzar desde la nota <b className="text-accent">{pattern[from].fret}</b></span>
+                                <span aria-hidden>·</span>
+                                <button type="button" onClick={() => setFrom(null)} className="inline-flex items-center gap-1.5 text-fg-soft hover:text-fg">
+                                    <kbd className="hidden rounded border border-line-strong px-1.5 font-mono text-3xs lg:inline">Esc</kbd>
+                                    <span className="lg:hidden">Quitar</span><span className="hidden lg:inline">para quitar</span>
+                                </button>
+                            </p>}
                         </>
                         : phase === 'loading'
                             ? <Button disabled className="min-w-40"><Loader2 size={17} className="animate-spin"/>Cargando sonido…</Button>
@@ -529,21 +540,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                     <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo: se borra al salir o al empezar otra práctica."/>
                     <Button variant="secondary" onClick={recorder.clear} className="shrink-0"><Trash2 size={15}/>Borrar</Button>
                 </div>}
-                {/* En móvil la nota elegida va en su propia fila, separada con una línea como el resto de la tarjeta. */}
-                <div className="flex flex-col border-t border-line text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-3">
-                    <p className="px-5 py-3 sm:p-0"><b className="text-fg-soft">{FIGURES[figure].label}</b> · {study?.notation ?? 'Púa alternada · Dedos 1–2–3–4 = trastes 5–6–7–8'}</p>
-                    {/* Nota elegida en la tablatura: se quita con Esc, con «Quitar» o tocándola otra vez. */}
-                    {from !== null && !active && <p className="flex items-center gap-2 border-t border-line px-5 py-3 sm:ml-auto sm:shrink-0 sm:border-0 sm:p-0">
-                        <span>Comenzar desde la nota <b className="text-accent">{pattern[from].fret}</b></span>
-                        <span aria-hidden>·</span>
-                        <button type="button" onClick={() => setFrom(null)} className="inline-flex items-center gap-1.5 text-fg-soft hover:text-fg">
-                            <kbd className="hidden rounded border border-line-strong px-1.5 font-mono text-3xs lg:inline">Esc</kbd>
-                            <span className="lg:hidden">Quitar</span><span className="hidden lg:inline">para quitar</span>
-                        </button>
-                    </p>}
-                </div>
                 <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
-                    <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${FIGURES[figure].label}.`}>
+                    <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${rhythmLabel}.`}>
                         {bars.map((bar, barIndex) => <div key={barIndex} ref={element => { rowRefs.current[barIndex] = element; }}>
                             {/* Encabezado de parte al estilo de una partitura: marca de ensayo en recuadro y título en cursiva. */}
                             {bar.part && <h3 className={cn('mb-4 flex items-center gap-3', barIndex > 0 && 'mt-4')}>
@@ -561,8 +559,10 @@ function PracticeView({ mode }: { mode: Mode }) {
                                     const noteIndex = bar.start + index;
                                     const playing = step === noteIndex;
                                     // Ligado con la nota anterior de la misma cuerda (en la misma fila): arco para hammer-on/pull-off, línea para slide.
+                                    // Con tapping el arco no cruza de un pulso al siguiente: cada grupo se lee solo y la p o h de arriba basta.
                                     const previous = bar.notes[index - 1];
-                                    const tie = note.string === row + 1 && previous?.string === note.string ? picks[noteIndex] : undefined;
+                                    const newBeat = study?.picking === 'tapping' && noteIndex % FIGURES[figure].notesPerBeat === 0;
+                                    const tie = note.string === row + 1 && previous?.string === note.string && !newBeat ? picks[noteIndex] : undefined;
                                     return <span key={index} className="relative grid justify-items-center">
                                         {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
@@ -583,7 +583,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         ? <span key={pulse} className="block size-28 animate-pop rounded-full bg-violet/60 shadow-[0_0_80px_#3198dc88] md:size-36"/>
                         : <span key={pulse} className={cn('block animate-pop font-black leading-none text-accent-strong', count > 0 ? 'text-[9rem] md:text-[12rem]' : 'text-6xl md:text-7xl')}>{count > 0 ? count : `Ronda ${round}`}</span>}
                     <div>
-                        <p className="text-2xl font-bold md:text-3xl">{count < 0 ? FIGURES[figure].perBeat : round === 1 ? 'Prepárate' : 'Siguiente ronda'}</p>
+                        <p className="text-2xl font-bold md:text-3xl">{round === 1 ? 'Prepárate' : 'Siguiente ronda'}</p>
                         <p className="mx-auto mt-3 max-w-md font-serif text-lg text-fg-soft italic md:text-xl">{MOTIVATION[(round - 1) % MOTIVATION.length]}</p>
                         <p className="mt-3 text-sm text-muted"><kbd className="rounded border border-line-strong px-1.5 font-mono text-xs">Esc</kbd> para cancelar</p>
                     </div>

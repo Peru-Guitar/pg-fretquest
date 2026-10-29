@@ -11,7 +11,6 @@ import { ReadStatus } from '@/components/quest/LessonStatus';
 import { useProgress } from '@/lib/progressDb';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { useSyncExternalStore, type ReactNode } from 'react';
-import { createLocalStore } from '@/lib/localStore';
 import { cn } from '@/lib/cn';
 import { ChevronDown } from 'lucide-react';
 import { levelLabel } from '@/lib/account';
@@ -19,9 +18,6 @@ import { courses, type Difficulty } from '@/data/questMock';
 import { Practicing } from '@/components/quest/QuestUI';
 import { useAccount } from '@/lib/account';
 import { useCommunity } from '@/lib/community';
-
-/** Última pestaña abierta en cada módulo (id del módulo → índice del grupo). */
-const moduleTabs = createLocalStore<Record<string, number>>('fq-module-tabs', {});
 
 /** Hash de la URL (sin «#»), para abrir y compartir una pestaña concreta. */
 const subscribeHash = (listener: () => void) => { window.addEventListener('hashchange', listener); return () => window.removeEventListener('hashchange', listener); };
@@ -45,15 +41,11 @@ export default function LessonPage() {
     const range = levels.length ? [...new Set([levels[0], levels.at(-1)!])].map(levelLabel).join(' – ') : '';
 
     const hasArtists = course.lessons.some(lesson => lesson.type === 'practice' && (lesson.artist || lesson.category));
-    // Con varios grupos, una pestaña por grupo; se recuerda la última abierta en cada módulo.
-    // El hash de la URL manda (enlace compartido); si no hay, la última pestaña abierta.
+    // Con varios grupos, una pestaña por grupo. El hash de la URL manda (enlace compartido); si no hay, la primera.
     const { groups, labels, slugs, tabbed } = moduleGroups(course.lessons);
     const hash = useHash();
-    const tabs = moduleTabs.use();
-    const fromHash = slugs.indexOf(hash);
-    const current = fromHash >= 0 ? fromHash : Math.min(tabs[course.id] ?? 0, groups.length - 1);
+    const current = Math.max(slugs.indexOf(hash), 0);
     const pickTab = (index: number) => {
-        moduleTabs.set({ ...moduleTabs.get(), [course.id]: index });
         history.replaceState(history.state, '', `#${slugs[index]}`);
         window.dispatchEvent(new HashChangeEvent('hashchange'));
     };

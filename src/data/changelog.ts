@@ -2,6 +2,21 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.8.0',
+        date: '2026-10-29',
+        notes: [
+            'Nuevo módulo Tapping: una cuerda, dos cuerdas, string skipping, escalas simétricas y diagonales.',
+            'Nueva lección de Michael Romeo: Of Sins And Shadows.',
+            'El módulo Estudios ahora se llama Artistas.',
+            'En el inicio, «Hoy te recomendamos» te sugiere otra lección parecida a tu última práctica.',
+            'La guía de la práctica empieza prendida y recuerda tu elección.',
+            'Al entrar a un módulo se abre siempre la primera pestaña.',
+            'Tablatura más limpia: sin textos repetidos y sin notas sueltas en una fila.',
+            'Durante la práctica la pantalla avanza sola y la página de atrás ya no se mueve.',
+            'Nueva sección sobre qué es Fret Quest y cómo pedir ayuda en el grupo de WhatsApp.',
+        ],
+    },
+    {
         version: '0.7.2',
         date: '2026-10-29',
         notes: [

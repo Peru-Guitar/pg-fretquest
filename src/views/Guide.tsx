@@ -2,8 +2,9 @@
 
 import { ROUTES } from '@/lib/routes';
 import { Link } from '@/lib/router';
-import { CalendarCheck, Compass, Gauge, Heart, ListChecks, Music, Play, Sparkles, Users } from 'lucide-react';
+import { CalendarCheck, Compass, Dumbbell, Gauge, Heart, ListChecks, MessageCircle, Music, Play, Sparkles, Users } from 'lucide-react';
 import { Card, PageTitle } from '@/components/ui';
+import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
 /** Guía «Cómo funciona»: cómo usar Fret Quest y cómo entrenar. Textos cortos, una tarjeta por tema. */
 const SECTIONS = [
@@ -74,6 +75,16 @@ const SECTIONS = [
 export default function GuidePage() {
     return <>
         <PageTitle eyebrow="CÓMO FUNCIONA" title="Tu guía de entrenamiento" text="Todo lo que necesitas para sacarle partido a Fret Quest, en pocas palabras."/>
+
+        {/* Lo primero: qué es (y qué no es) Fret Quest. */}
+        <Card className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue/20 text-accent-strong"><Dumbbell size={24}/></span>
+            <div className="flex-1">
+                <h2 className="text-xl">Esto es un gimnasio, no un curso</h2>
+                <p className="mt-1 text-sm leading-relaxed text-fg-soft">Fret Quest no da clases: tienes ejercicios para entrenar a tu ritmo. Si quieres que alguien te dé una mano o te corrija, únete al grupo de WhatsApp.</p>
+            </div>
+            <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-lg bg-[#25D366] px-4 text-sm font-bold text-canvas transition hover:brightness-110 md:self-center"><MessageCircle size={18}/>Unirse al grupo</a>
+        </Card>
 
         {/* Resumen en tres pasos. */}
         <ol className="mb-6 grid gap-3 md:grid-cols-3">{[

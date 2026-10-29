@@ -21,6 +21,7 @@ export const ROUTES = {
   about: "/acerca-de",
   changelog: "/novedades",
   analytics: "/analytics",
+  soundCheck: "/lab",
   userProfile: "/perfil",
 };
 
