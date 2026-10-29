@@ -45,7 +45,9 @@ function AccountForm({ account }: { account: Account }) {
                 <span className="grid size-16 shrink-0 place-items-center rounded-full border border-line-strong bg-raised text-fg text-2xl font-black">{(name || '?').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
                 <div><b className="text-lg">{name || 'Sin nombre'}</b><p className="text-sm text-muted">{[[form.city.trim(), form.country.trim()].filter(Boolean).join(', '), form.guitar.trim()].filter(Boolean).join(' · ') || 'Completa tu perfil'}</p></div>
             </div>
-            <Field label="Nombre visible"><input value={form.name} maxLength={40} required onChange={event => change({ name: event.target.value })}/></Field>
+            <Field label="Nombre visible"><input value={form.name} maxLength={40} required onChange={event => change({ name: event.target.value })}/>
+                <span className="text-xs text-muted">Es el nombre que verán los demás en la Comunidad y puede ser tu nombre artístico o como te conocen</span>
+            </Field>
             <div className="grid gap-x-4 sm:grid-cols-2">
                 <Field label="Ciudad" className="mt-0"><input value={form.city} maxLength={60} placeholder="Lima" onChange={event => change({ city: event.target.value })}/></Field>
                 <Field label="País" className="mt-0"><input value={form.country} maxLength={60} placeholder="Perú" onChange={event => change({ country: event.target.value })}/></Field>
