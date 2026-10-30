@@ -33,7 +33,7 @@ export default function SoundCheckPage() {
         setPlaying(id);
         setStep(-1);
         try { await prepare(); } catch { stop(); return; }
-        const plan = speedPlan(study.figure, study.speed ?? 2);
+        const plan = speedPlan(study.figure, study.speed ?? 2, study.originalBpm);
         cancelRef.current = scheduleRound(plan.bpm, study.pattern, { guide: true, countIn: false, notesPerBeat: FIGURES[plan.figure].notesPerBeat, onCount: () => {}, onStep: setStep, onEnd: stop });
     };
     useEffect(() => () => cancelRef.current?.(), []);
@@ -45,7 +45,7 @@ export default function SoundCheckPage() {
             <h2 className="mb-3 text-lg">{course.title}{!course.available && <span className="ml-2 text-sm font-normal text-muted">Sin publicar</span>}</h2>
             <div className="grid gap-3 md:grid-cols-3">{lessons.map(lesson => {
                 const study = practiceStudies[lesson.id];
-                const plan = speedPlan(study.figure, study.speed ?? 2);
+                const plan = speedPlan(study.figure, study.speed ?? 2, study.originalBpm);
                 const current = playing === lesson.id;
                 return <div key={lesson.id} className={cn('flex items-center gap-3 rounded-xl border bg-card p-3.5', current ? 'border-violet' : 'border-line')}>
                     <button type="button" onClick={() => current ? stop() : void play(lesson.id)} aria-label={current ? 'Detener' : `Escuchar ${lesson.title}`}

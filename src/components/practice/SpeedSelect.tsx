@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
-import { SPEEDS, speedPlan, type Figure, type Speed } from '@/data/practiceStudies';
+import { FIGURES, speedPlan, speedsOf, type Figure, type Speed } from '@/data/practiceStudies';
 import { cn } from '@/lib/cn';
 
 export type RichOption<T> = { value: T; badge: string; title: string; detail: string };
@@ -71,10 +71,11 @@ export function RichSelect<T extends number>({ label, options, value, onChange, 
 }
 
 /** Velocidad: cada nivel con su nombre y, debajo, cómo suena en esta lección (figura y BPM). `figure`: la figura base. */
-export function SpeedSelect({ value, onChange, figure, suggested, full }: { value: Speed; onChange: (speed: Speed) => void; figure: Figure; suggested: Speed; full?: boolean }) {
-    const options = SPEEDS.map(({ speed, name }): RichOption<Speed> => {
-        const plan = speedPlan(figure, speed);
-        return { value: speed, badge: String(speed), title: name, detail: `${plan.bpm} BPM` };
-    });
+export function SpeedSelect({ value, onChange, figure, originalBpm, suggested, full }: { value: Speed; onChange: (speed: Speed) => void; figure: Figure; originalBpm?: number; suggested: Speed; full?: boolean }) {
+    // Ordenados por notas por segundo: «Original» queda en su lugar, no siempre al final. El número es la posición.
+    const options = speedsOf(originalBpm)
+        .map(({ speed, name }) => ({ speed, name, plan: speedPlan(figure, speed, originalBpm) }))
+        .sort((a, b) => a.plan.bpm * FIGURES[a.plan.figure].notesPerBeat - b.plan.bpm * FIGURES[b.plan.figure].notesPerBeat)
+        .map(({ speed, name, plan }, index): RichOption<Speed> => ({ value: speed, badge: String(index + 1), title: name, detail: `${plan.bpm} BPM · ${plan.figure}` }));
     return <RichSelect label="Velocidad" options={options} value={value} onChange={onChange} suggested={suggested} full={full}/>;
 }

@@ -2,6 +2,17 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.8.1',
+        date: '2026-10-30',
+        notes: [
+            'Nuevas lecciones: «Serrana» de Jason Becker y el «Monster Lick» de Frank Gambale, con economy picking.',
+            'Nueva velocidad «Original» en las lecciones de artistas: el BPM de la grabación, ordenado entre los demás niveles.',
+            'El selector de velocidad muestra la figura de cada nivel (corcheas, semicorcheas…) junto al BPM.',
+            'Of Sins And Shadows ahora suena en semicorcheas, como en el disco.',
+            'Ajustes de dificultad en las lecciones de Becker y Gilbert.',
+        ],
+    },
+    {
         version: '0.8.0',
         date: '2026-10-29',
         notes: [

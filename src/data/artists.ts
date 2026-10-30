@@ -13,6 +13,7 @@ export const artists: Record<string, Artist> = {
   'paul-gilbert': { id: 'paul-gilbert', name: 'Paul Gilbert', note: 'Guitarrista estadounidense de Racer X y Mr. Big, referente de la púa alternada y del string skipping.' },
   'michael-romeo': { id: 'michael-romeo', name: 'Michael Romeo', note: 'Guitarrista estadounidense de Symphony X, un referente de los pasajes a gran velocidad y del manejo del tapping.' },
   'greg-howe': { id: 'greg-howe', name: 'Greg Howe', note: 'Guitarrista estadounidense de fusión y shred, referente del legato, el tapping y los arpegios a gran velocidad.' },
+  'frank-gambale': { id: 'frank-gambale', name: 'Frank Gambale', note: 'Guitarrista australiano de jazz fusión, creador y referente del economy picking (sweep picking aplicado a escalas).' },
   'vinnie-moore': { id: 'vinnie-moore', name: 'Vinnie Moore', note: 'Guitarrista estadounidense del shred neoclásico, conocido por su púa alternada precisa.' },
 };
 

@@ -1085,11 +1085,23 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
 });
 // La más reciente va primera.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
- id: 'licks-phrasing-romeo-02', title: 'Of Sins And Shadows: Tapping Solo',
+ id: 'licks-phrasing-romeo-02', title: 'Of Sins And Shadows: tapping solo',
  type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
-moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.splice(2, 0, {
+// La más reciente va primera.
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-gambale-01', title: 'Monster Lick: economy picking',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+// La más reciente va primera.
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-becker-02', title: 'Serrana: arpegios en sweep',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.splice(4, 0, {
  id: 'licks-phrasing-romeo-01', title: 'Tresillos en string skipping sobre Em',
  type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
@@ -1106,7 +1118,7 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
 });
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  id: 'licks-phrasing-becker-01', title: 'Arpegios en sweep con pull-off',
- type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
@@ -1116,7 +1128,7 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
 });
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.push({
  id: 'licks-phrasing-gilbert-01', title: 'Arpegios en string skipping',
- type: 'practice', difficulty: 'avanzado', minutes: 8, xp: 60,
+ type: 'practice', difficulty: 'intermedio', minutes: 8, xp: 60,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
 });
 // Escalas y patrones: los modos de C mayor, C menor armónica y C menor melódica, en el orden de sus grados (ver SCALE_MODES).
@@ -1142,6 +1154,8 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(MODAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(INTERVAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
+ 'licks-phrasing-gambale-01': '2026-10-30',
+ 'licks-phrasing-becker-02': '2026-10-30',
  'licks-phrasing-howe-01': '2026-10-26',
  'licks-phrasing-romeo-02': '2026-10-29',
  'licks-phrasing-romeo-01': '2026-10-25',

@@ -19,7 +19,7 @@ export const FIGURES: Record<Figure, { notesPerBeat: number; label: string; perB
  * semicorcheas a mitad de camino (de 2 a 10,7 notas por segundo, sin bajar nunca de 60 BPM para no perder el pulso).
  * Las demás conservan su figura y cada nivel solo cambia el BPM.
  */
-export type Speed = 1 | 2 | 3 | 4 | 5;
+export type Speed = 1 | 2 | 3 | 4 | 5 | 6;
 export const SPEEDS: { speed: Speed; name: string }[] = [
     { speed: 1, name: 'Base' },
     { speed: 2, name: 'Estable' },
@@ -27,6 +27,9 @@ export const SPEEDS: { speed: Speed; name: string }[] = [
     { speed: 4, name: 'Intenso' },
     { speed: 5, name: 'Extremo' },
 ];
+/** Nivel 6 opcional: solo en lecciones con `originalBpm` (la velocidad de la grabación, por encima de Extremo). */
+const ORIGINAL: { speed: Speed; name: string } = { speed: 6, name: 'Original' };
+export const speedsOf = (originalBpm?: number) => originalBpm ? [...SPEEDS, ORIGINAL] : SPEEDS;
 const LADDER: { figure: Figure; bpm: number }[] = [
     { figure: 'corcheas', bpm: 60 },
     { figure: 'corcheas', bpm: 90 },
@@ -35,10 +38,10 @@ const LADDER: { figure: Figure; bpm: number }[] = [
     { figure: 'semicorcheas', bpm: 160 },
 ];
 const FIXED_BPM = [60, 80, 100, 120, 160];
-export const speedName = (speed: Speed) => SPEEDS[speed - 1].name;
+export const speedName = (speed: Speed) => speed === 6 ? ORIGINAL.name : SPEEDS[speed - 1].name;
 /** Figura y BPM con que suena una lección (su figura base) a cierta velocidad. */
-export const speedPlan = (figure: Figure, speed: Speed): { figure: Figure; bpm: number } =>
-    figure === 'corcheas' ? LADDER[speed - 1] : { figure, bpm: FIXED_BPM[speed - 1] };
+export const speedPlan = (figure: Figure, speed: Speed, originalBpm?: number): { figure: Figure; bpm: number } =>
+    speed === 6 ? { figure, bpm: originalBpm ?? FIXED_BPM[4] } : figure === 'corcheas' ? LADDER[speed - 1] : { figure, bpm: FIXED_BPM[speed - 1] };
 /** Nivel más cercano a un intento guardado solo con BPM (antes de los niveles): compara notas por segundo. */
 export const speedFromBpm = (figure: Figure, bpm: number): Speed => {
     const rate = bpm * FIGURES[figure].notesPerBeat;
@@ -62,16 +65,20 @@ export type PracticeStudy = {
      * y liga en la misma cuerda: hammer-on al subir de traste, pull-off al bajar.
      * `tapping`: sin púa; las notas con `tap` van con la mano derecha (T) y el resto se liga
      * (pull-off al bajar, hammer-on al subir o al cambiar de cuerda).
+     * `economy`: toda nota con púa; empieza en V y alterna, salvo al pasar a la cuerda vecina en la dirección en que ya va
+     * la púa (⊓ hacia la aguda, V hacia la grave): ahí repite el golpe y barre.
      */
-    picking?: 'alternate' | 'legato' | 'tapping';
+    picking?: 'alternate' | 'legato' | 'tapping' | 'economy';
     /** Desde esta nota (índice del patrón) se usa la técnica de arpegio (`legato`), p. ej. un sweep al final de un lick. */
     legatoFrom?: number;
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
     artist?: string;
     /** Quién transcribió el patrón (se muestra junto al crédito del artista). */
     transcribedBy?: string;
-    /** Velocidad sugerida (1–5, ver `SPEEDS`); 2 por defecto. */
+    /** Velocidad sugerida (1–5, o 6 con `originalBpm`; ver `SPEEDS`); 2 por defecto. */
     speed?: Speed;
+    /** BPM de la grabación original, si supera Extremo: agrega el nivel 6 «Original». */
+    originalBpm?: number;
     pattern: PatternNote[];
     /** Partes con título (se numeran solas); cada una empieza en una fila nueva de la tablatura. Sin partes, el patrón se reparte de corrido. */
     sections?: { title: string; pattern: PatternNote[] }[];
@@ -1115,8 +1122,51 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         picking: 'legato',
         artist: 'jason-becker',
-        speed: 2,
+        speed: 4,
         ...withSections(tabBars('licks-phrasing-becker-01', 'semicorcheas').map(pattern => ({ title: '', pattern }))),
+    },
+    'licks-phrasing-becker-02': {
+        description: 'En «Serrana», Jason Becker recorre una progresión entera con arpegios barridos de cinco cuerdas: mayores, menores y disminuidos, siempre en sextillos y con un aire neoclásico.',
+        goal: 'Barrer arpegios de cinco cuerdas en sextillos, con el pull-off de la primera cuerda y el hammer-on de la quinta al mismo volumen que las notas con púa, sin perder el pulso al cambiar de acorde.',
+        steps: [
+            'Cada arpegio sube desde la quinta cuerda hasta la primera y vuelve a bajar: la púa barre hacia abajo al subir y hacia arriba al bajar.',
+            'En la primera cuerda, pull-off (p) desde la nota aguda; en la quinta, hammer-on (h) para dar la vuelta. Esas notas no se atacan con púa.',
+            'Son tres partes: arpegios mayores (G, A, D), menores (F#m, Bm, Em, Cm, G#m, Eb) y disminuidos, que cruzan las cuerdas con más ligados.',
+            'Practica cada acorde por separado y luego encadénalos de dos en dos, hasta tocar cada parte de corrido.',
+        ],
+        mistakes: ['Que las notas del barrido suenen juntas como un acorde: levanta cada dedo al pasar a la siguiente cuerda.', 'Atacar con púa las notas ligadas.', 'Frenar en los cambios de acorde.'],
+        criterion: 'Toca cada parte sin pausas y con todas las notas parejas. Sube el BPM cuando el barrido no suene a acorde.',
+        perRow: 12,
+        figure: 'sextillos',
+        picking: 'legato',
+        artist: 'jason-becker',
+        speed: 6,
+        originalBpm: 137,
+        ...withSections(tabBars('licks-phrasing-becker-02', 'sextillos').reduce<{ title: string; pattern: PatternNote[] }[]>((sections, bar, index) => {
+            // Compases 1–8 mayores, 9–16 menores (con las repeticiones escritas) y 17–23 disminuidos y el final.
+            const title = index < 8 ? 'Arpegios mayores' : index < 16 ? 'Arpegios menores' : 'Arpegios disminuidos';
+            if (sections.at(-1)?.title === title) sections.at(-1)!.pattern.push(...bar); else sections.push({ title, pattern: [...bar] });
+            return sections;
+        }, [])),
+    },
+    'licks-phrasing-gambale-01': {
+        description: 'El «Monster Lick» de Frank Gambale sube por el mástil en semicorcheas con economy picking: la púa sigue su dirección al pasar de cuerda en lugar de alternar siempre.',
+        goal: 'Dominar el economy picking: mantener la dirección de la púa al pasar a una cuerda adyacente, sin cambios de dirección que corten la fluidez, con las semicorcheas parejas y al mismo volumen.',
+        steps: [
+            'Empieza con un golpe hacia arriba (V) y respeta la dirección de cada golpe indicada en la tablatura.',
+            'Al cambiar a una cuerda adyacente en la misma dirección, barre: un solo movimiento de púa atraviesa las dos cuerdas.',
+            'En la misma cuerda, alterna hacia abajo y hacia arriba como en la púa alternada.',
+            'Practica cada compás por separado, despacio, y luego únelos de dos en dos mientras el lick sube por el mástil.',
+        ],
+        mistakes: ['Convertir el lick en púa alternada pura: pierdes el ahorro de movimiento del economy picking.', 'Que el barrido entre cuerdas suene como un acorde: cada nota debe sonar por separado.', 'Acelerar en los barridos y frenar en las notas alternadas.'],
+        criterion: 'Toca el lick completo sin pausas, con la dirección de púa indicada y todas las notas parejas. Sube el BPM sin perder precisión.',
+        figure: 'semicorcheas',
+        artist: 'frank-gambale',
+        speed: 6,
+        originalBpm: 160,
+        perRow: 16,
+        picking: 'economy',
+        pattern: tabBars('licks-phrasing-gambale-01', 'semicorcheas').flat(),
     },
     'licks-phrasing-gilbert-01': {
         description: 'Paul Gilbert convirtió el salto de cuerdas en su sello: frases amplias, como si tocaran dos guitarras. Este lick baja por el mástil con ese sonido abierto.',
@@ -1168,12 +1218,13 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         ],
         mistakes: ['Que el tap suene más fuerte que las notas ligadas.', 'Dejar sonar las cuerdas al aire: apágalas con la palma y los dedos libres.', 'Perder el pulso en los cambios de cuerda.'],
         criterion: 'Toca las tres frases de corrido y con todas las notas parejas. Sube el BPM cuando los cambios de cuerda no se noten.',
-        figure: 'tresillos',
-        perRow: 12,
+        figure: 'semicorcheas',
+        perRow: 16,
         picking: 'tapping',
         artist: 'michael-romeo',
-        speed: 5, // la velocidad original
-        ...withSections(tabBars('licks-phrasing-romeo-02', 'tresillos').map((pattern, index) => ({ title: `Frase ${index + 1}`, pattern }))),
+        speed: 6,
+        originalBpm: 182,
+        ...withSections(tabBars('licks-phrasing-romeo-02', 'semicorcheas').map((pattern, index) => ({ title: `Frase ${index + 1}`, pattern }))),
     },
     'licks-phrasing-howe-01': {
         description: 'Greg Howe es pura fusión: rock con alma de jazz. En «Abrupt Terminal» los arpegios suben y bajan con tapping arriba, brillantes y llenos de energía.',
@@ -1184,7 +1235,7 @@ export const practiceStudies: Record<string, PracticeStudy> = {
             'Las notas con T (trastes 21 y 22) van con tapping de la mano derecha; la nota siguiente en la misma cuerda sale con pull-off desde el tap.',
             'En los compases 11 y 12 los taps caen en la segunda cuerda: deja la mano izquierda fija en 12–15 y tapea el 22.',
             'Practica cada compás por separado y luego encadénalos.',
-            'La versión original va a 132 BPM: es la meta, no el punto de partida.',
+            'La versión original va a 133 BPM: es la velocidad sugerida.',
         ],
         mistakes: ['Que el tap suene más fuerte o más débil que las notas con púa.', 'Perder el lugar de la púa después del tap: retoma la alternancia sin reiniciar con ⊓.', 'Que suenen las cuerdas al aire en los saltos a la quinta y sexta cuerda.', 'Acelerar en los compases fáciles y frenar en los saltos de cuerda.'],
         criterion: 'Toca los trece compases sin pausas y con los taps a tiempo. Sube el BPM cuando el pull-off después de cada tap suene tan claro como las notas con púa.',
@@ -1192,7 +1243,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         figure: 'semicorcheas',
         artist: 'greg-howe',
         transcribedBy: 'Koko Rengifo',
-        speed: 4,
+        speed: 6,
+        originalBpm: 133,
         pattern: tabBars('licks-phrasing-howe-01', 'semicorcheas').flat(),
     },
     'licks-phrasing-vinnie-01': {
@@ -1249,6 +1301,15 @@ export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['pickin
         if (note.tap) return 'tap';
         return previous && previous.string === note.string && note.fret < previous.fret ? 'pull' : 'hammer';
     });
+    if (picking === 'economy') {
+        const strokes: Stroke[] = [];
+        pattern.forEach((note, index) => {
+            const previous = pattern[index - 1], last = strokes[index - 1];
+            const sweep = previous && (last === 'down' ? note.string === previous.string - 1 : note.string === previous.string + 1);
+            strokes.push(!previous ? 'up' : sweep ? last : last === 'down' ? 'up' : 'down');
+        });
+        return strokes;
+    }
     // Con púa alternada, una nota con `tap` va con la mano derecha (T) y la siguiente en la misma cuerda y más abajo sale con pull-off.
     if (picking === 'alternate' && legatoFrom === Infinity) return pattern.map((note, index) => {
         const previous = pattern[index - 1];
