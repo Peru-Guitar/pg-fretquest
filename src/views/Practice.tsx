@@ -35,7 +35,9 @@ const now = () => Date.now();
 /** Guitarra de guía al practicar: prendida por defecto y recordada en este navegador. */
 const practiceGuideStore = createLocalStore('fq-practice-guide', true);
 /** Marca de ataque sobre cada nota de la tablatura. */
-const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' } };
+const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' }, rest: { mark: '𝄽', title: 'Silencio' } };
+/** Medida del bend como se escribe en tablatura: ½ = medio tono, full = un tono. */
+const bendLabel = (semitones: number) => semitones === 1 ? '½' : semitones === 2 ? 'full' : semitones === 3 ? '1½' : `${semitones / 2}`;
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS: RichOption<number>[] = [
     { value: 1, badge: '1', title: '1 ronda', detail: 'Una pasada completa' },
@@ -570,6 +572,9 @@ function PracticeView({ mode }: { mode: Mode }) {
                                             ? <button type="button" disabled={active} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
                                                 className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : !active && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && 'cursor-pointer hover:text-fg', !active && from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
                                             : <span className="invisible z-10 px-1 text-base">{note.fret}</span>}
+                                        {/* Bend: flecha y medida arriba a la derecha (con release, flecha de vuelta). Vibrato: onda a la derecha. */}
+                                        {note.string === row + 1 && note.bend && <span title={`${note.prebend ? 'Pre-bend' : 'Bend'} ${bendLabel(note.bend)}${note.release ? ' y release' : ''}`} className="absolute -top-2.5 left-1/2 z-20 ml-2 font-sans text-2xs leading-none font-bold whitespace-nowrap text-accent-strong">{note.prebend ? 'PB ' : ''}{note.prebend ? '↘' : note.release ? '↗↘' : '↗'} {bendLabel(note.bend)}</span>}
+                                        {note.string === row + 1 && note.vibrato && <span title="Vibrato" className="absolute top-1/2 left-1/2 z-20 ml-3 -translate-y-1/2 text-sm leading-none text-accent-strong">〰</span>}
                                     </span>;
                                 })}
                             </div>)}

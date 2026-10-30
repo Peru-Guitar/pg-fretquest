@@ -2,6 +2,13 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.8.3',
+        date: '2026-10-30',
+        notes: [
+            'Las tablaturas ya pueden mostrar y hacer sonar bends, pre-bends, vibrato, ligados nota a nota y silencios.',
+        ],
+    },
+    {
         version: '0.8.2',
         date: '2026-10-30',
         notes: [

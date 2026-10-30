@@ -1292,10 +1292,22 @@ export const practiceStudies: Record<string, PracticeStudy> = {
 };
 
 /** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h), pull-off (p) o tapping (T). */
-export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide' | 'tap';
+export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide' | 'tap' | 'rest';
 
-/** Ataque de cada nota del patrón según la técnica del estudio. */
+/**
+ * Ataque de cada nota del patrón según la técnica del estudio. Lo marcado en la nota manda sobre la técnica:
+ * un silencio no lleva golpe y una nota con `legato` sale con hammer-on o pull-off desde la anterior.
+ */
 export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate', legatoFrom = Infinity): Stroke[] {
+    return techniqueOf(pattern, picking, legatoFrom).map((stroke, index): Stroke => {
+        const note = pattern[index];
+        if (note.rest) return 'rest';
+        if (note.legato) return note.fret > pattern[index - 1].fret ? 'hammer' : 'pull';
+        return stroke;
+    });
+}
+
+function techniqueOf(pattern: PatternNote[], picking: PracticeStudy['picking'], legatoFrom: number): Stroke[] {
     if (picking === 'tapping') return pattern.map((note, index) => {
         const previous = pattern[index - 1];
         if (note.tap) return 'tap';
