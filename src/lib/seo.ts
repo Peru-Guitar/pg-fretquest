@@ -12,7 +12,7 @@ const DEFAULT_IMAGE = { url: "/images/og-fretquest-v2.jpg", width: 1200, height:
 export function pageMetadata({ title, description = DEFAULT_DESCRIPTION, path, image, noindex = false }: {
   title?: string; description?: string; path: string; image?: string; noindex?: boolean;
 }): Metadata {
-  const fullTitle = title ? `${title} · ${SITE_NAME}` : `${SITE_NAME} · Más control. Menos esfuerzo.`;
+  const fullTitle = title ? `${title} · ${SITE_NAME}` : `${SITE_NAME} · Más práctica. Menos excusas.`;
   const images = [image ? { url: image, alt: title ?? SITE_NAME } : DEFAULT_IMAGE];
   return {
     title: fullTitle,
