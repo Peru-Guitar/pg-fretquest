@@ -147,7 +147,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     const suggestedSpeed = study?.speed ?? 2;
     // Velocidad: el nivel elegido decide la figura (en las lecciones en corcheas) y el BPM.
     const [speed, setSpeed] = useState<Speed>(suggestedSpeed);
-    const { figure, bpm } = speedPlan(baseFigure, speed);
+    const { figure, bpm } = speedPlan(baseFigure, speed, study?.originalBpm);
     const perRow = study?.perRow ?? 16;
     const rhythmLabel = rhythmSummary(pattern, FIGURES[figure].label.split(' · ')[0], FIGURES[figure].notesPerBeat);
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
@@ -381,7 +381,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
     const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
 
-    const tempoSelect = <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} suggested={suggestedSpeed}/>;
+    const tempoSelect = <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} originalBpm={study?.originalBpm} suggested={suggestedSpeed}/>;
 
     const roundsSelect = <RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/>;
 
@@ -507,7 +507,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                     {/* Velocidad y rondas: una por fila en móvil, en dos columnas desde sm. */}
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
                         <PracticeField label="Velocidad" icon={Gauge}>
-                            <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} suggested={suggestedSpeed} full/>
+                            <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} originalBpm={study?.originalBpm} suggested={suggestedSpeed} full/>
                         </PracticeField>
                         {session
                             ? <div className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Repeat size={13}/>Sesión</span><p className="text-sm text-fg-soft"><b>{session.minutes} min</b>: rondas hasta completar el tiempo</p></div>
