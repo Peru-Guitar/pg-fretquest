@@ -31,7 +31,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "Antes de tocar, entiende qué entrena cada ejercicio y cómo está planteado: objetivo, patrón, digitación y dirección de púa.",
         "points": [
           {
             "title": "Lee todas las indicaciones antes de tocar",
@@ -57,7 +57,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "La constancia y la atención rinden más que las horas sueltas. Organiza sesiones cortas, enfocadas y regulares.",
         "points": [
           {
             "title": "Establece un horario y mantén la constancia",
@@ -84,7 +84,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "Un sonido estable y honesto te deja escuchar lo que tienes que corregir. Fija una configuración y mantenla.",
         "points": [
           {
             "title": "Mantén una configuración estable",
@@ -110,7 +110,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "Lento, por partes y respetando la digitación y la púa. La velocidad llega cuando el patrón suena limpio y sin tensión.",
         "points": [
           {
             "title": "Empieza despacio",
@@ -141,7 +141,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "Los detalles que separan una ejecución limpia de una sucia: cuerdas apagadas, ataques parejos, manos sincronizadas y movimientos relajados.",
         "points": [
           {
             "title": "Notas claras y cuerdas en silencio",
@@ -176,7 +176,7 @@ const moduleFixtures: TechniqueModule[] = [
         "minutes": 3,
         "xp": 20,
         "type": "reading",
-        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        "summary": "Escúchate, elige una sola cosa que mejorar, repite y compara. Limpieza siempre antes que velocidad.",
         "points": [
           {
             "title": "Escúchate con atención",
