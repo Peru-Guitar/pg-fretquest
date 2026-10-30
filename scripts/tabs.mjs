@@ -9,19 +9,38 @@ const DIR = fileURLToPath(new URL('../src/data/tabs/', import.meta.url));
 const OUT = `${DIR}tabs.generated.ts`;
 const TICKS_PER_BEAT = 960;
 
-/** Un .alphatex → compases de notas: cuerda (1 = la más aguda), traste, duración en pulsos, tap y slide desde la nota anterior. */
+/**
+ * Un .alphatex → compases de notas: cuerda (1 = la más aguda), traste, duración en pulsos, tap, slide desde la nota anterior,
+ * hammer-on/pull-off desde la anterior (`legato`), bend (semitonos que sube, con `release` si vuelve y `prebend` si ya
+ * empieza estirada), vibrato y silencios
+ * (`rest`, cuerda 0).
+ */
 export function parseTab(text) {
     const score = alphaTab.importer.ScoreLoader.loadAlphaTex(text, new alphaTab.Settings());
     const staff = score.tracks[0].staves[0];
     const strings = staff.tuning.length;
     let slideIn = false;
-    return staff.bars.map(bar => bar.voices[0].beats.flatMap(beat => beat.notes.map(note => {
-        const parsed = { string: strings + 1 - note.string, fret: note.fret, beats: beat.playbackDuration / TICKS_PER_BEAT };
-        if (beat.tap) parsed.tap = true;
-        if (slideIn) parsed.slide = true;
-        slideIn = note.slideOutType !== 0;
-        return parsed;
-    })));
+    return staff.bars.map(bar => bar.voices[0].beats.flatMap(beat => {
+        const beats = beat.playbackDuration / TICKS_PER_BEAT;
+        if (beat.isRest) { slideIn = false; return [{ string: 0, fret: 0, beats, rest: true }]; }
+        return beat.notes.map(note => {
+            const parsed = { string: strings + 1 - note.string, fret: note.fret, beats };
+            if (beat.tap) parsed.tap = true;
+            if (slideIn) parsed.slide = true;
+            if (note.isHammerPullDestination) parsed.legato = true;
+            // Puntos del bend en cuartos de tono: el más alto es hasta dónde sube; si el último baja, hay release.
+            const points = note.bendPoints ?? [];
+            if (points.length) {
+                const top = Math.max(...points.map(point => point.value));
+                parsed.bend = top / 2;
+                if (points.at(-1).value < top) parsed.release = true;
+                if (points[0].value > 0) parsed.prebend = true;
+            }
+            if (note.vibrato) parsed.vibrato = true;
+            slideIn = note.slideOutType !== 0;
+            return parsed;
+        });
+    }));
 }
 
 export function generate() {

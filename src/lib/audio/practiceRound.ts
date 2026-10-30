@@ -1,4 +1,4 @@
-import { clickAt, getTone, playAt, silence } from "./guitar";
+import { clickAt, expressiveAt, getTone, playAt, silence } from "./guitar";
 
 /**
  * Programa una ronda sobre el transporte de Tone.js: cuenta de entrada de 8 clics con sonido
@@ -10,7 +10,18 @@ import { clickAt, getTone, playAt, silence } from "./guitar";
  * `slide`: se llega deslizando el dedo desde la nota anterior en la misma cuerda, sin púa.
  * `beats`: duración en pulsos cuando no es la figura del estudio (p. ej. 1 = negra para la nota final).
  */
-export type PatternNote = { string: number; fret: number; slide?: boolean; /** Nota con tapping (mano derecha). */ tap?: boolean; beats?: number };
+export type PatternNote = {
+  string: number; fret: number; slide?: boolean; /** Nota con tapping (mano derecha). */ tap?: boolean; beats?: number;
+  /** Se liga desde la nota anterior en la misma cuerda: hammer-on si sube, pull-off si baja (sin púa). */
+  legato?: boolean;
+  /** Bend: semitonos que sube la nota (1 = ½ tono, 2 = 1 tono). `release`: vuelve a la nota pisada antes de terminar. */
+  bend?: number; release?: boolean;
+  /** Pre-bend: la cuerda ya está estirada al atacar (suena `bend` semitonos arriba); con `release` baja a la nota pisada. */
+  prebend?: boolean;
+  vibrato?: boolean;
+  /** Silencio de `beats` pulsos (cuerda y traste 0). */
+  rest?: boolean;
+};
 
 type RoundOptions = {
   /** Toca la guitarra de guía (Práctica). En Progreso solo suena el metrónomo. */
@@ -75,7 +86,10 @@ export function scheduleRound(bpm: number, pattern: PatternNote[], options: Roun
   pattern.forEach((note, index) => {
     const length = lengths[index];
     transport.schedule((time: number) => {
-      if (options.guide) playAt(note.string, note.fret, length * step * 0.95, time, options.guideVelocity);
+      if (options.guide && !note.rest) {
+        if (note.bend || note.vibrato) expressiveAt(note.string, note.fret, length * step * 0.95, time, note, options.guideVelocity);
+        else playAt(note.string, note.fret, length * step * 0.95, time, options.guideVelocity);
+      }
       draw.schedule(ui(() => options.onStep(index)), time);
     }, start + at * step);
     at += length;

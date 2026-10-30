@@ -177,6 +177,49 @@ export function slide(string: number, fromFret: number, toFret: number, holdSec:
   src.onended = () => slides.delete(src);
 }
 
+/**
+ * Nota con bend y/o vibrato en un instante del reloj de audio: como el slide, suena la muestra más cercana y su velocidad
+ * sigue la afinación. El bend sube en ~0,15 s y se sostiene (el pre-bend ya empieza arriba); con `release` vuelve en el
+ * último tercio. El vibrato oscila ±¼ de semitono a 5,5 Hz y entra después del bend (o desde el inicio si no hay bend).
+ */
+export function expressiveAt(string: number, fret: number, durationSec: number, time: number, { bend = 0, release = false, prebend = false, vibrato = false }: { bend?: number; release?: boolean; prebend?: boolean; vibrato?: boolean }, velocity = 0.85): void {
+  if (!buffers?.loaded || !drive) return;
+  const open = OPEN_STRINGS[string - 1];
+  if (open === undefined) return;
+  const from = open + fret;
+  const midis = SAMPLES.map((n) => tone.Frequency(n).toMidi() as number);
+  const nearest = midis.reduce((a, b) => (Math.abs(b - from) < Math.abs(a - from) ? b : a));
+
+  const ac = audio();
+  const src = ac.createBufferSource();
+  src.buffer = buffers.get(SAMPLES[midis.indexOf(nearest)]).get();
+  const gain = ac.createGain();
+  src.connect(gain);
+  tone.connect(gain, drive);
+
+  const length = Math.max(0.15, durationSec);
+  const rise = Math.min(0.15, length * 0.3);
+  const back = release ? length * 0.65 : Infinity;
+  // Altura en semitonos sobre la nota pisada en el segundo `t` de la nota.
+  const pitch = (t: number) => {
+    const up = !bend ? 0 : t < rise && !prebend ? bend * (t / rise) : t < back ? bend : bend * Math.max(0, 1 - (t - back) / rise);
+    const wobble = vibrato && t > (bend ? rise : 0.05) ? 0.25 * Math.sin(2 * Math.PI * 5.5 * t) : 0;
+    return up + wobble;
+  };
+  const rate = (t: number) => Math.pow(2, (from + pitch(t) - nearest) / 12);
+  src.playbackRate.setValueAtTime(rate(0), time);
+  for (let t = 0.015; t < length; t += 0.015) src.playbackRate.linearRampToValueAtTime(rate(t), time + t);
+  // Mismo nivel que el sampler (-13 dB) y una caída corta al final, sin clic.
+  const level = 0.19 * (velocity / 0.85);
+  gain.gain.setValueAtTime(level, time);
+  gain.gain.setValueAtTime(level, time + length - 0.08);
+  gain.gain.linearRampToValueAtTime(0, time + length);
+  src.start(time);
+  src.stop(time + length);
+  slides.add(src);
+  src.onended = () => slides.delete(src);
+}
+
 /** Clic del metrónomo: `accent` = tick (tiempo), si no tac (contratiempo). */
 export function clickAt(time: number, accent: boolean): void {
   clicker?.triggerAttackRelease(accent ? 1800 : 1100, 0.03, time, accent ? 1 : 0.6);
