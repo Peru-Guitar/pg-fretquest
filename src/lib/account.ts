@@ -1,5 +1,5 @@
 import { courses, type Difficulty, type PracticeLesson } from "@/data/questMock";
-import { DIFFICULTY } from "@/lib/points";
+import { DIFFICULTY } from "@/lib/difficulty";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";

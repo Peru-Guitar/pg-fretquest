@@ -4,7 +4,7 @@ type LessonBase = { id: string; title: string; minutes: number; xp: number; /** 
 /** Lección de lectura: contenido para leer, sin tocar. */
 export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; points: { title: string; text: string }[]; note?: string };
 /** Lección de práctica: patrón para tocar en la sala de práctica. */
-/** Dificultad propia de cada ejercicio (factor de puntos). */
+/** Dificultad propia de cada ejercicio (su nombre en DIFFICULTY). */
 export type Difficulty = 'base' | 'intermedio' | 'avanzado' | 'experto';
 export type PracticeLesson = LessonBase & { type: 'practice'; difficulty: Difficulty; /** Artista autor del patrón (id de `data/artists`). */ artist?: string; /** Quién transcribió el patrón. */ transcribedBy?: string; /** Categoría del patrón dentro del módulo (p. ej. «Grupos de tres cuerdas»): agrupa las lecciones. */ category?: string; description: string; goal: string; tempo: { min: number; max: number }; rounds: number; record?: number };
 export type Lesson = ReadingLesson | PracticeLesson;
