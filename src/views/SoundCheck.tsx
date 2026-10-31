@@ -10,7 +10,7 @@ import { prepare } from '@/lib/audio/guitar';
 import { scheduleRound } from '@/lib/audio/practiceRound';
 import { Link } from '@/lib/router';
 import { practiceUrl } from '@/lib/routes';
-import { DIFFICULTY } from '@/lib/points';
+import { DIFFICULTY } from '@/lib/difficulty';
 import { cn } from '@/lib/cn';
 
 /**

@@ -1,5 +1,5 @@
 import type { Difficulty } from '@/data/questMock';
-import { DIFFICULTY } from '@/lib/points';
+import { DIFFICULTY } from '@/lib/difficulty';
 import { cn } from '@/lib/cn';
 
 const BARS: Record<Difficulty, number> = { base: 1, intermedio: 2, avanzado: 3, experto: 4 };
