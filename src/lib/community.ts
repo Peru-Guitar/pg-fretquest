@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { collectionGroup, getCountFromServer } from "firebase/firestore";
 import { courses, type Difficulty } from "@/data/questMock";
-import { db } from "@/lib/firebase";
-import { localDateKey, readCommunityDays, readCommunityReadings, weekStartKey, type DayDoc } from "@/lib/progressDb";
+import { readReport, type CommunityReport } from "@/lib/communityReport";
+import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
 
 /**
- * Comunidad con datos reales: se leen los días de esta semana de todos (consulta de grupo sobre `days`)
- * y se agrupan aquí. El resultado se guarda 1 hora en el navegador, por semana; al registrar una práctica
- * propia se invalida para que te veas al momento.
+ * Comunidad: se lee el reporte de la semana (`communityReports/{lunes}`, 1 lectura; ver `lib/communityReport`).
+ * `computeCommunity` es el cálculo con el que se genera ese reporte a partir de los días de todos.
+ * Se guarda solo en memoria (ver `isFresh`).
  */
-export type RankEntry = { uid: string; name: string; total: number; seconds: number; active: number };
+/** `totalSeconds`: tiempo de toda la vida, para su nivel y rango (solo en el reporte nuevo). */
+export type RankEntry = { uid: string; name: string; total: number; seconds: number; active: number; totalSeconds?: number };
 export type Community = {
   at: number;
   people: number;
@@ -25,15 +25,27 @@ export type Community = {
   byModule: Record<string, { uid: string; name: string }[]>;
   /** Lo mismo por lección (prácticas y lecturas marcadas como leídas). */
   byLesson: Record<string, { uid: string; name: string }[]>;
-  /** Días de práctica registrados desde el lanzamiento. */
+  /** Días de práctica registrados desde el lanzamiento (el reporte nuevo ya no lo trae: 0). */
   sinceLaunch: number;
+  /** Activos de la semana por rango (solo en el reporte nuevo). */
+  byRank?: { rank: string; people: number }[];
 };
 
-const CACHE_MS = 60 * 60 * 1000;
-const cacheKey = () => `fretquest.community.v5.${weekStartKey()}`;
+/**
+ * El reporte ya es la caché: aquí solo se guarda en MEMORIA la última lectura, para que los componentes de una misma
+ * carga (Comunidad, el pulso, las tarjetas de lecciones) compartan 1 lectura. Al recargar la página se vuelve a leer.
+ * Con la app abierta mucho rato, se relee al navegar solo si el reporte ya pudo cambiar (más de 1 h desde que se generó)
+ * y la última lectura tiene más de 30 min.
+ */
+const REPORT_REFRESH_MS = 60 * 60 * 1000;
+const RECHECK_MS = 30 * 60 * 1000;
+let memory: { community: Community; fetchedAt: number; week: string } | null = null;
+const isFresh = (now = Date.now()) => memory !== null && memory.week === weekStartKey()
+  && (now < memory.community.at + REPORT_REFRESH_MS || now < memory.fetchedAt + RECHECK_MS);
 
+/** Descarta la copia en memoria (este navegador acaba de regenerar el reporte). */
 export function invalidateCommunity() {
-  try { localStorage.removeItem(cacheKey()); } catch { /* sin almacenamiento */ }
+  memory = null;
 }
 
 /** Módulo de cada lección, para saber qué módulos practicó cada quien. */
@@ -114,19 +126,29 @@ function loadCommunity(): Promise<Community> {
   return pending;
 }
 
+/** El reporte de la semana con la forma que usa la web. Sin reporte (nadie practicó todavía), todo en cero. */
+function fromReport(report: CommunityReport | null): Community {
+  const empty: Record<Difficulty, number> = { base: 0, intermedio: 0, avanzado: 0, experto: 0 };
+  return {
+    at: report ? report.generatedAt.toMillis() : Date.now(),
+    people: report?.people ?? 0,
+    attempts: report?.practices ?? 0,
+    today: report?.today ?? 0,
+    byDay: report?.byDay ?? Array(7).fill(0),
+    byLevel: report?.byPlan ?? empty,
+    topLessons: (report?.topLessons ?? []).map(item => ({ lessonId: item.lessonId, attempts: item.practices })),
+    ranking: (report?.ranking ?? []).map(row => ({ uid: row.uid, name: row.name, total: row.practices, seconds: row.seconds, active: row.days, totalSeconds: row.totalSeconds })),
+    byModule: report?.byModule ?? {},
+    byLesson: report?.byLesson ?? {},
+    sinceLaunch: 0,
+    byRank: report?.byRank ?? [],
+  };
+}
+
 async function readCommunity(): Promise<Community> {
-  try {
-    const cached = JSON.parse(localStorage.getItem(cacheKey()) ?? "null") as Community | null;
-    if (cached && Date.now() - cached.at < CACHE_MS) return cached;
-  } catch { /* caché ilegible: se recalcula */ }
-  const [days, count, readings] = await Promise.all([
-    readCommunityDays(weekStartKey()),
-    getCountFromServer(collectionGroup(db, "days")).then(snapshot => snapshot.data().count).catch(() => 0),
-    // Si las lecturas fallan (p. ej. reglas sin desplegar), Comunidad se muestra igual sin ellas.
-    readCommunityReadings(weekStartKey()).catch(error => { console.warn('Comunidad: no se pudieron leer las lecturas.', error); return []; }),
-  ]);
-  const community = computeCommunity(days, count, readings);
-  try { localStorage.setItem(cacheKey(), JSON.stringify(community)); } catch { /* sin almacenamiento */ }
+  if (isFresh()) return memory!.community;
+  const community = fromReport(await readReport());
+  memory = { community, fetchedAt: Date.now(), week: weekStartKey() };
   return community;
 }
 

@@ -4,8 +4,10 @@ import { ROUTES } from '@/lib/routes';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation, useHydrated } from '@/lib/router';
-import { BarChart3, BookOpen, CircleHelp, House, Info, ListChecks, Menu, MessageCircle, UserPlus, Users, Wrench, X } from 'lucide-react';
+import { BookOpen, CircleHelp, House, Info, ListChecks, Menu, MessageCircle, SlidersHorizontal, Trophy, UserPlus, Users, Wrench, X } from 'lucide-react';
 import { isAdmin, useAccount } from '@/lib/account';
+import { WeekStrip } from '@/components/WeekStrip';
+import { RankBadge } from '@/components/RankBadge';
 import { AccountBar } from '@/components/AccountBar';
 import { SupportButton } from '@/components/SupportButton';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
@@ -31,7 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     // «Mi plan» solo con sesión; mientras no se sabe (antes de hidratar) se reserva su hueco, invisible.
     const hydrated = useHydrated();
     const links = !hydrated || account ? primaryLinks : primaryLinks.filter(link => link.to !== ROUTES.plan);
-    // Analytics: solo con rol admin, y solo en el menú lateral.
+    // Backstage: solo con rol admin, y solo en el menú lateral.
     const admin = isAdmin(account);
     useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
     // Landing de invitación: sin sidebar ni barra de cuenta, para que el único camino sea unirse. El logo y «Ir al inicio» vuelven a la app.
@@ -69,12 +71,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={cn(linkBase, sidebarLink.base)}>
                     <UserPlus size={19}/><span>Invitar a un amigo</span>
                 </a>
-                {admin && navigation([{ to: ROUTES.analytics, label: 'Analytics', icon: BarChart3 }], sidebarLink)}
+                {admin && navigation([{ to: ROUTES.backstage, label: 'Backstage', icon: SlidersHorizontal }], sidebarLink)}
             </nav>
             {/* Abajo: información, ayuda y comunidad externa, en un estilo más discreto que la navegación (en móvil, desde el menú). */}
             <nav aria-label="Información" className="mt-auto mb-3 border-t border-line-soft pt-3">
                 <p className="mx-3.5 mb-1.5 text-3xs tracking-[0.2em] text-subtle">INFORMACIÓN</p>
-                {navigation([{ to: ROUTES.about, label: 'Acerca de', icon: Info }, { to: ROUTES.guide, label: 'Cómo funciona', icon: CircleHelp }], infoLink)}
+                {navigation([{ to: ROUTES.about, label: 'Acerca de', icon: Info }, { to: ROUTES.guide, label: 'Cómo funciona', icon: CircleHelp }, { to: ROUTES.ranks, label: 'Rangos', icon: Trophy }], infoLink)}
                 <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className={cn(linkBase, infoLink.base)}>
                     <MessageCircle size={19} className="text-[#25D366]"/><span>Unirse al Grupo</span>
                 </a>
@@ -89,12 +91,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="min-w-0 md:ml-50 xl:ml-56">
             {/* Sticky solo en móvil: ahí el botón del menú es la única navegación. */}
-            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas px-4.5 md:static md:justify-end md:px-6 xl:px-9.5">
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas px-4.5 md:static md:px-6 xl:px-9.5">
                 <div className="flex items-center gap-4 md:hidden">
                     <button aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X/> : <Menu/>}</button>
                     <Link to="/" className="text-lg font-black tracking-tight">Fret Quest</Link>
                 </div>
-                <AccountBar/>
+                {/* Izquierda, tu semana (días); a la derecha, tu rango (horas) junto a tu cuenta. El nivel de guitarrista va en el menú, como tu plan. */}
+                <WeekStrip className="hidden md:flex"/>
+                <div className="flex items-center gap-3">
+                    <RankBadge className="hidden md:flex"/>
+                    <AccountBar/>
+                </div>
             </header>
             <main id="main-content" key={pathname} className="mx-auto max-w-365 min-w-0 animate-rise px-4.5 pt-6.5 pb-11 md:px-6 md:py-7.5 xl:px-9.5 xl:pt-9 xl:pb-11">
                 {children}

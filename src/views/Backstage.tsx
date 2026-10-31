@@ -1,23 +1,28 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Activity, CalendarCheck, ChevronRight, Clock, Gauge, Loader2, Repeat, Search, Target, Users } from 'lucide-react';
+import { Activity, CalendarCheck, ChevronRight, Clock, Gauge, Loader2, RefreshCw, Repeat, Search, Target, Users } from 'lucide-react';
 import { Button, Card, PageTitle, SectionTitle, Stat, Tabs } from '@/components/ui';
 import { Tip } from '@/components/ui/Tip';
 import { Link, useHydrated, useNavigate, useSearchParams } from '@/lib/router';
 import { isAdmin, levelLabel, useAccount } from '@/lib/account';
-import { readAnalytics, readMembers, type AnalyticsData, type Member, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
+import { readAnalytics, readMembers, syncAllTotalSeconds, type AnalyticsData, type Member, type ModuleRow, type Participant, type Ranked, type Tempo } from '@/lib/analytics';
 import { initials, toneOf } from '@/lib/avatar';
 import { weekStartKey } from '@/lib/progressDb';
 import { speedName } from '@/data/practiceStudies';
 import { ROUTES, userProfileUrl } from '@/lib/routes';
 import { cn } from '@/lib/cn';
+import { levelFromSeconds } from '@/lib/ranks';
+import { RankGlyph } from '@/components/RankIcon';
+import { TIER_COLOR } from '@/components/quest/rankStyle';
+import { RankDistribution } from '@/components/quest/RankDistribution';
+import { generateReport, readReport, type CommunityReport } from '@/lib/communityReport';
 
 /**
- * Analytics: solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
- * Tres pestañas (`?tab=`): Resumen (la semana en cifras, cuándo y cuánto se practica), Lecciones (cada módulo con sus
- * lecciones: tiempo, velocidad real frente a la sugerida y quiénes la practicaron) y Usuarios (todos los registrados y quiénes
- * practicaron). Cada cara lleva al perfil del usuario.
+ * Backstage (antes Analytics): solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
+ * Cuatro pestañas (`?tab=`): Resumen (la semana en cifras, cuándo y cuánto se practica), Lecciones (cada módulo con sus
+ * lecciones: tiempo, velocidad real frente a la sugerida y quiénes la practicaron), Usuarios (todos los registrados y quiénes
+ * practicaron) y Sincronización (tareas de mantenimiento, como recalcular las horas). Cada cara lleva al perfil del usuario.
  */
 export const time = (seconds: number) => seconds < 60 ? `${Math.round(seconds)} s` : seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`;
 /** Módulo y lecciones comparten columnas para que las cifras queden alineadas. */
@@ -25,7 +30,7 @@ const COLUMNS = 'grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0
 /** Avatares visibles por lección; el resto se resume en «+N». */
 const FACES = 5;
 const share = (part: number, total: number) => total > 0 ? Math.round(part / total * 100) : 0;
-const TABS = [{ value: 'resumen', label: 'Resumen' }, { value: 'lecciones', label: 'Lecciones' }, { value: 'usuarios', label: 'Usuarios' }] as const;
+const TABS = [{ value: 'resumen', label: 'Resumen' }, { value: 'lecciones', label: 'Lecciones' }, { value: 'usuarios', label: 'Usuarios' }, { value: 'sincronizacion', label: 'Sincronización' }] as const;
 type Tab = typeof TABS[number]['value'];
 /** Filas por página en la lista de usuarios. */
 const PAGE = 50;
@@ -162,7 +167,21 @@ function LevelCard({ data }: { data: AnalyticsData }) {
     </Card>;
 }
 
+/** Quienes practicaron esta semana, por rango (según su tiempo total). */
+function RankCard({ data }: { data: AnalyticsData }) {
+    return <Card>
+        <SectionTitle title="Por rango" className="mb-1"/>
+        <p className="text-xs text-muted">Quienes practicaron esta semana, según su tiempo total en la app.</p>
+        <RankDistribution byRank={data.byRank}/>
+    </Card>;
+}
+
 /** Todos los que practicaron esta semana, por tiempo. Cada fila abre su perfil. */
+function RankLine({ totalSeconds }: { totalSeconds: number }) {
+    const { level, rank } = levelFromSeconds(totalSeconds);
+    return <span className={cn('flex items-center gap-1 text-2xs font-bold', TIER_COLOR[rank.tier])}><RankGlyph rank={rank} size={18}/>Nv. {level} · {rank.name}</span>;
+}
+
 function PeopleCard({ data }: { data: AnalyticsData }) {
     return <Card>
         <SectionTitle title="Quiénes practicaron" className="mb-1"/>
@@ -172,6 +191,7 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
                 <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>
                 <span className="min-w-0 flex-1">
                     <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{person.name}</b>
+                    <RankLine totalSeconds={person.totalSeconds}/>
                     <span className="text-2xs text-muted">{person.level ? levelLabel(person.level) : 'Sin nivel'} · {person.days} {person.days === 1 ? 'día' : 'días'} · {person.completed} con meta</span>
                 </span>
                 <b className="shrink-0 text-sm tabular-nums text-fg">{time(person.seconds)}</b>
@@ -182,6 +202,55 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
 }
 
 /** Todos los registrados, por última práctica. Se cargan al abrir la pestaña; buscar y paginar no cuesta lecturas. */
+/** Recalcula las horas totales (nivel y rango) de todos desde sus días. */
+function SyncTotals() {
+    const [status, setStatus] = useState<'idle' | 'busy' | 'error' | { users: number; updated: number }>('idle');
+    const sync = () => {
+        setStatus('busy');
+        syncAllTotalSeconds().then(setStatus).catch(() => setStatus('error'));
+    };
+    return <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <SectionTitle title="Horas para los rangos" className="mb-1"/>
+            <p className="text-xs text-muted">{status === 'error' ? 'No se pudo sincronizar. ¿Están desplegadas las reglas?'
+                : typeof status === 'object' ? `Listo: ${status.updated} de ${status.users} usuarios actualizados.`
+                : 'Recalcula el total practicado de cada usuario sumando sus días. Se puede repetir sin problema.'}</p>
+        </div>
+        <Button variant="secondary" onClick={sync} disabled={status === 'busy'}>{status === 'busy' ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}Sincronizar horas</Button>
+    </Card>;
+}
+
+/** Reporte de Comunidad de la semana: cuándo se generó, quién lo disparó y un botón para regenerarlo al momento. */
+function SyncReport() {
+    const account = useAccount();
+    const [report, setReport] = useState<CommunityReport | null | undefined>(undefined);
+    const [status, setStatus] = useState<'idle' | 'busy' | 'error' | 'done'>('idle');
+    useEffect(() => {
+        let alive = true;
+        readReport().then(value => alive && setReport(value)).catch(() => alive && setReport(null));
+        return () => { alive = false; };
+    }, []);
+    const regenerate = () => {
+        if (!account) return;
+        setStatus('busy');
+        generateReport({ uid: account.uid, name: account.name }, 'admin')
+            .then(() => readReport()).then(value => { setReport(value); setStatus('done'); })
+            .catch(() => setStatus('error'));
+    };
+    const when = report && report.generatedAt.toDate().toLocaleString('es-PE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <SectionTitle title="Reporte de Comunidad" className="mb-1"/>
+            <p className="text-xs text-muted">{status === 'error' ? 'No se pudo regenerar. ¿Están desplegadas las reglas?'
+                : report === undefined ? 'Cargando…'
+                : report ? <>Semana del {report.week} · generado el {when} por <b className="text-fg-soft">{report.updatedBy.name}</b> ({report.updatedBy.source === 'admin' ? 'a mano' : 'al practicar'}) · {report.people} activos.</>
+                : 'Esta semana todavía no hay reporte: se crea cuando alguien termina una lección.'}</p>
+            <p className="mt-1 text-2xs text-subtle">Se regenera solo, como mucho una vez por hora, cuando alguien termina una lección.</p>
+        </div>
+        <Button variant="secondary" onClick={regenerate} disabled={status === 'busy'}>{status === 'busy' ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}Regenerar reporte</Button>
+    </Card>;
+}
+
 function MembersCard() {
     const [state, setState] = useState<{ members: Member[] | null; error: boolean }>({ members: null, error: false });
     const [search, setSearch] = useState('');
@@ -217,6 +286,7 @@ function MembersCard() {
                         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(member.uid))}>{initials(member.name)}</span>
                         <span className="min-w-0">
                             <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{member.name}</b>
+                            <RankLine totalSeconds={member.totalSeconds}/>
                             <span className="block truncate text-2xs text-muted">{member.level ? levelLabel(member.level) : 'Sin nivel'}<span className="md:hidden">{member.lastPractice ? ` · ${shortDate(member.lastPractice)}` : ''}</span></span>
                         </span>
                         <span className="hidden truncate text-xs text-muted md:block">{[member.city, member.country].filter(Boolean).join(', ') || '—'}</span>
@@ -232,7 +302,7 @@ function MembersCard() {
     </Card>;
 }
 
-export default function AnalyticsPage() {
+export default function BackstagePage() {
     const hydrated = useHydrated();
     const account = useAccount();
     const admin = isAdmin(account);
@@ -252,13 +322,17 @@ export default function AnalyticsPage() {
     if (!admin) return <Card><p className="text-sm text-muted">Esta página no existe.</p></Card>;
     const { data, error } = state;
     return <>
-        <PageTitle eyebrow="ADMIN" title="Analytics" text={`Usuarios y lo más practicado esta semana (desde el lunes ${weekStartKey()}).`}/>
-        <Tabs items={[...TABS]} value={tab} onChange={value => navigate(value === 'resumen' ? ROUTES.analytics : `${ROUTES.analytics}?tab=${value}`)} label="Secciones de Analytics" className="mb-5"/>
+        <PageTitle eyebrow="ADMIN" title="Backstage" text={`Usuarios y lo más practicado esta semana (desde el lunes ${weekStartKey()}).`}/>
+        <Tabs items={[...TABS]} value={tab} onChange={value => navigate(value === 'resumen' ? ROUTES.backstage : `${ROUTES.backstage}?tab=${value}`)} label="Secciones de Backstage" className="mb-5"/>
         {tab === 'usuarios' && <div className="grid grid-cols-1 gap-5">
             <MembersCard/>
             {data && data.people.length > 0 && <PeopleCard data={data}/>}
         </div>}
-        {tab !== 'usuarios' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid grid-cols-1 gap-5">
+        {tab === 'sincronizacion' && <div className="grid grid-cols-1 gap-5">
+            <SyncReport/>
+            <SyncTotals/>
+        </div>}
+        {tab !== 'usuarios' && tab !== 'sincronizacion' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid grid-cols-1 gap-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
@@ -271,7 +345,10 @@ export default function AnalyticsPage() {
                     <Buckets title="Sesión típica" caption={<>Minutos por persona en un día. Promedio: <b className="text-fg-soft">{data.sessions.avg} min</b>.</>} rows={data.sessions.buckets} unit={['día', 'días']}/>
                     <Buckets title="Constancia" caption={<><CalendarCheck size={12} className="mr-1 inline text-accent"/>Cuántos días practicó cada persona esta semana.</>} rows={data.consistency} unit={['persona', 'personas']}/>
                 </div>
-                <LevelCard data={data}/>
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <LevelCard data={data}/>
+                    <RankCard data={data}/>
+                </div>
             </> : <Card><p className="text-sm text-muted">Nadie ha practicado esta semana.</p></Card>}
         </div> : <div className="grid grid-cols-1 gap-5">
             {data.modules.length === 0

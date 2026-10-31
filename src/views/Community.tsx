@@ -2,14 +2,19 @@
 
 import { ROUTES, practiceUrl, userProfileUrl } from '@/lib/routes';
 import { Link, useHydrated } from '@/lib/router';
-import { Activity, Crown, Flame, Guitar, Loader2, LogIn, Users } from 'lucide-react';
+import { Activity, CalendarRange, Crown, Flame, Guitar, Loader2, LogIn, Users } from 'lucide-react';
 import { Card, Caption, PageTitle, SectionTitle } from '@/components/ui';
 import { courses, type PracticeLesson } from '@/data/questMock';
 import { LEVELS, levelLabel, useAccount } from '@/lib/account';
 import { useCommunity } from '@/lib/community';
 import { timeAgo } from '@/lib/timeAgo';
+import { weekStartKey } from '@/lib/progressDb';
 import { cn } from '@/lib/cn';
 import { initials, toneOf } from '@/lib/avatar';
+import { levelFromSeconds } from '@/lib/ranks';
+import { RankGlyph } from '@/components/RankIcon';
+import { TIER_COLOR } from '@/components/quest/rankStyle';
+import { RankDistribution } from '@/components/quest/RankDistribution';
 
 /**
  * Comunidad: el progreso de todos esta semana, con datos reales (ver `lib/community`).
@@ -24,7 +29,14 @@ const TOP = 12;
 
 const PODIUM = ['h-24 border-t-2 border-gold bg-white/5 text-gold', 'h-16 border-t-2 border-line-strong bg-white/5 text-fg-soft', 'h-12 border-t-2 border-accent/60 bg-white/5 text-accent'];
 
-type RankEntry = { uid: string; name: string; tone: string; you: boolean; seconds: number; active: number };
+type RankEntry = { uid: string; name: string; tone: string; you: boolean; seconds: number; active: number; totalSeconds?: number };
+
+/** Nivel y rango de alguien del ranking (si el reporte trae su total). */
+function RankTag({ totalSeconds, className }: { totalSeconds?: number; className?: string }) {
+    if (totalSeconds === undefined) return null;
+    const { level, rank } = levelFromSeconds(totalSeconds);
+    return <span className={cn('inline-flex max-w-full items-center gap-1 truncate text-2xs font-bold', TIER_COLOR[rank.tier], className)}><RankGlyph rank={rank} size={18}/>Nv. {level} · {rank.name}</span>;
+}
 
 /** Tiempo de la semana: «2 h 15 min», «45 min». */
 const hoursLabel = (seconds: number) => {
@@ -37,11 +49,38 @@ const hoursLabel = (seconds: number) => {
 // «ROBERTO» → «Roberto»: hay nombres guardados en mayúsculas.
 const titleCase = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
+/** «26 oct» */
+const shortDay = (date: Date) => date.toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '');
+
+/**
+ * La semana del reporte, en una franja a todo el ancho bajo el título: fechas, cuánto lleva (un tramo por día)
+ * cuándo se reinicia y cuándo se actualizó. En móvil los bloques bajan uno debajo de otro.
+ */
+function WeekBar({ updatedAt }: { updatedAt: number }) {
+    const [y, m, d] = weekStartKey().split('-').map(Number);
+    const today = (new Date().getDay() + 6) % 7;
+    const left = 7 - today;
+    return <div className="mb-6 flex flex-col gap-3 rounded-xl border border-blue/30 bg-blue/12 px-5 py-3.5 text-fg lg:flex-row lg:items-center lg:gap-6">
+        <div className="shrink-0">
+            <p className="flex items-center gap-1.5 text-3xs font-black tracking-[0.18em] text-accent"><CalendarRange size={13}/>SEMANA ACTUAL</p>
+            <p className="text-lg font-black text-fg">{shortDay(new Date(y, m - 1, d))} – {shortDay(new Date(y, m - 1, d + 6))}</p>
+        </div>
+        <div className="flex min-w-0 flex-1 gap-1" aria-hidden>{DAYS.map((day, index) => <span key={day} title={day} className={cn('h-1.5 flex-1 rounded-full', index < today ? 'bg-blue/60' : index === today ? 'bg-accent' : 'bg-white/12')}/>)}</div>
+        <div className="shrink-0 text-xs text-fg-soft lg:text-right">
+            <p>Se reinicia <b className="text-accent">{left === 1 ? 'mañana' : `en ${left} días`}</b></p>
+            <p className="text-muted">Última actualización {timeAgo(updatedAt)}</p>
+        </div>
+    </div>;
+}
+
 function RankRow({ row, place }: { row: RankEntry; place: number }) {
     return <li className="min-w-0"><Link to={userProfileUrl(row.uid)} className={cn('group flex items-center gap-3 rounded-lg border px-3 py-3 sm:px-3.5 transition-colors', row.you ? 'border-blue/50 bg-blue/10 hover:bg-blue/15' : 'border-line bg-white/2 hover:border-line-strong hover:bg-white/5')}>
         <span className="w-5 shrink-0 font-mono text-sm text-muted sm:w-7">{place}</span>
         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', row.tone)}>{initials(row.name)}</span>
-        <span className={cn('min-w-0 flex-1 truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
+        <span className="min-w-0 flex-1">
+            <span className={cn('block truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
+            <RankTag totalSeconds={row.totalSeconds} className="flex"/>
+        </span>
         <span className="shrink-0 text-right text-2xs leading-tight text-muted"><b className="block font-mono text-sm text-fg sm:text-base">{hoursLabel(row.seconds)}</b>{row.active} días</span>
     </Link></li>;
 }
@@ -76,7 +115,8 @@ export default function CommunityPage() {
     ];
 
     return <>
-        <PageTitle eyebrow="COMUNIDAD" title="No practicas solo." text="Así se está moviendo la comunidad de Fret Quest. Sin rankings: cada práctica suma."/>
+        <PageTitle eyebrow="COMUNIDAD" title="No practicas solo." text="Así se está moviendo la comunidad de Fret Quest esta semana. Cada práctica suma."/>
+        <WeekBar updatedAt={data.at}/>
 
         <div className="mb-6 grid gap-4 sm:grid-cols-3">{stats.map(({ icon: Icon, value, label }) => <Card key={label} className="flex items-center gap-4">
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue/12 text-accent-strong"><Icon size={22}/></span>
@@ -88,7 +128,7 @@ export default function CommunityPage() {
 
         <Card className="mb-6">
             <SectionTitle title="Ranking de la semana" className="mb-1"/>
-            <Caption>Por tiempo practicado en la semana, sin importar el nivel; en empate, por días distintos. Se reinicia cada lunes · actualizado {timeAgo(data.at)}.</Caption>
+            <Caption>Por tiempo practicado de lunes a domingo, sin importar el nivel; en empate, por días distintos.</Caption>
 
             {/* Podio: 2º · 1º · 3º */}
             <ol className="mt-8 grid grid-cols-3 items-end gap-2 sm:gap-3 md:gap-5">{[1, 0, 2].map(place => {
@@ -99,6 +139,7 @@ export default function CommunityPage() {
                     <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-16 text-lg ring-gold/60 sm:size-20 sm:text-xl' : 'size-13 text-base ring-line-strong sm:size-16 sm:text-lg')}>{initials(row.name)}</span>
                     {/* En mobile solo el primer nombre: el completo no entra en un tercio de pantalla. */}
                     <b className={cn('mt-2.5 max-w-full truncate text-sm group-hover:underline sm:text-base', row.you ? 'text-accent' : 'text-fg')}><span className="sm:hidden">{titleCase(row.name.split(' ')[0])}</span><span className="hidden sm:inline">{row.name}</span>{row.you && ' (tú)'}</b>
+                    <RankTag totalSeconds={row.totalSeconds} className="mt-0.5 justify-center"/>
                     <span className="text-xs text-muted"><b className="block font-mono text-fg-soft sm:inline">{hoursLabel(row.seconds)}</b><span className="hidden sm:inline"> · </span>{row.active} días</span>
                     <span className={cn('mt-3 grid w-full place-items-center rounded-t-xl font-mono text-2xl font-black', PODIUM[place])}>{place + 1}</span>
                 </Link></li>;
@@ -133,7 +174,11 @@ export default function CommunityPage() {
                 </div>
             </Card>
 
-            <Card>
+            {data.byRank ? <Card>
+                <SectionTitle title="Rangos de la comunidad" className="mb-1"/>
+                <Caption>Quién entrena esta semana, por rango</Caption>
+                <RankDistribution byRank={data.byRank}/>
+            </Card> : <Card>
                 <SectionTitle title="Niveles de la comunidad" className="mb-1"/>
                 <Caption>Quién entrena esta semana, por nivel</Caption>
                 <ul className="mt-5 flex flex-col gap-4">{LEVELS.map(level => <li key={level} className="text-sm">
@@ -143,7 +188,7 @@ export default function CommunityPage() {
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/8"><span className="block h-full rounded-full bg-blue" style={{ width: `${WEEK.byLevel[level]}%` }}/></div>
                 </li>)}</ul>
-            </Card>
+            </Card> }
         </div>
 
         <Card className="mt-6">
@@ -162,6 +207,6 @@ export default function CommunityPage() {
             })}</ol>
         </Card>
 
-        <p className="mt-6 text-center text-sm text-muted"><b className="font-mono text-fg">{WEEK.sinceLaunch.toLocaleString('es')}</b> días de práctica registrados desde el lanzamiento.</p>
+        {WEEK.sinceLaunch > 0 && <p className="mt-6 text-center text-sm text-muted"><b className="font-mono text-fg">{WEEK.sinceLaunch.toLocaleString('es')}</b> días de práctica registrados desde el lanzamiento.</p>}
     </>;
 }

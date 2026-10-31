@@ -3,15 +3,17 @@ import { arrayUnion, collection, deleteDoc, collectionGroup, doc, getDocs, incre
 import type { Difficulty } from "@/data/questMock";
 import { practiceStudies, speedFromBpm, type Speed } from "@/data/practiceStudies";
 import { db } from "@/lib/firebase";
-import { invalidateCommunity } from "@/lib/community";
+import { refreshReportIfDue } from "@/lib/communityReport";
+import { invalidateProfile } from "@/lib/profile";
 
 /**
  * Modelo de progreso en Firestore. Se registra al terminar una práctica con sesión iniciada (al salir el resumen).
  *
+ *   users/{uid}.totalSeconds          Segundos practicados en total: nivel y rango de compromiso.
  *   users/{uid}/days/{fecha}          Registro del día: tiempo total, si se completó la sesión y los intentos por lección.
  *   users/{uid}/lessons/{lessonId}    Resumen por lección de PRÁCTICA para Mi plan: días, intentos y última vez.
  *   users/{uid}/readings/{lessonId}   Lecciones de LECTURA marcadas como leídas: `readAt`.
- *   rankings/{semana}                 Ranking precalculado (solo lo escribe una Cloud Function, más adelante).
+ *   communityReports/{lunes}          Reporte de Comunidad de la semana (ver lib/communityReport).
  *
  * Los documentos guardan solo `lessonId`, nunca el módulo: la lección puede cambiar de módulo sin migrar nada.
  * Las horas van en UTC (Timestamp); la web las muestra en la hora del navegador.
@@ -70,12 +72,20 @@ export async function recordAttempt(params: {
     lessons: { [params.lessonId]: { attempts: increment(1), seconds: increment(seconds), sessions: arrayUnion(attempt) } },
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  // Total acumulado de toda la vida: de aquí salen el nivel y el rango (ver lib/ranks).
+  batch.set(doc(db, "users", params.uid), { totalSeconds: increment(seconds) }, { merge: true });
   batch.set(doc(db, "users", params.uid, "lessons", params.lessonId), {
     days: increment(params.firstToday ? 1 : 0),
     attempts: increment(1),
     lastAt: attempt.endedAt,
   }, { merge: true });
   await batch.commit();
+}
+
+/** Suma de los segundos de todos los días del usuario: el total para quien practicó antes de que existiera `totalSeconds`. */
+export async function sumAllDaySeconds(uid: string) {
+  const snapshot = await getDocs(collection(db, "users", uid, "days"));
+  return snapshot.docs.reduce((total, item) => total + ((item.data() as DayDoc).seconds ?? 0), 0);
 }
 
 /** Días del usuario desde `from` (YYYY-MM-DD): progreso de hoy y de la semana. */
@@ -167,8 +177,9 @@ export async function recordFinishedPractice(params: { name: string; level: Diff
     sessionSeconds: params.sessionMinutes * 60, daySecondsBefore, completedBefore: today?.completed ?? false,
     firstToday: !today?.lessons?.[params.lessonId],
   });
-  // Tu práctica tiene que verse ya en Comunidad: se descarta su caché.
-  invalidateCommunity();
+  // Tu perfil se vuelve a leer la próxima vez que lo abras. Y si toca (más de 1 h), se regenera el reporte de Comunidad en segundo plano (y entonces se descarta su caché).
+  invalidateProfile(uid);
+  void refreshReportIfDue({ uid, name: params.name });
   return { beforeSeconds: daySecondsBefore, addedSeconds: seconds };
 }
 

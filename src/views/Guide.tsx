@@ -2,7 +2,7 @@
 
 import { ROUTES } from '@/lib/routes';
 import { Link } from '@/lib/router';
-import { CalendarCheck, Compass, Dumbbell, Gauge, Heart, ListChecks, MessageCircle, Music, Play, Sparkles, Users } from 'lucide-react';
+import { CalendarCheck, Compass, Dumbbell, Gauge, Heart, ListChecks, MessageCircle, Music, Play, Sparkles, Trophy, Users } from 'lucide-react';
 import { Card, PageTitle } from '@/components/ui';
 import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
@@ -50,6 +50,13 @@ const SECTIONS = [
             'Ves cuántos guitarristas entrenan esta semana y el ranking de los que más horas practican.',
             'El ranking es semanal: se reinicia cada lunes, así que siempre puedes llegar arriba.',
             'Solo cuentan las prácticas completadas con tu cuenta.',
+        ],
+    },
+    {
+        icon: Trophy, title: 'Rangos', to: ROUTES.ranks, link: 'Ver los rangos',
+        points: [
+            'Subes de rango con las horas que practicas en Fret Quest: de Primer acorde a Fret Legend.',
+            'Es una forma sana de medir tu dedicación y medirte con los demás; no refleja tu nivel real, pero con dedicación siempre hay mejora.',
         ],
     },
     {

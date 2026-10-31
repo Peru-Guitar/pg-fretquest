@@ -39,7 +39,7 @@ function suggestLevel(answers: number[]): Difficulty {
     return LEVELS[Math.min(3, combined % 1 === 0.5 ? self : Math.round(combined))];
 }
 
-/** Maqueta del alta: login simulado → autoevaluación → nivel sugerido (se puede cambiar). */
+/** Alta: entrar con Google → autoevaluación → nivel sugerido (se puede cambiar). */
 export default function LoginPage() {
     const account = useAccount();
     const hydrated = useHydrated();

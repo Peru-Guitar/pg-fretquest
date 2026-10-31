@@ -6,8 +6,7 @@ import { attemptSpeed, localDateKey, weekStartKey, type DayDoc } from "@/lib/pro
 import { practiceStudies, type Speed } from "@/data/practiceStudies";
 
 /**
- * Perfil de un usuario: TODOS sus días (los lee cualquiera con sesión, como el ranking). El admin lee además
- * `users/{uid}` (ciudad, guitarra, meta), que es privado: 2 consultas.
+ * Perfil de un usuario: TODOS sus días y `users/{uid}` (ciudad, guitarra, meta), que lee cualquiera con sesión: 2 consultas.
  * Se guarda ya calculado y en JSON plano (sin Timestamps) 1 hora en el navegador, por usuario;
  * «Actualizar» lo vuelve a leer.
  */
@@ -29,13 +28,18 @@ export type UserProfile = {
 };
 
 const CACHE_MS = 60 * 60 * 1000;
-const cacheKey = (uid: string, admin: boolean) => `fretquest.profile.v2.${admin ? 'admin' : 'public'}.${uid}`;
+const cacheKey = (uid: string) => `fretquest.profile.v3.${uid}`;
+
+/** Descarta el perfil guardado de un usuario (al terminar tu práctica, el tuyo: así lo ves al día). */
+export function invalidateProfile(uid: string) {
+  try { localStorage.removeItem(cacheKey(uid)); } catch { /* sin almacenamiento */ }
+}
 const lessonsById = new Map(courses.flatMap(course => course.lessons.map(lesson => [lesson.id, { lesson, course }] as const)));
 
 const addDays = (key: string, days: number) => { const [y, m, d] = key.split("-").map(Number); return localDateKey(new Date(y, m - 1, d + days)); };
 
-async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
-  const [user, snapshot] = await Promise.all([admin ? getDoc(doc(db, "users", uid)) : null, getDocs(collection(db, "users", uid, "days"))]);
+async function fetchProfile(uid: string): Promise<UserProfile> {
+  const [user, snapshot] = await Promise.all([getDoc(doc(db, "users", uid)), getDocs(collection(db, "users", uid, "days"))]);
   const info = (user?.data() ?? {}) as Partial<UserProfile>;
   const days = snapshot.docs.map(item => item.data() as DayDoc).sort((a, b) => a.date.localeCompare(b.date));
   const monday = weekStartKey();
@@ -81,29 +85,29 @@ async function fetchProfile(uid: string, admin: boolean): Promise<UserProfile> {
   };
 }
 
-function cached(uid: string, admin: boolean) {
+function cached(uid: string) {
   try {
-    const profile = JSON.parse(localStorage.getItem(cacheKey(uid, admin)) ?? "null") as UserProfile | null;
+    const profile = JSON.parse(localStorage.getItem(cacheKey(uid)) ?? "null") as UserProfile | null;
     return profile && Date.now() - profile.at < CACHE_MS ? profile : null;
   } catch { return null; }
 }
 
 /** Perfil del usuario (null mientras carga). `refresh` ignora la caché y vuelve a leer (mientras tanto, queda lo anterior). */
-export function useUserProfile(uid: string | null, admin: boolean) {
+export function useUserProfile(uid: string | null) {
   const [version, setVersion] = useState(0);
   const [fetched, setFetched] = useState<{ key: string; uid: string; data: UserProfile | null; error: boolean } | null>(null);
   const key = `${uid}:${version}`;
   // Solo la primera carga usa la caché; «Actualizar» sube `version` y fuerza la lectura.
-  const hit = useMemo(() => uid && version === 0 ? cached(uid, admin) : null, [uid, version, admin]);
+  const hit = useMemo(() => uid && version === 0 ? cached(uid) : null, [uid, version]);
   useEffect(() => {
     if (!uid || hit) return;
     let alive = true;
-    fetchProfile(uid, admin).then(data => {
-      try { localStorage.setItem(cacheKey(uid, admin), JSON.stringify(data)); } catch { /* sin almacenamiento */ }
+    fetchProfile(uid).then(data => {
+      try { localStorage.setItem(cacheKey(uid), JSON.stringify(data)); } catch { /* sin almacenamiento */ }
       if (alive) setFetched({ key, uid, data, error: false });
     }).catch(() => alive && setFetched({ key, uid, data: null, error: true }));
     return () => { alive = false; };
-  }, [uid, key, hit, admin]);
+  }, [uid, key, hit]);
   const mine = fetched?.uid === uid ? fetched : null;
   const fresh = mine?.key === key ? mine : null;
   return {

@@ -3,9 +3,8 @@ import { DIFFICULTY } from "@/lib/difficulty";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { saveName, watchProgress } from "@/lib/progressDb";
+import { saveName, sumAllDaySeconds, watchProgress } from "@/lib/progressDb";
 import { createLocalStore } from "@/lib/localStore";
-import { addDays, weekStart } from "@/lib/domain/report";
 
 /**
  * Cuenta: login con Google (Firebase Auth) y datos en Firestore (`users/{uid}`): nombre, ciudad, país, guitarra,
@@ -21,7 +20,7 @@ export type Account = {
   country?: string;
   guitar?: string;
   level: Difficulty | null;
-  /** Rol dado desde la consola (`users/{uid}.role`): 'admin' ve Analytics. */
+  /** Rol dado desde la consola (`users/{uid}.role`): 'admin' ve Backstage. */
   role?: string;
   /** Ya se leyó `users/{uid}` de Firestore en esta sesión: hasta entonces no se sabe si tiene nivel y ritmo. */
   synced?: boolean;
@@ -29,13 +28,10 @@ export type Account = {
   weeklyGoal?: number;
   /** Duración de la sesión del plan: 15, 30 o 45 min. Un día cuenta para el ritmo si completas una sesión. */
   sessionMinutes?: number;
+  /** Segundos practicados en total (`users/{uid}.totalSeconds`): nivel y rango de compromiso. */
+  totalSeconds?: number;
   /** Solo la lección: su módulo se busca en el temario, así una lección puede cambiar de módulo sin romper nada. */
   lastPractice: { lessonId: string; date: string } | null;
-  /**
-   * Prácticas registradas: como mucho UNA por lección y día (repetirla ese día es práctica libre).
-   * Simula los eventos `practices/{uid}_{lessonId}_{date}` que alimentan Comunidad.
-   */
-  practices?: { lessonId: string; date: string }[];
 };
 
 const store = createLocalStore<Account | null>("fretquest.account", null);
@@ -62,16 +58,33 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const level = LEVELS.includes(data.level) ? data.level as Difficulty : account.level;
     const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
     const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
-    // Sin nombre guardado (recién llegado): se guarda el de Google, para que también lo vean Analytics y la Comunidad.
+    // Sin nombre guardado (recién llegado): se guarda el de Google, para que también lo vean Backstage y la Comunidad.
     if (typeof data.name !== 'string' && user.displayName) void saveName(user.uid, user.displayName.slice(0, 40)).catch(() => { /* se reintenta al volver a entrar */ });
     const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
-    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
+    // Sin total guardado (practicó antes de los rangos, o nunca): se calcula una vez sumando sus días.
+    if (typeof data.totalSeconds !== 'number') void backfillTotalSeconds(user.uid);
+    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : account.totalSeconds, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {
     // Sin conexión: se sigue con lo guardado en el navegador.
     const account = store.get();
     if (account?.uid === user.uid) store.set({ ...account, synced: true });
   });
 });
+async function backfillTotalSeconds(uid: string) {
+  try {
+    const totalSeconds = await sumAllDaySeconds(uid);
+    await setDoc(doc(db, "users", uid), { totalSeconds }, { merge: true });
+    const account = store.get();
+    if (account?.uid === uid) store.set({ ...account, totalSeconds });
+  } catch { /* se reintenta al volver a entrar */ }
+}
+
+/** Suma a la cuenta local lo recién practicado (en Firestore ya lo sumó `recordAttempt`): el nivel sube sin recargar. */
+export const addTotalSeconds = (seconds: number) => {
+  const account = store.get();
+  if (account) store.set({ ...account, totalSeconds: (account.totalSeconds ?? 0) + Math.round(seconds) });
+};
+
 export const updateProfile = (changes: Pick<Account, "name" | "city" | "country" | "guitar">) => {
   const account = store.get();
   if (!account) return;
@@ -114,20 +127,11 @@ const sessionStore = createLocalStore<PlanSession | null>("fretquest.planSession
 export const usePlanSession = sessionStore.use;
 export const getPlanSession = sessionStore.get;
 export const setPlanSession = sessionStore.set;
-/** Días con sesión completada (DATOS LOCALES de la maqueta; con Firestore, `sessions/{uid}_{día}`). */
-const sessionDays = createLocalStore<string[]>("fretquest.sessionDays", []);
-export const completeSessionToday = () => { const days = sessionDays.get(); if (!days.includes(todayKey())) sessionDays.set([...days, todayKey()]); };
 export const setWeeklyGoal = (days: number) => {
   const account = store.get();
   if (!account) return;
   store.set({ ...account, weeklyGoal: days });
   void setDoc(doc(db, "users", account.uid), { weeklyGoal: days }, { merge: true }).catch(() => { /* queda local */ });
-};
-
-/** Días distintos con práctica registrada esta semana (lunes a domingo, hora de Lima). */
-export const daysPracticedThisWeek = (account: Account | null) => {
-  const week = thisWeek();
-  return new Set((account?.practices ?? []).map(practice => practice.date).filter(date => week.includes(date))).size;
 };
 
 export const isAdmin = (account: Account | null) => account?.role === "admin";
@@ -144,14 +148,12 @@ export const COMMUNITY_TIME_ZONE = "America/Lima";
 const limaDate = new Intl.DateTimeFormat("en-CA", { timeZone: COMMUNITY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
 export const todayKey = (date = new Date()) => limaDate.format(date);
 
-/** Registra la práctica completada de hoy (solo con sesión iniciada). */
+/** Registra la última práctica (solo con sesión iniciada): mueve el plan. */
 export function recordPractice(lessonId: string) {
   const account = store.get();
   if (!account) return;
   const date = todayKey();
-  const practices = account.practices ?? [];
-  const counted = practices.some(practice => practice.lessonId === lessonId && practice.date === date);
-  store.set({ ...account, lastPractice: { lessonId, date }, practices: counted ? practices : [...practices, { lessonId, date }] });
+  store.set({ ...account, lastPractice: { lessonId, date } });
   // La última práctica mueve el plan: se guarda en Firestore para verla desde cualquier dispositivo.
   void setDoc(doc(db, "users", account.uid), { lastPractice: { lessonId, date } }, { merge: true }).catch(() => { /* queda local */ });
 }
@@ -201,11 +203,3 @@ export function suggestion(account: Account) {
   return { next, done, finished, position: index + 1, total: lessons.length, lastLesson: index >= 0 ? lessons[index] : null };
 }
 
-/** Días de esta semana (lunes → domingo) en hora de Lima, como claves YYYY-MM-DD. */
-export const thisWeek = () => { const monday = weekStart(todayKey()); return Array.from({ length: 7 }, (_, day) => addDays(monday, day)); };
-
-/** Prácticas completadas por la cuenta esta semana. */
-export const practicesThisWeek = (account: Account | null) => {
-  const from = thisWeek()[0];
-  return (account?.practices ?? []).filter(practice => practice.date >= from).length;
-};

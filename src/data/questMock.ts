@@ -1,5 +1,4 @@
 import { INTERVAL_PENTATONICS, TAPPING_FOUR_NOTES, TAPPING_ONE_STRING, TAPPING_SKIPS, TAPPING_SYMMETRIC, TAPPING_TWO_STRINGS, MODAL_ARPEGGIO_LESSONS, MODAL_PENTATONICS, OCTAVE_MODES, PENTATONIC_G_START, SKIP_PATTERNS, TWO_STRING_PATTERNS, SCALE_MODES, SYMMETRIC_SCALES, modeCategory, modeTitle, practiceStudies } from './practiceStudies';
-export const player = { name: 'Eduardo', handle: 'edu.strings', level: 12, xp: '2.450', rank: 'Explorador de cuerdas', streak: 7 };
 type LessonBase = { id: string; title: string; minutes: number; xp: number; /** Fecha en que se publicó (YYYY-MM-DD): alimenta «Últimas lecciones agregadas». */ added?: string };
 /** Lección de lectura: contenido para leer, sin tocar. */
 export type ReadingLesson = LessonBase & { type: 'reading'; summary: string; points: { title: string; text: string }[]; note?: string };

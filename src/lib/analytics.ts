@@ -1,20 +1,22 @@
-import { collection, getCountFromServer, getDocs } from "firebase/firestore";
+import { collection, collectionGroup, getDocs, writeBatch } from "firebase/firestore";
 import { courses, type Difficulty } from "@/data/questMock";
 import { practiceStudies, type Speed } from "@/data/practiceStudies";
 import { LEVELS } from "@/lib/account";
 import { db } from "@/lib/firebase";
 import { attemptSpeed, readCommunityDays, weekStartKey } from "@/lib/progressDb";
+import { levelFromSeconds } from "@/lib/ranks";
 
 /**
- * Analytics del rol admin (`users/{uid}.role`, ver `isAdmin` en `lib/account`).
- * Todo sale de UNA lectura: los días de esta semana de todos (más el conteo de usuarios). Lo demás se calcula aquí.
+ * Datos de Backstage, del rol admin (`users/{uid}.role`, ver `isAdmin` en `lib/account`).
+ * Sale de dos lecturas: los días de esta semana de todos y los usuarios (para contarlos y por su total, el rango). Lo demás se calcula aquí.
  */
 export type Participant = { uid: string; name: string; seconds: number };
 /** Velocidad de los intentos (niveles 1–5): promedio y máximo, frente a la sugerida de la lección. */
 export type Tempo = { avg: Speed; max: Speed; target: Speed };
 export type Ranked = { id: string; title: string; users: number; attempts: number; seconds: number; participants: Participant[]; tempo?: Tempo };
 export type ModuleRow = Ranked & { image?: string; lessons: Ranked[] };
-export type Person = { uid: string; name: string; level: Difficulty | null; seconds: number; days: number; completed: number };
+/** `totalSeconds`: tiempo de toda la vida (`users/{uid}`), para su nivel y rango. */
+export type Person = { uid: string; name: string; level: Difficulty | null; seconds: number; days: number; completed: number; totalSeconds: number };
 export type AnalyticsData = {
   users: number; active: number; seconds: number; modules: ModuleRow[];
   /** Minutos por día (lunes → domingo) y hora (0–23), según el inicio de cada intento. */
@@ -27,6 +29,8 @@ export type AnalyticsData = {
   consistency: { label: string; count: number }[];
   byLevel: { level: Difficulty | null; people: number; seconds: number; top?: { id: string; title: string; seconds: number } }[];
   people: Person[];
+  /** Quienes practicaron esta semana, por rango. */
+  byRank: { rank: string; people: number }[];
 };
 
 const lessonsById = new Map(courses.flatMap(course => course.lessons.map(lesson => [lesson.id, { lesson, course }] as const)));
@@ -44,13 +48,12 @@ const finish = ({ uids, speeds, ...row }: Tally): Ranked =>
 const BUCKETS = [{ label: "< 15 min", max: 15 }, { label: "15–30 min", max: 30 }, { label: "30–45 min", max: 45 }, { label: "45 min o más", max: Infinity }];
 
 export async function readAnalytics(): Promise<AnalyticsData> {
-  const [users, days] = await Promise.all([
-    getCountFromServer(collection(db, "users")).then(snapshot => snapshot.data().count),
-    readCommunityDays(weekStartKey()),
-  ]);
+  const [userDocs, days] = await Promise.all([getDocs(collection(db, "users")), readCommunityDays(weekStartKey())]);
+  const users = userDocs.size;
+  const totals = new Map(userDocs.docs.map(user => [user.id, (user.get("totalSeconds") as number | undefined) ?? 0]));
   const modules = new Map<string, Tally & { image?: string; lessons: Map<string, Tally> }>();
   const heat = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
-  const people = new Map<string, Person & { latest: string }>();
+  const people = new Map<string, Omit<Person, "totalSeconds"> & { latest: string }>();
   const levels = new Map<Difficulty | null, { people: Set<string>; seconds: number; lessons: Map<string, number> }>();
 
   for (const day of days) {
@@ -84,7 +87,9 @@ export async function readAnalytics(): Promise<AnalyticsData> {
   }
 
   const minutesPerDay = days.map(day => (day.seconds ?? 0) / 60);
-  const personList = [...people.values()].map(({ uid, name, level, seconds, days, completed }): Person => ({ uid, name, level, seconds, days, completed })).sort((a, b) => b.seconds - a.seconds);
+  const personList = [...people.values()].map(({ uid, name, level, seconds, days, completed }): Person => ({ uid, name, level, seconds, days, completed, totalSeconds: Math.max(totals.get(uid) ?? 0, seconds) })).sort((a, b) => b.seconds - a.seconds);
+  const rankCount = new Map<string, number>();
+  for (const person of personList) { const { rank } = levelFromSeconds(person.totalSeconds); rankCount.set(rank.name, (rankCount.get(rank.name) ?? 0) + 1); }
   return {
     users,
     active: people.size,
@@ -107,11 +112,12 @@ export async function readAnalytics(): Promise<AnalyticsData> {
       return { level, people: entry.people.size, seconds: entry.seconds, top: topId ? { id: topId, title: lessonsById.get(topId)?.lesson.title ?? topId, seconds: topSeconds } : undefined };
     }),
     people: personList,
+    byRank: [...rankCount.entries()].map(([rank, people]) => ({ rank, people })),
   };
 }
 
 /** Perfil de un registrado, para la pestaña Usuarios. */
-export type Member = { uid: string; name: string; level: Difficulty | null; city?: string; country?: string; guitar?: string; lastPractice: string | null };
+export type Member = { uid: string; name: string; level: Difficulty | null; city?: string; country?: string; guitar?: string; lastPractice: string | null; totalSeconds: number };
 
 /**
  * Todos los registrados: una lectura por usuario, y solo al abrir la pestaña Usuarios.
@@ -127,6 +133,28 @@ export async function readMembers(): Promise<Member[]> {
       level: LEVELS.includes(data.level) ? data.level as Difficulty : null,
       city: text(data.city), country: text(data.country), guitar: text(data.guitar),
       lastPractice: text(data.lastPractice?.date) ?? null,
+      totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : 0,
     };
   }).sort((a, b) => (b.lastPractice ?? "").localeCompare(a.lastPractice ?? "") || a.name.localeCompare(b.name));
+}
+
+/**
+ * Recalcula `users/{uid}.totalSeconds` de todos sumando sus días (una consulta de grupo sobre `days`) y guarda solo los
+ * que cambiaron. Idempotente: se puede repetir. Solo el admin (las reglas le dejan tocar únicamente ese campo).
+ */
+export async function syncAllTotalSeconds() {
+  const [users, days] = await Promise.all([getDocs(collection(db, "users")), getDocs(collectionGroup(db, "days"))]);
+  const totals = new Map<string, number>();
+  for (const day of days.docs) {
+    const uid = day.ref.parent.parent?.id;
+    if (uid) totals.set(uid, (totals.get(uid) ?? 0) + ((day.get("seconds") as number | undefined) ?? 0));
+  }
+  const changed = users.docs.filter(user => user.get("totalSeconds") !== (totals.get(user.id) ?? 0));
+  // Firestore admite hasta 500 escrituras por lote.
+  for (let i = 0; i < changed.length; i += 500) {
+    const batch = writeBatch(db);
+    for (const user of changed.slice(i, i + 500)) batch.update(user.ref, { totalSeconds: totals.get(user.id) ?? 0 });
+    await batch.commit();
+  }
+  return { users: users.size, updated: changed.length };
 }
