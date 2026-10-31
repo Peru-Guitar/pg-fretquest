@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <body className="font-sans antialiased">
       <AppShell>{children}</AppShell>
       <CopyGuard/>
-      <Script src="https://cloud.umami.is/script.js" data-website-id="29b1233a-223e-4588-aa58-96caea920b7b" data-domains="fretquest.peruguitar.com" strategy="afterInteractive"/>
+      <Script src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c60f911bc3ed4851b2d781561ea970f9"}' strategy="afterInteractive"/>
     </body>
   </html>;
 }
