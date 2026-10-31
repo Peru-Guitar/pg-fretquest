@@ -22,7 +22,7 @@ import { PracticeField, PracticeIntro, PracticeOption } from '@/components/pract
 import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
 import { InputLevel, RoundRecordings } from '@/components/practice/RoundRecordings';
 import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
-import { completeSessionToday, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
+import { addTotalSeconds, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
@@ -240,7 +240,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 if (current) {
                     // En sesión: rondas sin fin hasta que se acabe el tiempo; la ronda en curso siempre termina.
                     if (now() < current.startedAt + current.minutes * 60_000) { runRound(number + 1, false); return; }
-                    stop(); completeSessionToday(); setPlanSession(null);
+                    stop(); setPlanSession(null);
                     finish(number, { sessionMinutes: current.minutes, seconds: (now() - current.startedAt) / 1000 });
                     return;
                 }
@@ -275,6 +275,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         const before = todayOf(getProgress());
         setFinished(value => value && { ...value, progress: { beforeSeconds: before?.seconds ?? 0, addedSeconds: seconds, goalMinutes, completedBefore: before?.completed ?? false } });
         recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm: bpmRef.current })
+            .then(saved => { if (saved) addTotalSeconds(saved.addedSeconds); })
             .catch(() => setFinished(value => value && { ...value, progress: null }));
     };
     const start = async (listen: boolean) => {

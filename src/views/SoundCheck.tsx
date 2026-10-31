@@ -14,7 +14,7 @@ import { DIFFICULTY } from '@/lib/difficulty';
 import { cn } from '@/lib/cn';
 
 /**
- * Prueba de sonido: solo para el rol admin (como Analytics; a los demás se les responde como página inexistente).
+ * Prueba de sonido: solo para el rol admin (como Backstage; a los demás se les responde como página inexistente).
  * Todas las lecciones con práctica, para escucharlas rápido con la guitarra de guía a la velocidad sugerida de cada una.
  */
 const modules = courses

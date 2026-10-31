@@ -6,12 +6,12 @@ service cloud.firestore {
     // Rol: `users/{uid}.role` ('admin'). Solo se da desde la consola o el CLI; la app no puede cambiarlo.
     function isAdmin() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin'; }
 
-    // Perfil privado: cada usuario solo lee y escribe el suyo (nombre, ciudad, país, guitarra, nivel, ritmo, sesión, última práctica). `role` se conserva tal cual.
+    // Perfil: cada usuario solo escribe el suyo (nombre, ciudad, país, guitarra, nivel, ritmo, sesión, última práctica, total practicado).
+    // `role` se conserva tal cual. Lo lee cualquiera con sesión: perfiles públicos y rangos de la comunidad (el correo no está aquí, sino en Auth).
     match /users/{uid} {
-      // El admin también los lee: Analytics cuenta los usuarios.
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if signedIn();
       allow write: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'weeklyGoal', 'sessionMinutes', 'lastPractice', 'role'])
+        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'weeklyGoal', 'sessionMinutes', 'lastPractice', 'role', 'totalSeconds'])
         && request.resource.data.get('role', null) == (resource == null ? null : resource.data.get('role', null))
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40))
         && (!('level' in request.resource.data) || (request.resource.data.level in ['base', 'intermedio', 'avanzado', 'experto']))
@@ -20,8 +20,16 @@ service cloud.firestore {
         && (!('city' in request.resource.data) || (request.resource.data.city is string && request.resource.data.city.size() <= 60))
         && (!('country' in request.resource.data) || (request.resource.data.country is string && request.resource.data.country.size() <= 60))
         && (!('guitar' in request.resource.data) || (request.resource.data.guitar is string && request.resource.data.guitar.size() <= 60))
+        // Total practicado: solo sube, y como mucho 24 h por escritura. La primera vez (sin total) es el cálculo desde los días.
+        && (!('totalSeconds' in request.resource.data) || (request.resource.data.totalSeconds is int && request.resource.data.totalSeconds >= 0
+            && (resource == null || !('totalSeconds' in resource.data) || (request.resource.data.totalSeconds >= resource.data.totalSeconds && request.resource.data.totalSeconds <= resource.data.totalSeconds + 86400))))
         && (!('lastPractice' in request.resource.data) || (request.resource.data.lastPractice.keys().hasOnly(['lessonId', 'date'])
             && request.resource.data.lastPractice.lessonId is string && request.resource.data.lastPractice.date is string));
+
+      // El admin solo puede corregir el total practicado (botón «Sincronizar horas» de Backstage), nada más.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalSeconds'])
+        && request.resource.data.totalSeconds is int && request.resource.data.totalSeconds >= 0;
 
       // Registro del día. Lo escribe solo su dueño; el id es la fecha y no se puede borrar.
       // El tiempo solo sube y como mucho 24 h; `updatedAt` lo pone el servidor.
@@ -70,6 +78,24 @@ service cloud.firestore {
     // Quién leyó cada lección esta semana: consulta de grupo sobre las lecturas (solo lectura, con sesión iniciada).
     match /{path=**}/readings/{lessonId} {
       allow read: if signedIn();
+    }
+
+    // Reporte de Comunidad de la semana (id = lunes): lo leen todos con sesión. Se escribe de dos formas:
+    // pedir el turno (solo cambia `refreshing`, a nombre propio) o reescribirlo completo (a nombre propio, hora del servidor, sin turno).
+    match /communityReports/{week} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && week.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.week == week
+        && ((request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys().hasOnly(['week', 'refreshing'])
+              && request.resource.data.refreshing.uid == request.auth.uid
+              && request.resource.data.refreshing.at == request.time)
+          || (request.resource.data.keys().hasOnly(['version', 'week', 'people', 'practices', 'today', 'byDay', 'byPlan', 'byRank', 'topLessons', 'ranking', 'byModule', 'byLesson', 'generatedAt', 'updatedBy', 'refreshing'])
+              && request.resource.data.generatedAt == request.time
+              && request.resource.data.updatedBy.uid == request.auth.uid
+              && request.resource.data.refreshing == null
+              && request.resource.data.ranking is list && request.resource.data.ranking.size() <= 15));
+      allow delete: if false;
     }
 
     // Ranking precalculado: lo escribe solo una Cloud Function (más adelante); se lee con sesión iniciada.

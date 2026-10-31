@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import AnalyticsPage from "@/views/Analytics";
-import { pageMetadata } from "@/lib/seo";
+'use client';
 
-// Página de admin: no se indexa.
-export const metadata: Metadata = pageMetadata({ title: "Analytics", path: "/analytics", noindex: true });
+import { Navigate } from "@/lib/router";
+import { ROUTES } from "@/lib/routes";
 
+// Antes se llamaba Analytics: los enlaces viejos llevan a Backstage.
 export default function Page() {
-  return <AnalyticsPage/>;
+  return <Navigate to={ROUTES.backstage} replace/>;
 }

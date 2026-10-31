@@ -1,6 +1,6 @@
 import { moduleUrl } from '@/lib/routes';
 import { Link } from '@/lib/router';
-import { ArrowRight, Guitar, Star } from 'lucide-react';
+import { ArrowRight, Guitar } from 'lucide-react';
 import { courses } from '@/data/questMock';
 import { cn } from '@/lib/cn';
 import { Card } from '@/components/ui';
@@ -80,22 +80,3 @@ export function CourseCard({ course, practicing = [] }: { course: typeof courses
 export function CourseGrid({ children, className }: { children: React.ReactNode; className?: string }) {
     return <div className={cn('grid gap-4 xs:grid-cols-2 lg:grid-cols-3 xl:gap-5', className)}>{children}</div>;
 }
-
-const achievements = [
-    { symbol: '✦', title: 'Primera sesión', text: 'Primer entrenamiento', medal: 'from-[#5ab8ec] to-[#1d4a7a] text-white' },
-    { symbol: '♜', title: 'Constancia de acero', text: '7 días seguidos', medal: 'from-[#ffc156] to-[#8a6420] text-[#fff6e0]' },
-    { symbol: 'ϟ', title: 'Sin perder el ritmo', text: '95% de precisión', medal: 'from-[#35dca9] to-[#16664f] text-[#ccffed]' },
-    { symbol: '◇', title: 'Constancia de leyenda', text: 'Alcanza el nivel 25', medal: 'from-[#5ab8ec] to-[#1d4a7a] text-white', locked: true },
-];
-
-export function Achievements() {
-    return <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 xl:gap-4">
-        {achievements.map(({ symbol, title, text, medal, locked }) => <div key={title} className={cn('relative rounded-lg border border-line bg-card px-2 py-5.5 text-center xl:px-3 xl:py-6', locked && 'opacity-50')}>
-            <span className={cn('mx-auto mb-4 grid h-16 w-14.5 place-items-center bg-linear-150 text-4xl [clip-path:polygon(50%_0,95%_25%,95%_75%,50%_100%,5%_75%,5%_25%)]', medal)}>{symbol}</span>
-            <h3 className="text-xs xs:text-sm">{title}</h3>
-            <p className="mt-2 text-3xs text-muted xs:text-2xs">{text}</p>
-            {!locked && <Star size={12} className="mx-auto mt-3.5 text-accent"/>}
-        </div>)}
-    </div>;
-}
-
