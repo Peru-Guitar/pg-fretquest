@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { courses, type Difficulty } from "@/data/questMock";
 import { db } from "@/lib/firebase";
-import { attemptSpeed, localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
-import { practiceStudies, type Speed } from "@/data/practiceStudies";
+import { weekStartKey } from "@/lib/progressDb";
+import { readProgress } from "@/lib/progressReport";
+import { addDays, emptyProgress } from "@/lib/domain/progressReport";
 
 /**
- * Perfil de un usuario: TODOS sus días y `users/{uid}` (ciudad, guitarra, meta), que lee cualquiera con sesión: 2 consultas.
- * Se guarda ya calculado y en JSON plano (sin Timestamps) 1 hora en el navegador, por usuario;
- * «Actualizar» lo vuelve a leer.
+ * Perfil de un usuario: `users/{uid}` (nombre, plan, ciudad, guitarra, meta, horas) y su reporte de progreso
+ * `progressReports/{uid}` (ver `domain/progressReport`): 2 lecturas, sin importar cuánto haya practicado.
+ * Se guarda ya calculado y en JSON plano 30 min en el navegador, por usuario; «Actualizar» lo vuelve a leer.
  */
-export type ProfileLesson = { id: string; title: string; module: string; moduleId: string; days: number; attempts: number; seconds: number; /** Velocidad máxima y última (niveles 1–5, 0 = sin dato) y la sugerida de la lección. */ speedMax: Speed | 0; speedLast: Speed | 0; target?: Speed; lastAt: number };
+export type ProfileLesson = { id: string; title: string; module: string; moduleId: string; attempts: number; seconds: number; lastAt: number };
 export type UserProfile = {
   at: number;
   uid: string;
@@ -27,8 +28,8 @@ export type UserProfile = {
   lessons: ProfileLesson[];
 };
 
-const CACHE_MS = 60 * 60 * 1000;
-const cacheKey = (uid: string) => `fretquest.profile.v3.${uid}`;
+const CACHE_MS = 30 * 60 * 1000;
+const cacheKey = (uid: string) => `fretquest.profile.v4.${uid}`;
 
 /** Descarta el perfil guardado de un usuario (al terminar tu práctica, el tuyo: así lo ves al día). */
 export function invalidateProfile(uid: string) {
@@ -36,52 +37,35 @@ export function invalidateProfile(uid: string) {
 }
 const lessonsById = new Map(courses.flatMap(course => course.lessons.map(lesson => [lesson.id, { lesson, course }] as const)));
 
-const addDays = (key: string, days: number) => { const [y, m, d] = key.split("-").map(Number); return localDateKey(new Date(y, m - 1, d + days)); };
-
 async function fetchProfile(uid: string): Promise<UserProfile> {
-  const [user, snapshot] = await Promise.all([getDoc(doc(db, "users", uid)), getDocs(collection(db, "users", uid, "days"))]);
-  const info = (user?.data() ?? {}) as Partial<UserProfile>;
-  const days = snapshot.docs.map(item => item.data() as DayDoc).sort((a, b) => a.date.localeCompare(b.date));
+  const [user, stored] = await Promise.all([getDoc(doc(db, "users", uid)), readProgress(uid)]);
+  const info = (user.data() ?? {}) as Partial<UserProfile> & { totalSeconds?: number };
+  // Sin reporte (nunca practicó, o aún no se sincronizó): todo en cero, sin romper la página.
+  const progress = stored ?? emptyProgress();
   const monday = weekStartKey();
-  const weeks = Array.from({ length: 8 }, (_, index) => ({ start: addDays(monday, (index - 7) * 7), minutes: 0 }));
-  const weekKeys = Array.from({ length: 7 }, (_, index) => addDays(monday, index));
-  const week = Array<number>(7).fill(0);
-  const lessons = new Map<string, ProfileLesson>();
-  for (const day of days) {
-    const minutes = (day.seconds ?? 0) / 60;
-    const slot = weeks.reduce((found, item, index) => day.date >= item.start ? index : found, -1);
-    if (slot >= 0) weeks[slot].minutes += minutes;
-    const weekday = weekKeys.indexOf(day.date);
-    if (weekday >= 0) week[weekday] += minutes;
-    for (const [lessonId, lesson] of Object.entries(day.lessons ?? {})) {
-      const meta = lessonsById.get(lessonId);
-      const row = lessons.get(lessonId) ?? lessons.set(lessonId, {
-        id: lessonId, title: meta?.lesson.title ?? lessonId, module: meta?.course.title ?? "Sin módulo", moduleId: meta?.course.id ?? "",
-        days: 0, attempts: 0, seconds: 0, speedMax: 0, speedLast: 0, lastAt: 0,
-        target: practiceStudies[lessonId] ? practiceStudies[lessonId].speed ?? 2 : undefined,
-      }).get(lessonId)!;
-      row.days += 1; row.attempts += lesson.attempts ?? 0; row.seconds += lesson.seconds ?? 0;
-      for (const attempt of lesson.sessions ?? []) {
-        const at = attempt.startedAt.toMillis();
-        const speed = attemptSpeed(lessonId, attempt) ?? 0;
-        row.speedMax = Math.max(row.speedMax, speed) as Speed | 0;
-        if (at >= row.lastAt) { row.lastAt = at; row.speedLast = speed; }
-      }
-    }
-  }
+  const minutesOf = (date: string) => (progress.days[date] ?? 0) / 60;
+  const week = Array.from({ length: 7 }, (_, index) => minutesOf(addDays(monday, index)));
+  const weeks = Array.from({ length: 8 }, (_, index) => {
+    const start = addDays(monday, (index - 7) * 7);
+    return { start, minutes: Array.from({ length: 7 }, (_, day) => minutesOf(addDays(start, day))).reduce((sum, value) => sum + value, 0) };
+  });
+  const lessons = Object.entries(progress.lessons).map(([id, lesson]): ProfileLesson => {
+    const meta = lessonsById.get(id);
+    return { id, title: meta?.lesson.title ?? id, module: meta?.course.title ?? "Sin módulo", moduleId: meta?.course.id ?? "", attempts: lesson.practices, seconds: lesson.seconds, lastAt: lesson.lastAt };
+  });
   return {
     at: Date.now(), uid,
-    name: info.name ?? days.at(-1)?.name ?? "Sin nombre",
-    level: info.level ?? days.at(-1)?.level ?? null,
+    name: info.name ?? "Sin nombre",
+    level: info.level ?? null,
     city: info.city, country: info.country, guitar: info.guitar, weeklyGoal: info.weeklyGoal, sessionMinutes: info.sessionMinutes,
-    seconds: days.reduce((sum, day) => sum + (day.seconds ?? 0), 0),
-    days: days.length,
-    completed: days.filter(day => day.completed).length,
-    attempts: [...lessons.values()].reduce((sum, lesson) => sum + lesson.attempts, 0),
-    first: days[0]?.date, last: days.at(-1)?.date,
+    seconds: info.totalSeconds ?? lessons.reduce((sum, lesson) => sum + lesson.seconds, 0),
+    days: progress.practiceDays,
+    completed: progress.completedDays,
+    attempts: progress.practices,
+    first: progress.firstDate ?? undefined, last: progress.lastDate ?? undefined,
     week: week.map(Math.round),
     weeks: weeks.map(item => ({ ...item, minutes: Math.round(item.minutes) })),
-    lessons: [...lessons.values()].sort((a, b) => b.seconds - a.seconds),
+    lessons: lessons.sort((a, b) => b.seconds - a.seconds),
   };
 }
 

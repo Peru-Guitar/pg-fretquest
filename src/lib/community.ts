@@ -32,20 +32,21 @@ export type Community = {
 };
 
 /**
- * El reporte ya es la caché: aquí solo se guarda en MEMORIA la última lectura, para que los componentes de una misma
- * carga (Comunidad, el pulso, las tarjetas de lecciones) compartan 1 lectura. Al recargar la página se vuelve a leer.
- * Con la app abierta mucho rato, se relee al navegar solo si el reporte ya pudo cambiar (más de 1 h desde que se generó)
- * y la última lectura tiene más de 30 min.
+ * La última lectura del reporte se guarda 30 min en el navegador (el reporte se regenera como mucho una vez por hora),
+ * para no leer en cada visita. Si varios componentes lo piden a la vez, comparten la misma lectura (`pending`).
+ * Cambia la semana o terminas una lección que lo regenera → se vuelve a leer.
  */
-const REPORT_REFRESH_MS = 60 * 60 * 1000;
-const RECHECK_MS = 30 * 60 * 1000;
-let memory: { community: Community; fetchedAt: number; week: string } | null = null;
-const isFresh = (now = Date.now()) => memory !== null && memory.week === weekStartKey()
-  && (now < memory.community.at + REPORT_REFRESH_MS || now < memory.fetchedAt + RECHECK_MS);
+const CACHE_MS = 30 * 60 * 1000;
+const CACHE_KEY = "fretquest.community.v1";
+type Cached = { community: Community; fetchedAt: number; week: string };
+const isFresh = (cached: Cached | null, now = Date.now()): cached is Cached => cached !== null && cached.week === weekStartKey() && now < cached.fetchedAt + CACHE_MS;
+function stored(): Cached | null {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) ?? "null") as Cached | null; } catch { return null; }
+}
 
-/** Descarta la copia en memoria (este navegador acaba de regenerar el reporte). */
+/** Descarta la copia guardada (este navegador acaba de regenerar el reporte). */
 export function invalidateCommunity() {
-  memory = null;
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* sin almacenamiento */ }
 }
 
 /** Módulo de cada lección, para saber qué módulos practicó cada quien. */
@@ -146,9 +147,11 @@ function fromReport(report: CommunityReport | null): Community {
 }
 
 async function readCommunity(): Promise<Community> {
-  if (isFresh()) return memory!.community;
+  const saved = stored();
+  if (isFresh(saved)) return saved.community;
   const community = fromReport(await readReport());
-  memory = { community, fetchedAt: Date.now(), week: weekStartKey() };
+  const cached: Cached = { community, fetchedAt: Date.now(), week: weekStartKey() };
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cached)); } catch { /* sin almacenamiento */ }
   return community;
 }
 

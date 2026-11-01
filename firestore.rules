@@ -80,6 +80,22 @@ service cloud.firestore {
       allow read: if signedIn();
     }
 
+    // Reporte de progreso de cada usuario (su perfil, ya calculado): lo leen todos con sesión. Lo reescribe su dueño
+    // al practicar, o el admin al sincronizar; siempre completo, con la hora del servidor.
+    match /progressReports/{uid} {
+      allow read: if signedIn();
+      allow create, update: if (isOwner(uid) || isAdmin())
+        && request.resource.data.keys().hasOnly(['version', 'practices', 'practiceDays', 'completedDays', 'firstDate', 'lastDate', 'days', 'lessons', 'updatedAt'])
+        && request.resource.data.version is int
+        && request.resource.data.practices is int && request.resource.data.practices >= 0
+        && request.resource.data.practiceDays is int && request.resource.data.practiceDays >= 0
+        && request.resource.data.completedDays is int && request.resource.data.completedDays >= 0
+        && request.resource.data.days is map && request.resource.data.days.size() <= 70
+        && request.resource.data.lessons is map
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     // Reporte de Comunidad de la semana (id = lunes): lo leen todos con sesión. Se escribe de dos formas:
     // pedir el turno (solo cambia `refreshing`, a nombre propio) o reescribirlo completo (a nombre propio, hora del servidor, sin turno).
     match /communityReports/{week} {
