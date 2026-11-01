@@ -12,3 +12,6 @@ public/version.json
 
 # Material de trabajo (prompts, imágenes fuente, borradores, MusicXML): solo local
 docs/
+
+# Diseños locales (imágenes fuente, pesados)
+/design/

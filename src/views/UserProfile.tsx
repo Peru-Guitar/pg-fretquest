@@ -101,7 +101,7 @@ function Header({ profile }: { profile: UserProfile }) {
                     {profile.weeklyGoal && <span className="flex items-center gap-1"><Target size={13}/>{profile.weeklyGoal} días/sem · {profile.sessionMinutes ?? 30} min</span>}
                 </p>
                 <p className="mt-1.5 text-2xs text-subtle">Desde {dateLabel(profile.first)} · última práctica {dateLabel(profile.last)}</p>
-                <p className="mt-1 text-2xs text-subtle">Datos de las {new Date(profile.at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} · se actualizan cada hora</p>
+                <p className="mt-1 text-2xs text-subtle">Datos de las {new Date(profile.at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} · se actualizan cada 30 min</p>
             </div>
         </div>
     </Card>;

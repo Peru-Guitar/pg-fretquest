@@ -17,6 +17,7 @@ import { RankGlyph } from '@/components/RankIcon';
 import { TIER_COLOR } from '@/components/quest/rankStyle';
 import { RankDistribution } from '@/components/quest/RankDistribution';
 import { generateReport, readReport, type CommunityReport } from '@/lib/communityReport';
+import { rebuildAllProgress } from '@/lib/progressReport';
 
 /**
  * Backstage (antes Analytics): solo para el rol admin (`users/{uid}.role`). A los demás se les responde como página inexistente.
@@ -220,6 +221,32 @@ function SyncTotals() {
     </Card>;
 }
 
+/** Rearma el reporte de progreso (perfil) de todos desde sus días, con el avance y el tiempo que falta. */
+function SyncProgress() {
+    // `left`: segundos que faltan, estimados con lo que tardó cada usuario hasta ahora.
+    const [status, setStatus] = useState<'idle' | 'error' | { done: number; total: number; left: number | null; finished: boolean }>('idle');
+    const busy = typeof status === 'object' && !status.finished;
+    const sync = () => {
+        const startedAt = Date.now();
+        setStatus({ done: 0, total: 0, left: null, finished: false });
+        rebuildAllProgress((done, total) => setStatus({ done, total, finished: false,
+            left: done ? Math.ceil((Date.now() - startedAt) / done * (total - done) / 1000) : null }))
+            .then(total => setStatus({ done: total, total, left: 0, finished: true }))
+            .catch(() => setStatus('error'));
+    };
+    return <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+            <SectionTitle title="Progreso de los perfiles" className="mb-1"/>
+            <p className="text-xs text-muted">{status === 'error' ? 'No se pudo sincronizar. ¿Están desplegadas las reglas?'
+                : typeof status === 'object' && status.finished ? `Listo: ${status.total} perfiles sincronizados.`
+                : typeof status === 'object' ? (status.total ? <>Sincronizando {status.done} de {status.total} perfiles{status.left !== null && ` · quedan ~${status.left < 60 ? `${status.left} s` : `${Math.ceil(status.left / 60)} min`}`}</> : 'Buscando usuarios…')
+                : 'Rearma el progreso de cada usuario (lo que muestra su perfil) desde todos sus días. Se puede repetir sin problema.'}</p>
+            {busy && <span className="mt-2 block h-1.5 max-w-sm overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-blue transition-[width]" style={{ width: `${status.total ? status.done / status.total * 100 : 0}%` }}/></span>}
+        </div>
+        <Button variant="secondary" onClick={sync} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}Sincronizar progreso</Button>
+    </Card>;
+}
+
 /** Reporte de Comunidad de la semana: cuándo se generó, quién lo disparó y un botón para regenerarlo al momento. */
 function SyncReport() {
     const account = useAccount();
@@ -331,6 +358,7 @@ export default function BackstagePage() {
         {tab === 'sincronizacion' && <div className="grid grid-cols-1 gap-5">
             <SyncReport/>
             <SyncTotals/>
+            <SyncProgress/>
         </div>}
         {tab !== 'usuarios' && tab !== 'sincronizacion' && (error ? <Card><p className="text-sm text-muted">No se pudieron cargar los datos.</p></Card> : !data ? spinner : tab === 'resumen' ? <div className="grid grid-cols-1 gap-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

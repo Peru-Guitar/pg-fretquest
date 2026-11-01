@@ -2,6 +2,15 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.10.0',
+        date: '2026-11-01',
+        notes: [
+            'Los perfiles cargan mucho más rápido, sin importar cuánto hayas practicado.',
+            'Módulos del perfil más claros: cada lección con cuántas veces la practicaste y cuánto tiempo.',
+            'Comunidad y los perfiles abren al instante cuando vuelves a entrar.',
+        ],
+    },
+    {
         version: '0.9.1',
         date: '2026-11-01',
         notes: [

@@ -5,6 +5,7 @@ import { practiceStudies, speedFromBpm, type Speed } from "@/data/practiceStudie
 import { db } from "@/lib/firebase";
 import { refreshReportIfDue } from "@/lib/communityReport";
 import { invalidateProfile } from "@/lib/profile";
+import { addPracticeToProgress } from "@/lib/progressReport";
 
 /**
  * Modelo de progreso en Firestore. Se registra al terminar una práctica con sesión iniciada (al salir el resumen).
@@ -88,18 +89,6 @@ export async function sumAllDaySeconds(uid: string) {
   return snapshot.docs.reduce((total, item) => total + ((item.data() as DayDoc).seconds ?? 0), 0);
 }
 
-/** Días del usuario desde `from` (YYYY-MM-DD): progreso de hoy y de la semana. */
-export async function readMyDays(uid: string, from: string) {
-  const snapshot = await getDocs(query(collection(db, "users", uid, "days"), where("date", ">=", from)));
-  return snapshot.docs.map(item => item.data() as DayDoc);
-}
-
-/** Resumen de todas las lecciones practicadas por el usuario (Mi plan). */
-export async function readLessonSummaries(uid: string) {
-  const snapshot = await getDocs(collection(db, "users", uid, "lessons"));
-  return Object.fromEntries(snapshot.docs.map(item => [item.id, item.data({ serverTimestamps: "estimate" }) as LessonSummary]));
-}
-
 /** Días de todos los usuarios desde `from`: base del ranking semanal (con caché en el front, más adelante). */
 export async function readCommunityDays(from: string) {
   const snapshot = await getDocs(query(collectionGroup(db, "days"), where("date", ">=", from)));
@@ -177,6 +166,11 @@ export async function recordFinishedPractice(params: { name: string; level: Diff
     sessionSeconds: params.sessionMinutes * 60, daySecondsBefore, completedBefore: today?.completed ?? false,
     firstToday: !today?.lessons?.[params.lessonId],
   });
+  // Tu reporte de progreso suma esta práctica (en segundo plano: si falla, «Sincronizar progreso» lo arregla).
+  const completedNow = !(today?.completed ?? false) && daySecondsBefore + seconds >= params.sessionMinutes * 60;
+  void addPracticeToProgress(uid, { date: localDateKey(params.endedAt), lessonId: params.lessonId, seconds, endedAt: params.endedAt.getTime(), completedNow })
+    .then(() => invalidateProfile(uid))
+    .catch(error => console.warn("Progreso: no se pudo actualizar el reporte.", error));
   // Tu perfil se vuelve a leer la próxima vez que lo abras. Y si toca (más de 1 h), se regenera el reporte de Comunidad en segundo plano (y entonces se descarta su caché).
   invalidateProfile(uid);
   void refreshReportIfDue({ uid, name: params.name });
