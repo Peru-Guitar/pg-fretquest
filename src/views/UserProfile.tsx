@@ -1,12 +1,11 @@
 'use client';
 
-import { CalendarDays, Clock, Gauge, Guitar, Loader2, LogIn, MapPin, Repeat, Target } from 'lucide-react';
+import { CalendarDays, Clock, Guitar, Loader2, LogIn, MapPin, Repeat, Target } from 'lucide-react';
 import { BackLink, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
 import { useHydrated, useSearchParams } from '@/lib/router';
 import { levelLabel, useAccount } from '@/lib/account';
 import { useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
 import { courses } from '@/data/questMock';
-import { speedName } from '@/data/practiceStudies';
 import { initials, toneOf } from '@/lib/avatar';
 import { ROUTES } from '@/lib/routes';
 import { timeAgo } from '@/lib/timeAgo';
@@ -29,11 +28,11 @@ const imageOf = new Map(courses.map(course => [course.id, course.image]));
 
 /** Lecciones agrupadas por módulo, el de más tiempo primero (las lecciones ya vienen ordenadas por tiempo). */
 function groupByModule(lessons: ProfileLesson[]) {
-    const modules = new Map<string, { id: string; title: string; image?: string; seconds: number; attempts: number; lastAt: number; lessons: ProfileLesson[] }>();
+    const modules = new Map<string, { id: string; title: string; image?: string; seconds: number; lastAt: number; lessons: ProfileLesson[] }>();
     for (const lesson of lessons) {
         const id = lesson.moduleId || lesson.module;
-        const row = modules.get(id) ?? modules.set(id, { id, title: lesson.module, image: imageOf.get(lesson.moduleId), seconds: 0, attempts: 0, lastAt: 0, lessons: [] }).get(id)!;
-        row.seconds += lesson.seconds; row.attempts += lesson.attempts; row.lastAt = Math.max(row.lastAt, lesson.lastAt);
+        const row = modules.get(id) ?? modules.set(id, { id, title: lesson.module, image: imageOf.get(lesson.moduleId), seconds: 0, lastAt: 0, lessons: [] }).get(id)!;
+        row.seconds += lesson.seconds; row.lastAt = Math.max(row.lastAt, lesson.lastAt);
         row.lessons.push(lesson);
     }
     return [...modules.values()].sort((a, b) => b.seconds - a.seconds);
@@ -155,27 +154,21 @@ export default function UserProfilePage() {
 
         <Card className="mb-5">
             <SectionTitle title="Módulos" className="mb-1"/>
-            <p className="mb-3 text-xs text-muted">Lo que practicó, por módulo y tiempo. Cada lección con su velocidad máxima y la última, frente a la sugerida.</p>
+            <p className="mb-3 text-xs text-muted">Lecciones practicadas, con cuántas veces y cuánto tiempo.</p>
             {modules.length === 0 ? <p className="text-sm text-muted">Todavía no practicó.</p> : <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{modules.map(module => <li key={module.id} className="flex flex-col overflow-hidden rounded-xl border border-line-soft">
                 {module.image ? <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="h-28 w-full bg-sunken object-cover"/> : <span className="h-28 w-full bg-sunken"/>}
                 <div className="flex items-start gap-3 px-4 pt-3 pb-2">
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-fg-soft">{module.title}</p>
-                        <p className="truncate text-2xs text-muted">{module.lessons.length} {module.lessons.length === 1 ? 'lección' : 'lecciones'} · {module.attempts} {module.attempts === 1 ? 'intento' : 'intentos'}{module.lastAt > 0 && ` · ${timeAgo(module.lastAt)}`}</p>
+                        <p className="truncate text-2xs text-muted">{module.lessons.length} {module.lessons.length === 1 ? 'lección' : 'lecciones'}{module.lastAt > 0 && ` · ${timeAgo(module.lastAt)}`}</p>
                     </div>
                     <b className="text-sm tabular-nums text-fg">{time(module.seconds)}</b>
                 </div>
-                <ul className="px-4 pb-1">{module.lessons.map(lesson => {
-                    const reached = lesson.target && lesson.speedMax >= lesson.target;
-                    return <li key={lesson.id} className="border-t border-line-soft py-2">
-                        <p className="flex items-baseline gap-2"><span className="min-w-0 flex-1 truncate text-xs font-bold text-fg-soft">{lesson.title}</span><span className="text-2xs tabular-nums text-muted">{time(lesson.seconds)}</span></p>
-                        <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted">
-                            <Gauge size={13} className={reached ? 'text-success' : 'text-accent'}/>
-                            <span>máx <b className={reached ? 'text-success' : 'text-fg-soft'}>{lesson.speedMax ? speedName(lesson.speedMax) : '—'}</b> · última <b className="text-fg-soft">{lesson.speedLast ? speedName(lesson.speedLast) : '—'}</b></span>
-                            {lesson.target && <span className="text-subtle">/ {speedName(lesson.target)}</span>}
-                        </p>
-                    </li>;
-                })}</ul>
+                <ul className="px-4 pb-2">{module.lessons.map(lesson => <li key={lesson.id} className="flex items-center gap-3 border-t border-line-soft py-2">
+                    <span className="min-w-0 flex-1 truncate text-xs text-fg-soft">{lesson.title}</span>
+                    <span className="shrink-0 text-2xs tabular-nums text-muted">{lesson.attempts} {lesson.attempts === 1 ? 'vez' : 'veces'}</span>
+                    <span className="w-12 shrink-0 text-right text-2xs tabular-nums text-muted">{time(lesson.seconds)}</span>
+                </li>)}</ul>
             </li>)}</ul>}
         </Card>
 
