@@ -44,7 +44,7 @@ export function AccountBar() {
         </button>
         {open && <div role="menu" className="absolute top-full right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-raised p-2 shadow-[0_20px_60px_#0008]">
             <div className="flex flex-col items-start gap-2 border-b border-line-soft px-1 pt-1 pb-3 md:hidden" onClick={close}>
-                <WeekStrip className="flex"/>
+                <WeekStrip className="flex w-full justify-between rounded-lg px-2"/>
                 <RankBadge className="flex"/>
             </div>
             <Link to={ROUTES.plan} role="menuitem" onClick={close} className={item}>

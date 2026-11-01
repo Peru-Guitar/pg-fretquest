@@ -10,14 +10,6 @@ import { Link } from '@/lib/router';
 import { useAccount } from '@/lib/account';
 import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
-const RATINGS = [
-    { value: 1, label: 'Me costó mucho' },
-    { value: 2, label: 'Con varios errores' },
-    { value: 3, label: 'Bien, con algún fallo' },
-    { value: 4, label: 'Limpio y cómodo' },
-    { value: 5, label: 'Impecable' },
-];
-
 /** Guitarrista animado celebrando la práctica. Formato vertical, 800×1000. */
 const SUMMARY_IMAGE = '/images/practice-done.webp';
 
@@ -28,7 +20,7 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Ma
 
 /**
  * Resumen al terminar las rondas de una práctica, a pantalla completa con el fondo borroso:
- * rondas, velocidad, tiempo y una valoración opcional. No se guarda nada.
+ * rondas, velocidad y tiempo. No se guarda nada.
  */
 export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress, children, onClose }: { rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; children?: ReactNode; onClose: () => void }) {
     const signedIn = useAccount() !== null;
@@ -37,7 +29,6 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
     const added = Math.max(1, Math.round((progress?.addedSeconds ?? 0) / 60));
     const after = Math.min(goal, Math.floor(((progress?.beforeSeconds ?? 0) + (progress?.addedSeconds ?? 0)) / 60));
     const showMinutes = progress !== null && !progress.completedBefore;
-    const [rating, setRating] = useState<number | null>(null);
     const [imageOk, setImageOk] = useState(true);
     // La velocidad va solo en BPM, con la unidad chica: el nombre del nivel no entra en la ficha.
     const stats = [['Rondas', String(rounds)], ['Velocidad', String(bpm), 'BPM'], ['Tiempo', formatTime(seconds)]];
@@ -80,17 +71,6 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                     </div>}
                     {children && <div className="mt-6 w-full">{children}</div>}
 
-                    <p className="mt-6 text-sm text-fg-soft">¿Cómo te sentiste practicando? <span className="text-muted">(opcional)</span></p>
-                    <div role="radiogroup" aria-label="Valoración de la práctica" className="mt-3 grid w-full grid-cols-5 gap-1.5">
-                        {RATINGS.map(option => <button key={option.value} type="button" role="radio" aria-checked={rating === option.value} title={option.label} onClick={() => setRating(option.value)} className={cn(
-                            'flex flex-col items-center gap-1 rounded-lg border px-1 py-2.5 transition',
-                            rating === option.value ? 'border-blue bg-blue/20 text-fg' : 'border-white/10 bg-white/3 text-fg-soft hover:border-blue/60 hover:bg-white/6 hover:text-fg',
-                        )}>
-                            <b className="font-mono text-lg">{option.value}</b>
-                            <span className="text-3xs leading-tight">{option.label}</span>
-                        </button>)}
-                    </div>
-                    {rating !== null && <p className="mt-3 text-sm text-success">¡Gracias! Sé honesto contigo: así sabrás cuándo subir la velocidad.</p>}
                     <p className="mt-4 text-xs text-muted">¿Te trabaste o quieres que te corrijan? <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Pide ayuda en el grupo de WhatsApp</a>.</p>
 
                     {!signedIn && <p className="mt-4 text-xs text-muted">Practicaste sin sesión: no se registró. <Link to={ROUTES.login} onClick={onClose} className="text-accent hover:underline">Entra</Link> para guardar tu progreso.</p>}
