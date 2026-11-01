@@ -262,7 +262,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
     useEffect(() => { if (phase === 'playing' && !listening) startTake(round); }, [phase, listening, round, startTake]);
     // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
-    const openIntro = () => { setFrom(null); setShowIntro(true); if (record) void recorder.open(inputId); };
+    // Si estaba sonando «Reproducir», se corta: la preparación arranca con la tablatura limpia, sin nota marcada.
+    const openIntro = () => { stopRef.current(); setFrom(null); setShowIntro(true); if (record) void recorder.open(inputId); };
     const closeIntro = () => { setShowIntro(false); recorder.close(); };
     const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
     const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
@@ -294,6 +295,10 @@ function PracticeView({ mode }: { mode: Mode }) {
             .catch(() => setFinished(value => value && { ...value, progress: null }));
     };
     const start = async (listen: boolean) => {
+        // Nunca dos rondas a la vez: la anterior (si sigue sonando) se corta antes de empezar.
+        cancelRef.current?.();
+        cancelRef.current = null;
+        setStep(-1);
         setFinished(null);
         // Practicar es siempre desde el inicio: se borra la nota elegida en la tablatura, venga de donde venga.
         if (!listen) setFrom(null);
