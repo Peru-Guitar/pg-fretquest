@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Link to="/" className="text-lg font-black tracking-tight">Fret Quest</Link>
                 </div>
                 {/* Izquierda, tu semana (días); a la derecha, tu rango (horas) junto a tu cuenta. El nivel de guitarrista va en el menú, como tu plan. */}
-                <WeekStrip className="hidden md:flex"/>
+                <WeekStrip className="-ml-3 hidden md:flex"/>
                 <div className="flex items-center gap-3">
                     <RankBadge className="hidden md:flex"/>
                     <AccountBar/>

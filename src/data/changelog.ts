@@ -2,6 +2,15 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.9.1',
+        date: '2026-11-01',
+        notes: [
+            '¡Celebra cada nivel! Cuando una práctica te hace subir de nivel, lo verás en grande al cerrar el resumen.',
+            'Al darle a Practicar, la tablatura empieza siempre desde el inicio, sin notas marcadas.',
+            'En el celular, «Tu semana» se ve ordenada en el menú de tu cuenta.',
+        ],
+    },
+    {
         version: '0.9.0',
         date: '2026-10-31',
         notes: [

@@ -25,6 +25,8 @@ import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
 import { addTotalSeconds, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
+import { LevelUpDialog } from '@/components/practice/LevelUpDialog';
+import { levelFromSeconds } from '@/lib/ranks';
 import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { useCommunity } from '@/lib/community';
@@ -181,7 +183,15 @@ function PracticeView({ mode }: { mode: Mode }) {
     const [record, setRecord] = useState(false);
     // Entrada de audio elegida para grabar ("" = la predeterminada). No se guarda: cada visita parte de la predeterminada.
     const [inputId, setInputId] = useState('');
-    const closeSummary = useCallback(() => { setFinished(null); clearTakes(); }, [clearTakes]);
+    // Si la práctica subió el nivel, la celebración sale al cerrar el resumen (con el total nuevo, en segundos).
+    const [levelUp, setLevelUp] = useState<number | null>(null);
+    const pendingLevelUp = useRef<number | null>(null);
+    const closeSummary = useCallback(() => {
+        setFinished(null);
+        clearTakes();
+        setLevelUp(pendingLevelUp.current);
+        pendingLevelUp.current = null;
+    }, [clearTakes]);
     // Nota elegida en la tablatura: Reproducir empieza desde ahí (Practicar siempre toca el patrón completo).
     const [from, setFrom] = useState<number | null>(null);
     // Al cambiar de ejercicio vuelve al valor por defecto de su tablatura.
@@ -252,14 +262,13 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
     useEffect(() => { if (phase === 'playing' && !listening) startTake(round); }, [phase, listening, round, startTake]);
     // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
-    const openIntro = () => { setShowIntro(true); if (record) void recorder.open(inputId); };
+    const openIntro = () => { setFrom(null); setShowIntro(true); if (record) void recorder.open(inputId); };
     const closeIntro = () => { setShowIntro(false); recorder.close(); };
     const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
     const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
-    // Una práctica nueva borra las tomas anteriores y la nota elegida en la tablatura (practicar siempre es desde el inicio).
+    // Una práctica nueva borra las tomas anteriores.
     const startPractice = () => {
         recorder.clear();
-        setFrom(null);
         setShowIntro(false);
         void start(false);
     };
@@ -275,11 +284,19 @@ function PracticeView({ mode }: { mode: Mode }) {
         const before = todayOf(getProgress());
         setFinished(value => value && { ...value, progress: { beforeSeconds: before?.seconds ?? 0, addedSeconds: seconds, goalMinutes, completedBefore: before?.completed ?? false } });
         recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm: bpmRef.current })
-            .then(saved => { if (saved) addTotalSeconds(saved.addedSeconds); })
+            .then(saved => {
+                if (!saved) return;
+                const before = account.totalSeconds ?? 0;
+                const after = before + saved.addedSeconds;
+                if (levelFromSeconds(after).level > levelFromSeconds(before).level) pendingLevelUp.current = after;
+                addTotalSeconds(saved.addedSeconds);
+            })
             .catch(() => setFinished(value => value && { ...value, progress: null }));
     };
     const start = async (listen: boolean) => {
         setFinished(null);
+        // Practicar es siempre desde el inicio: se borra la nota elegida en la tablatura, venga de donde venga.
+        if (!listen) setFrom(null);
         setListening(listen);
         setCount(-1);
         setPhase('loading');
@@ -535,6 +552,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                     </div>}
                     </>}
                 </PracticeIntro>}
+                {levelUp !== null && <LevelUpDialog seconds={levelUp} onClose={() => setLevelUp(null)}/>}
                 {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}>
                     {recorder.takes.length > 0 && <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo y se borra al cerrar este resumen."/>}
                 </PracticeSummary>}

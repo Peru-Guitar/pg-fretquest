@@ -18,12 +18,12 @@ export function WeekStrip({ className }: { className?: string }) {
     const done = completedDaysThisWeek(progress);
     const reached = done >= goal;
 
-    return <Link to={ROUTES.plan} title="Días cumplidos esta semana frente a tu meta" className={cn('h-10 items-center gap-3 -ml-3 rounded-full px-3 text-sm transition hover:bg-white/5', className)}>
+    return <Link to={ROUTES.plan} title="Días cumplidos esta semana frente a tu meta" className={cn('h-10 items-center gap-3 rounded-full px-3 text-sm transition hover:bg-white/5', className)}>
         <span className="text-fg-soft">Tu semana</span>
-        <span className="flex gap-1.5">{Array.from({ length: goal }, (_, i) => <span key={i} className={cn(
+        <span className="flex items-center gap-3"><span className="flex gap-1.5">{Array.from({ length: goal }, (_, i) => <span key={i} className={cn(
             'size-2.5 rounded-full',
             i < done ? (reached ? 'bg-success' : 'bg-blue') : 'bg-white/20',
         )}/>)}</span>
-        <b className={cn('font-mono', reached ? 'text-success' : 'text-fg')}>{done}/{goal}</b>
+        <b className={cn('font-mono', reached ? 'text-success' : 'text-fg')}>{done}/{goal}</b></span>
     </Link>;
 }
