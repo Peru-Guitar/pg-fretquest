@@ -8,8 +8,11 @@ import { Button, Card, Eyebrow, PageTitle } from '@/components/ui';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { LEVELS, levelLabel, setLevel, setWeeklyHours, signIn, useAccount } from '@/lib/account';
 import { DEFAULT_WEEKLY_HOURS } from '@/lib/domain/weeklyGoal';
+import { AVATARS } from '@/data/avatars';
+import { AvatarPicker } from '@/components/AvatarPicker';
 import { WeeklyHoursPicker } from '@/components/quest/WeeklyHoursPicker';
 import type { Difficulty } from '@/data/questMock';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { cn } from '@/lib/cn';
 
 const LEVEL_TEXT: Record<Difficulty, string> = {
@@ -51,6 +54,7 @@ export default function LoginPage() {
     const [picked, setPicked] = useState<Difficulty | null>(null);
     const [signingIn, setSigningIn] = useState(false);
     const [choosingGoal, setChoosingGoal] = useState(false);
+    const [choosingAvatar, setChoosingAvatar] = useState(false);
     const [weeklyHours, setHours] = useState(DEFAULT_WEEKLY_HOURS);
     const [error, setError] = useState('');
     const answered = answers.length === QUESTIONS.length;
@@ -77,12 +81,13 @@ export default function LoginPage() {
     // `?repetir` (desde Mi cuenta) vuelve a hacer el cuestionario.
     // Cuenta nueva en este navegador: esperar a Firestore antes de decidir si hace falta el cuestionario.
     if (account.synced === false && !account.level) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
-    if (account.level && !retake && account.weeklyHours && !choosingGoal) return <Navigate to={ROUTES.plan} replace/>;
+    if (account.level && !retake && account.weeklyHours && !choosingGoal && !choosingAvatar) return <Navigate to={ROUTES.plan} replace/>;
     const showGoal = choosingGoal || (!!account.level && !retake);
 
-    // Pasos del alta: 1 cuestionario · 2 intensidad · 3 meta. Mismo ancho y cabecera que el resto de páginas.
-    const stepNumber = showGoal ? 3 : answered ? 2 : 1;
-    const steps = ['Cuestionario', 'Tu intensidad', 'Tu meta'];
+    // Pasos del alta: 1 cuestionario · 2 intensidad · 3 meta · 4 avatar (solo la primera vez, no al repetir el cuestionario). Mismo ancho y cabecera que el resto de páginas.
+    const stepNumber = choosingAvatar ? 4 : showGoal ? 3 : answered ? 2 : 1;
+    const withAvatar = AVATARS.length > 0 && !retake;
+    const steps = ['Cuestionario', 'Tu intensidad', 'Tu meta', ...(withAvatar ? ['Tu avatar'] : [])];
     const header = (eyebrow: string, title: string, text: string) => <>
         <ol className="mb-7 flex flex-wrap gap-2">{steps.map((label, index) => <li key={label} className={cn('flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold',
             index + 1 === stepNumber ? 'border-blue bg-blue/15 text-fg' : index + 1 < stepNumber ? 'border-success/40 text-success' : 'border-line text-muted')}>
@@ -90,11 +95,22 @@ export default function LoginPage() {
         <PageTitle eyebrow={eyebrow} title={title} text={text}/>
     </>;
 
+    if (choosingAvatar) return <>
+        {header('UN ÚLTIMO PASO', 'Elige tu avatar', 'Es la cara que verán los demás en la Comunidad. Lo cambias cuando quieras en Mi cuenta.')}
+        <Card className="p-6 md:p-8">
+            <AvatarPicker/>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Button className="min-h-13 px-8 text-base" onClick={() => navigate(ROUTES.plan)}>Ver mi plan <ArrowRight size={18}/></Button>
+                {!account.avatar && <button type="button" onClick={() => navigate(ROUTES.plan)} className="text-sm text-muted hover:text-fg">Elegir después</button>}
+            </div>
+        </Card>
+    </>;
+
     if (showGoal) return <>
-        {header('UN ÚLTIMO PASO', '¿Cuántas horas por semana quieres practicar?', 'Repártelas como quieras: la meta es para que sientas tu progreso. La cambias cuando quieras.')}
+        {header(withAvatar ? 'TU META' : 'UN ÚLTIMO PASO', '¿Cuántas horas por semana quieres practicar?', 'Repártelas como quieras: la meta es para que sientas tu progreso. La cambias cuando quieras.')}
         <Card className="p-6 md:p-8">
             <WeeklyHoursPicker value={weeklyHours} onChange={setHours}/>
-            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyHours(weeklyHours); navigate(ROUTES.plan); }}>Ver mi plan <ArrowRight size={18}/></Button>
+            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyHours(weeklyHours); if (withAvatar) setChoosingAvatar(true); else navigate(ROUTES.plan); }}>{withAvatar ? 'Continuar' : 'Ver mi plan'} <ArrowRight size={18}/></Button>
         </Card>
     </>;
 
@@ -105,7 +121,7 @@ export default function LoginPage() {
             <div className="relative">
                 <div className="mb-8 flex items-center gap-4 text-sm text-muted">
                     <span className="font-mono text-base font-bold text-fg">{answers.length + 1}<span className="text-muted"> / {QUESTIONS.length}</span></span>
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-line"><span className="block h-full rounded-full bg-blue transition-[width] duration-300" style={{ width: `${answers.length / QUESTIONS.length * 100}%` }}/></span>
+                    <SegmentedBar progress={answers.length / QUESTIONS.length} color="bg-blue" height="h-2.5" className="flex-1"/>
                     {answers.length > 0 && <button type="button" onClick={() => setAnswers(answers.slice(0, -1))} className="font-bold text-fg-soft hover:text-fg">← Atrás</button>}
                 </div>
                 <h2 key={answers.length} className="animate-rise text-2xl md:text-4xl">{current.text}</h2>

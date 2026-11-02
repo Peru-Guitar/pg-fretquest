@@ -18,6 +18,12 @@ describe("reporte de comunidad", () => {
     expect(body.ranking[1].totalSeconds).toBe(0);
   });
 
+  it("guarda el avatar solo de quien eligió uno", () => {
+    const body = buildReportBody("2026-10-26", summary, new Map(), new Map([["u1", "avatar-id"]]));
+    expect(body.ranking[0].avatar).toBe("avatar-id");
+    expect("avatar" in body.ranking[1]).toBe(false);
+  });
+
   it("cuenta a TODOS los activos por rango, no solo al top", () => {
     const body = buildReportBody("2026-10-26", summary, new Map([["u1", 150 * 3600], ["u20", 20 * 3600]]));
     const count = Object.fromEntries(body.byRank.map(row => [row.rank, row.people]));

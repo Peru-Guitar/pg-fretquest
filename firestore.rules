@@ -10,8 +10,10 @@ service cloud.firestore {
     // `role` se conserva tal cual. Lo lee cualquiera con sesión: perfiles públicos y rangos de la comunidad (el correo no está aquí, sino en Auth).
     match /users/{uid} {
       allow read: if signedIn();
+      // weeklyGoal, sessionMinutes, completed y completedDays ya no se escriben, pero siguen en documentos viejos:
+      // con `merge` cuentan como parte del documento, y sin permitirlos se rechazaría toda escritura de ese usuario.
       allow write: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'weeklyHours', 'lastPractice', 'role', 'totalSeconds'])
+        && request.resource.data.keys().hasOnly(['name', 'level', 'city', 'country', 'guitar', 'avatar', 'weeklyHours', 'weeklyGoal', 'sessionMinutes', 'lastPractice', 'role', 'totalSeconds'])
         && request.resource.data.get('role', null) == (resource == null ? null : resource.data.get('role', null))
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40))
         && (!('level' in request.resource.data) || (request.resource.data.level in ['base', 'intermedio', 'avanzado', 'experto']))
@@ -19,6 +21,7 @@ service cloud.firestore {
         && (!('city' in request.resource.data) || (request.resource.data.city is string && request.resource.data.city.size() <= 60))
         && (!('country' in request.resource.data) || (request.resource.data.country is string && request.resource.data.country.size() <= 60))
         && (!('guitar' in request.resource.data) || (request.resource.data.guitar is string && request.resource.data.guitar.size() <= 60))
+        && (!('avatar' in request.resource.data) || (request.resource.data.avatar is string && request.resource.data.avatar.matches('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')))
         // Total practicado: solo sube, y como mucho 24 h por escritura. La primera vez (sin total) es el cálculo desde los días.
         && (!('totalSeconds' in request.resource.data) || (request.resource.data.totalSeconds is int && request.resource.data.totalSeconds >= 0
             && (resource == null || !('totalSeconds' in resource.data) || (request.resource.data.totalSeconds >= resource.data.totalSeconds && request.resource.data.totalSeconds <= resource.data.totalSeconds + 86400))))
@@ -35,7 +38,7 @@ service cloud.firestore {
       match /days/{date} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid)
-          && request.resource.data.keys().hasOnly(['date', 'name', 'level', 'seconds', 'lessons', 'updatedAt'])
+          && request.resource.data.keys().hasOnly(['date', 'name', 'level', 'seconds', 'completed', 'lessons', 'updatedAt'])
           && request.resource.data.date == date
           && date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && request.resource.data.name is string && request.resource.data.name.size() <= 40
@@ -83,7 +86,7 @@ service cloud.firestore {
     match /progressReports/{uid} {
       allow read: if signedIn();
       allow create, update: if (isOwner(uid) || isAdmin())
-        && request.resource.data.keys().hasOnly(['version', 'practices', 'practiceDays', 'firstDate', 'lastDate', 'days', 'lessons', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['version', 'practices', 'practiceDays', 'completedDays', 'firstDate', 'lastDate', 'days', 'lessons', 'updatedAt'])
         && request.resource.data.version is int
         && request.resource.data.practices is int && request.resource.data.practices >= 0
         && request.resource.data.practiceDays is int && request.resource.data.practiceDays >= 0

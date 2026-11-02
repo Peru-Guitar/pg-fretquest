@@ -58,7 +58,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
       const selected = itemValue === value;
       return <button key={itemValue} type="button" aria-pressed={selected} onClick={() => onChange(itemValue)} className={cn(
         "inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-bold transition xs:px-4 xs:text-sm",
-        selected ? "border-blue/40 bg-brand-soft text-accent" : "border-transparent text-muted hover:bg-white/5",
+        selected ? "border-blue/50 bg-brand-soft text-accent shadow-[0_0_14px_#3198dc33]" : "border-transparent text-muted hover:bg-white/5",
       )}>{itemLabel ?? itemValue}</button>;
     })}
   </div>;
@@ -103,7 +103,7 @@ const statTones = {
 
 export function Stat({ icon, value, label, detail, tone = "orange", stacked }: { icon: ReactNode; value: string; label: string; detail?: string; tone?: keyof typeof statTones; stacked?: boolean }) {
   return <div className={cn("flex items-start gap-2 rounded-lg border border-line bg-radial-[at_top_left] to-surface to-70% px-3 py-4 text-left xs:gap-3 xs:px-4 xl:gap-3.5 xl:py-5", statTones[tone], stacked && "max-lg:block")}>
-    <span className={cn("flex pt-0.5 drop-shadow-[0_0_8px_currentColor] [&_svg]:size-4.5 xs:[&_svg]:size-5", stacked && "max-lg:mb-3")}>{icon}</span>
+    <span className={cn("grid size-9 shrink-0 place-items-center rounded-md border border-white/10 bg-white/5 shadow-[inset_0_1px_0_#ffffff14] [&_svg]:size-4.5 [&_svg]:drop-shadow-[0_0_6px_currentColor] xs:[&_svg]:size-5", stacked && "max-lg:mb-3")}>{icon}</span>
     <div>
       <strong className="text-lg leading-tight font-black tracking-tight xs:text-xl xl:text-[1.375rem]">{value}</strong>
       <p className="my-1.5 text-2xs text-muted md:text-xs xl:text-2xs">{label}</p>

@@ -8,10 +8,14 @@ import { Card, Caption, PageTitle, SectionTitle } from '@/components/ui';
 import { courses, type PracticeLesson } from '@/data/questMock';
 import { LEVELS, levelLabel, useAccount } from '@/lib/account';
 import { useCommunity } from '@/lib/community';
-import { timeAgo } from '@/lib/timeAgo';
+import { REFRESH_MS } from '@/lib/communityReport';
+import { RefreshCountdown } from '@/components/DataFreshness';
 import { weekStartKey } from '@/lib/progressDb';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
+import { BlockColumn } from '@/components/quest/BlockColumn';
 import { cn } from '@/lib/cn';
-import { initials, toneOf } from '@/lib/avatar';
+import { toneOf } from '@/lib/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { levelFromSeconds } from '@/lib/ranks';
 import { RankGlyph } from '@/components/RankIcon';
 import { TIER_COLOR } from '@/components/quest/rankStyle';
@@ -30,7 +34,7 @@ const TOP = 12;
 
 const PODIUM = ['h-24 border-t-2 border-gold bg-white/5 text-gold', 'h-16 border-t-2 border-line-strong bg-white/5 text-fg-soft', 'h-12 border-t-2 border-accent/60 bg-white/5 text-accent'];
 
-type RankEntry = { uid: string; name: string; tone: string; you: boolean; seconds: number; active: number; totalSeconds?: number };
+type RankEntry = { uid: string; name: string; avatar?: string; tone: string; you: boolean; seconds: number; active: number; totalSeconds?: number };
 
 /** Nivel y rango de alguien del ranking (si el reporte trae su total). */
 function RankTag({ totalSeconds, className }: { totalSeconds?: number; className?: string }) {
@@ -57,10 +61,9 @@ const shortDay = (date: Date) => date.toLocaleDateString('es', { day: 'numeric',
  * La semana del reporte, en una franja a todo el ancho bajo el título: fechas, los días en una línea de tiempo (hoy resaltado),
  * cuándo se reinicia y cuándo se actualizó. En móvil los bloques bajan uno debajo de otro.
  */
-function WeekBar({ updatedAt }: { updatedAt: number }) {
+function WeekBar() {
     const [y, m, d] = weekStartKey().split('-').map(Number);
     const today = (new Date().getDay() + 6) % 7;
-    const left = 7 - today;
     return <div className="mb-6 flex flex-col gap-3 rounded-xl border border-blue/30 bg-blue/12 px-5 py-3.5 text-fg lg:flex-row lg:items-center lg:gap-6">
         <div className="shrink-0">
             <p className="flex items-center gap-1.5 text-3xs font-black tracking-[0.18em] text-accent"><CalendarRange size={13}/>SEMANA ACTUAL</p>
@@ -73,17 +76,13 @@ function WeekBar({ updatedAt }: { updatedAt: number }) {
                 <b className="font-mono text-sm">{String(new Date(y, m - 1, d + index).getDate()).padStart(2, '0')}</b>
             </span>
         </Fragment>)}</div>
-        <div className="shrink-0 text-xs text-fg-soft lg:text-right">
-            <p>Se reinicia <b className="text-accent">{left === 1 ? 'mañana' : `en ${left} días`}</b></p>
-            <p className="text-muted">Última actualización {timeAgo(updatedAt)}</p>
-        </div>
     </div>;
 }
 
 function RankRow({ row, place }: { row: RankEntry; place: number }) {
     return <li className="min-w-0"><Link to={userProfileUrl(row.uid)} className={cn('group flex items-center gap-3 rounded-lg border px-3 py-3 sm:px-3.5 transition-colors', row.you ? 'border-blue/50 bg-blue/10 hover:bg-blue/15' : 'border-line bg-white/2 hover:border-line-strong hover:bg-white/5')}>
         <span className="w-5 shrink-0 font-mono text-sm text-muted sm:w-7">{place}</span>
-        <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', row.tone)}>{initials(row.name)}</span>
+        <UserAvatar uid={row.uid} name={row.name} avatar={row.avatar} tone={row.tone} className="size-9 text-2xs"/>
         <span className="min-w-0 flex-1">
             <span className={cn('block truncate', row.you ? 'font-bold text-accent' : 'text-fg-soft')}>{row.you ? `${row.name} (tú)` : row.name}</span>
             <RankTag totalSeconds={row.totalSeconds} className="flex"/>
@@ -95,7 +94,7 @@ function RankRow({ row, place }: { row: RankEntry; place: number }) {
 export default function CommunityPage() {
     const account = useAccount();
     const hydrated = useHydrated();
-    const { data, error } = useCommunity(account !== null);
+    const { data, error } = useCommunity(account !== null, account ?? undefined);
 
     if (!hydrated) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (!account) return <>
@@ -122,8 +121,10 @@ export default function CommunityPage() {
     ];
 
     return <>
-        <PageTitle eyebrow="COMUNIDAD" title="No practicas solo." text="Así se está moviendo la comunidad de Fret Quest esta semana. Cada práctica suma."/>
-        <WeekBar updatedAt={data.at}/>
+        <PageTitle eyebrow="COMUNIDAD" title="No practicas solo." text="Así se está moviendo la comunidad de Fret Quest esta semana. Cada práctica suma.">
+            <RefreshCountdown nextAt={data.at + REFRESH_MS}/>
+        </PageTitle>
+        <WeekBar/>
 
         <div className="mb-6 grid gap-4 sm:grid-cols-3">{stats.map(({ icon: Icon, value, label }) => <Card key={label} className="flex items-center gap-4">
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue/12 text-accent-strong"><Icon size={22}/></span>
@@ -143,7 +144,7 @@ export default function CommunityPage() {
                 if (!row) return <li key={place}/>;
                 return <li key={row.uid} className="min-w-0"><Link to={userProfileUrl(row.uid)} className="group flex flex-col items-center text-center">
                     {place === 0 && <Crown size={24} className="mb-1 fill-gold text-gold"/>}
-                    <span className={cn('grid place-items-center rounded-full font-black text-white ring-4', row.tone, place === 0 ? 'size-16 text-lg ring-gold/60 sm:size-20 sm:text-xl' : 'size-13 text-base ring-line-strong sm:size-16 sm:text-lg')}>{initials(row.name)}</span>
+                    <UserAvatar uid={row.uid} name={row.name} avatar={row.avatar} tone={row.tone} className={cn('ring-4', place === 0 ? 'size-16 text-lg ring-gold/60 sm:size-20 sm:text-xl' : 'size-13 text-base ring-line-strong sm:size-16 sm:text-lg')}/>
                     {/* En mobile solo el primer nombre: el completo no entra en un tercio de pantalla. */}
                     <b className={cn('mt-2.5 max-w-full truncate text-sm group-hover:underline sm:text-base', row.you ? 'text-accent' : 'text-fg')}><span className="sm:hidden">{titleCase(row.name.split(' ')[0])}</span><span className="hidden sm:inline">{row.name}</span>{row.you && ' (tú)'}</b>
                     <RankTag totalSeconds={row.totalSeconds} className="mt-0.5 justify-center"/>
@@ -174,7 +175,7 @@ export default function CommunityPage() {
                         const future = index > todayIndex;
                         return <div key={DAYS[index]} className="flex h-full max-w-10 min-w-0 flex-1 flex-col items-center justify-end gap-2 text-3xs whitespace-nowrap text-muted">
                             <span className={cn(index === todayIndex && 'font-bold text-fg')}>{future ? '' : value}</span>
-                            <i className={cn('w-full rounded-t', future ? 'h-1 bg-line' : index === todayIndex ? 'bg-blue' : 'bg-white/15')} style={future ? undefined : { height: `${value / maxDay * 150}px` }}/>
+                            <BlockColumn ratio={future ? 0 : value / maxDay} active={index === todayIndex} off={future}/>
                             <small className={cn(index === todayIndex && 'font-bold text-fg')}>{index === todayIndex ? 'Hoy' : DAYS[index]}</small>
                         </div>;
                     })}
@@ -193,7 +194,7 @@ export default function CommunityPage() {
                         <span className="flex-1 text-fg-soft">{levelLabel(level)}{account?.level === level && <span className="ml-2 text-2xs font-bold text-accent">TU INTENSIDAD</span>}</span>
                         <b className="font-mono">{WEEK.byLevel[level]}%</b>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/8"><span className="block h-full rounded-full bg-blue" style={{ width: `${WEEK.byLevel[level]}%` }}/></div>
+                    <SegmentedBar meter segments={20} progress={WEEK.byLevel[level] / 100} color="bg-blue"/>
                 </li>)}</ul>
             </Card> }
         </div>

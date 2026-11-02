@@ -23,13 +23,14 @@ export type UserProfile = {
   seconds: number; days: number; attempts: number;
   first?: string; last?: string;
   /** Minutos de esta semana, lunes → domingo. */
+  avatar?: string;
   week: number[];
   /** Últimas 8 semanas, de la más antigua a la actual. */
   weeks: { start: string; minutes: number }[];
   lessons: ProfileLesson[];
 };
 
-const CACHE_MS = 30 * 60 * 1000;
+export const PROFILE_CACHE_MS = 30 * 60 * 1000;
 const cacheKey = (uid: string) => `fretquest.profile.v4.${uid}`;
 
 /** Descarta el perfil guardado de un usuario (al terminar tu práctica, el tuyo: así lo ves al día). */
@@ -57,6 +58,7 @@ async function fetchProfile(uid: string): Promise<UserProfile> {
   return {
     at: Date.now(), uid,
     name: info.name ?? "Sin nombre",
+    avatar: info.avatar,
     level: info.level ?? null,
     city: info.city, country: info.country, guitar: info.guitar, weeklyHours: weeklyHoursOf(info),
     seconds: info.totalSeconds ?? lessons.reduce((sum, lesson) => sum + lesson.seconds, 0),
@@ -72,7 +74,7 @@ async function fetchProfile(uid: string): Promise<UserProfile> {
 function cached(uid: string) {
   try {
     const profile = JSON.parse(localStorage.getItem(cacheKey(uid)) ?? "null") as UserProfile | null;
-    return profile && Date.now() - profile.at < CACHE_MS ? profile : null;
+    return profile && Date.now() - profile.at < PROFILE_CACHE_MS ? profile : null;
   } catch { return null; }
 }
 

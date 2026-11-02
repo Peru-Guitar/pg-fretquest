@@ -11,7 +11,7 @@ export const REPORT_VERSION = 1;
 export const REPORT_RANKING = 15;
 
 export type ReportPerson = { uid: string; name: string };
-export type ReportRankRow = ReportPerson & { seconds: number; days: number; practices: number; totalSeconds: number };
+export type ReportRankRow = ReportPerson & { seconds: number; days: number; practices: number; totalSeconds: number; avatar?: string };
 
 /** Lo que se calcula de los días y lecturas de la semana (sin metadatos de quién ni cuándo). */
 export type ReportBody = {
@@ -42,7 +42,7 @@ export type WeekSummary = {
 };
 
 /** Arma el cuerpo del reporte: la semana ya resumida más el total de toda la vida de cada activo (para los rangos). */
-export function buildReportBody(week: string, summary: WeekSummary, totals: Map<string, number>): ReportBody {
+export function buildReportBody(week: string, summary: WeekSummary, totals: Map<string, number>, avatars = new Map<string, string>()): ReportBody {
   const byRank = new Map<string, number>();
   for (const row of summary.ranking) {
     const { rank } = levelFromSeconds(totals.get(row.uid) ?? 0);
@@ -60,6 +60,8 @@ export function buildReportBody(week: string, summary: WeekSummary, totals: Map<
     topLessons: summary.topLessons.map(item => ({ lessonId: item.lessonId, practices: item.attempts })),
     ranking: summary.ranking.slice(0, REPORT_RANKING).map(row => ({
       uid: row.uid, name: row.name, seconds: row.seconds, days: row.active, practices: row.total, totalSeconds: totals.get(row.uid) ?? 0,
+      // Sin avatar se omite el campo: Firestore no acepta `undefined`.
+      ...(avatars.has(row.uid) && { avatar: avatars.get(row.uid) }),
     })),
     byModule: summary.byModule,
     byLesson: summary.byLesson,

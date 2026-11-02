@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useScrollLock } from '@/lib/scrollLock';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { cn } from '@/lib/cn';
 import { levelFromSeconds } from '@/lib/ranks';
 import { RankGlyph } from '@/components/RankIcon';
@@ -69,7 +70,7 @@ export function LevelUpDialog({ seconds, onClose }: { seconds: number; onClose: 
                             <b className={cn('truncate text-sm', TIER_COLOR[rank.tier])}>{rank.name}</b>
                             <span className="shrink-0 text-xs text-fg-soft">{left ? <><b className="font-mono text-fg">{left} min</b> al nivel {next.level}</> : 'Nivel máximo'}</span>
                         </div>
-                        <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full transition-[width] duration-1000 ease-out', TIER_BAR[rank.tier])} style={{ width: `${fill * 100}%` }}/></span>
+                        <SegmentedBar progress={fill} color={TIER_BAR[rank.tier]} className="mt-2"/>
                     </div>
                 </div>
             </div>

@@ -36,6 +36,6 @@ Use `.claude/skills/new-lesson/SKILL.md` when adding or editing lessons.
 
 There is no server, and all reads and writes come from the browser. Keep screens on precomputed documents, and don't add per-visit queries over other users' data.
 
-- `communityReports/{monday}`: Community reads this one document. The browser of someone finishing a lesson regenerates it at most once an hour (`src/lib/communityReport.ts`).
+- `communityReports/{monday}`: Community reads this one document. The browser of someone finishing a lesson, or viewing Community in a visible tab when the report expires, regenerates it at most once an hour (`src/lib/communityReport.ts`).
 - `progressReports/{uid}`: profiles read this one document, plus `users/{uid}`. It is updated after each finished practice and can be rebuilt from `users/{uid}/days` (`src/lib/progressReport.ts`).
 - `users/{uid}/days/{date}` is the source of truth for practice time. The weekly ranking is ordered by seconds practiced.

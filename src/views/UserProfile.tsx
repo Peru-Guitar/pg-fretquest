@@ -4,15 +4,18 @@ import { CalendarDays, Clock, Guitar, Loader2, LogIn, MapPin, Repeat, Target } f
 import { BackLink, Card, LinkButton, SectionTitle, Stat } from '@/components/ui';
 import { useHydrated, useSearchParams } from '@/lib/router';
 import { levelLabel, useAccount } from '@/lib/account';
-import { useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
+import { PROFILE_CACHE_MS, useUserProfile, type ProfileLesson, type UserProfile } from '@/lib/profile';
+import { DataFreshness } from '@/components/DataFreshness';
 import { courses } from '@/data/questMock';
-import { initials, toneOf } from '@/lib/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { ROUTES } from '@/lib/routes';
 import { timeAgo } from '@/lib/timeAgo';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
+import { BlockColumn } from '@/components/quest/BlockColumn';
 import { cn } from '@/lib/cn';
 import { Tip } from '@/components/ui/Tip';
 import { RankIcon } from '@/components/RankIcon';
-import { TIER_BAR, TIER_COLOR } from '@/components/quest/rankStyle';
+import { TIER_BAR, TIER_COLOR, TIER_FRAME } from '@/components/quest/rankStyle';
 import { levelFromSeconds } from '@/lib/ranks';
 import { MAX_LEVEL, RANKS } from '@/data/ranks';
 import { DAYS, time } from '@/views/Backstage';
@@ -38,13 +41,13 @@ function groupByModule(lessons: ProfileLesson[]) {
     return [...modules.values()].sort((a, b) => b.seconds - a.seconds);
 }
 
-/** Barras verticales de un solo color, con tooltip por barra y la cifra de la más alta. */
+/** Columnas por bloques, con tooltip por barra y la cifra de la más alta. */
 function Columns({ rows, highlight }: { rows: { label: string; tip: string; minutes: number }[]; highlight: number }) {
     const max = Math.max(1, ...rows.map(row => row.minutes));
     return <div className="flex h-36 items-end gap-2">
         {rows.map((row, index) => <div key={index} className="group/face relative flex h-full flex-1 flex-col items-center justify-end gap-1.5" tabIndex={0} aria-label={`${row.tip}: ${row.minutes} min`}>
             <Tip>{row.tip} <span className="text-muted">· {row.minutes} min</span></Tip>
-            <span className={cn('w-full max-w-10 rounded-t-[4px] transition-colors', index === highlight ? 'bg-blue' : 'bg-blue/45 group-hover/face:bg-blue/70')} style={{ height: `${Math.max(row.minutes / max * 100, row.minutes > 0 ? 4 : 1.5)}%` }}/>
+            <BlockColumn ratio={row.minutes / max} active={index === highlight} className="max-w-10"/>
             <span className={cn('text-3xs', index === highlight ? 'font-bold text-fg-soft' : 'text-muted')}>{row.label}</span>
         </div>)}
     </div>;
@@ -61,7 +64,7 @@ function RankCard({ seconds }: { seconds: number }) {
     const nextRank = RANKS[RANKS.indexOf(rank.rank) + 1];
     const toRank = nextRank && Math.ceil(nextRank.hours * 60 - minutes);
     const label = 'text-3xs font-black tracking-[0.18em] text-subtle';
-    return <Card className="mb-5 grid gap-5 md:grid-cols-3 md:gap-0 md:divide-x md:divide-line-soft">
+    return <Card className={cn('mb-5 grid gap-5 md:grid-cols-3 md:gap-0 md:divide-x md:divide-line-soft', TIER_FRAME[rank.rank.tier])}>
         <div className="flex items-center gap-3.5 md:pr-6">
             <RankIcon rank={rank.rank} size={64}/>
             <div className="min-w-0">
@@ -72,7 +75,7 @@ function RankCard({ seconds }: { seconds: number }) {
         </div>
         <div className="flex flex-col justify-center md:px-6">
             <p className={label}>{rank.next ? `HACIA EL NIVEL ${rank.next.level}` : 'NIVEL MÁXIMO'}</p>
-            <span className="mt-2.5 block h-2 overflow-hidden rounded-full bg-white/12"><span className={cn('block h-full rounded-full', TIER_BAR[rank.rank.tier])} style={{ width: `${rank.progress * 100}%` }}/></span>
+            <SegmentedBar progress={rank.progress} color={TIER_BAR[rank.rank.tier]} height="h-3" className="mt-2.5"/>
             <p className="mt-2 text-xs text-muted">{left ? <><b className="text-fg-soft">{left} min</b> para subir</> : 'Ya llegó al nivel 50'}</p>
         </div>
         <div className="flex flex-col justify-center md:pl-6">
@@ -91,7 +94,7 @@ function Header({ profile }: { profile: UserProfile }) {
     const place = [profile.city, profile.country].filter(Boolean).join(', ');
     return <Card className="mb-5">
         <div className="flex items-center gap-4 md:gap-5">
-            <span className={cn('grid size-16 shrink-0 place-items-center rounded-full text-xl font-black text-white ring-4 ring-line-strong md:size-20 md:text-2xl', toneOf(profile.uid))}>{initials(profile.name)}</span>
+            <UserAvatar uid={profile.uid} name={profile.name} avatar={profile.avatar} className="size-24 text-3xl ring-2 ring-line-strong md:size-36 md:text-5xl"/>
             <div className="min-w-0 flex-1">
                 <h1 className="truncate text-2xl md:text-3xl">{profile.name}<span className="text-accent">.</span></h1>
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
@@ -101,7 +104,7 @@ function Header({ profile }: { profile: UserProfile }) {
                     {profile.weeklyHours && <span className="flex items-center gap-1"><Target size={13}/>Meta: {profile.weeklyHours} h/sem</span>}
                 </p>
                 <p className="mt-1.5 text-2xs text-subtle">Desde {dateLabel(profile.first)} · última práctica {dateLabel(profile.last)}</p>
-                <p className="mt-1 text-2xs text-subtle">Datos de las {new Date(profile.at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} · se actualizan cada 30 min</p>
+                <DataFreshness updatedAt={profile.at} nextAt={profile.at + PROFILE_CACHE_MS} nextPrefix="se refresca en" dueText="al recargar verás datos nuevos" className="mt-1"/>
             </div>
         </div>
     </Card>;

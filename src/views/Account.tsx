@@ -3,10 +3,12 @@
 import { ROUTES } from '@/lib/routes';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from '@/lib/router';
-import { Check, Dumbbell, UserRound } from 'lucide-react';
+import { Check, Dumbbell, Smile, UserRound } from 'lucide-react';
 import { Button, Card, Field, PageTitle } from '@/components/ui';
 import { LEVELS, levelLabel, setLevel, setWeeklyHours, updateProfile, useAccount, type Account } from '@/lib/account';
 import { cn } from '@/lib/cn';
+import { AvatarPicker } from '@/components/AvatarPicker';
+import { UserAvatar } from '@/components/UserAvatar';
 import { DEFAULT_WEEKLY_HOURS } from '@/lib/domain/weeklyGoal';
 import { WeeklyHoursPicker } from '@/components/quest/WeeklyHoursPicker';
 
@@ -24,7 +26,7 @@ function AccountForm({ account }: { account: Account }) {
     // La pestaña va en la URL (`?tab=entrenamiento`), para poder enlazarla abierta.
     const [params] = useSearchParams();
     const navigate = useNavigate();
-    const tab = params.get('tab') === 'entrenamiento' ? 'training' : 'profile';
+    const tab = params.get('tab') === 'entrenamiento' ? 'training' : params.get('tab') === 'avatar' ? 'avatar' : 'profile';
     const change = (changes: Partial<typeof form>) => { setForm({ ...form, ...changes }); setSaved(false); };
     const name = form.name.trim();
     const save = (event: React.FormEvent) => {
@@ -34,19 +36,19 @@ function AccountForm({ account }: { account: Account }) {
         setSaved(true);
     };
 
-    // Dos pestañas en una sola columna: datos personales y preferencias de entrenamiento.
-    const tabs = [{ id: 'profile', label: 'Perfil', icon: UserRound }, { id: 'training', label: 'Entrenamiento', icon: Dumbbell }] as const;
+    // Tres pestañas en una sola columna: datos personales, avatar y preferencias de entrenamiento.
+    const tabs = [{ id: 'profile', label: 'Perfil', icon: UserRound }, { id: 'avatar', label: 'Avatar', icon: Smile }, { id: 'training', label: 'Entrenamiento', icon: Dumbbell }] as const;
 
     return <div className="mx-auto max-w-3xl">
         <PageTitle eyebrow="TU CUENTA" title="Mi cuenta" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
         <div role="tablist" aria-label="Secciones de Mi cuenta" className="mb-6 flex gap-1 border-b border-line">
-            {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigate(id === 'training' ? ROUTES.training : ROUTES.account)}
+            {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigate(id === 'training' ? ROUTES.training : id === 'avatar' ? `${ROUTES.account}?tab=avatar` : ROUTES.account)}
                 className={cn('-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition', tab === id ? 'border-blue text-fg' : 'border-transparent text-muted hover:text-fg')}><Icon size={16}/>{label}</button>)}
         </div>
 
         {tab === 'profile' && <Card><form onSubmit={save}>
             <div className="flex items-center gap-4">
-                <span className="grid size-16 shrink-0 place-items-center rounded-full border border-line-strong bg-raised text-fg text-2xl font-black">{(name || '?').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
+                <UserAvatar uid={account.uid} name={name || '?'} avatar={account.avatar} tone="bg-raised" className="size-16 border border-line-strong text-2xl !text-fg"/>
                 <div><b className="text-lg">{name || 'Sin nombre'}</b><p className="text-sm text-muted">{[[form.city.trim(), form.country.trim()].filter(Boolean).join(', '), form.guitar.trim()].filter(Boolean).join(' · ') || 'Completa tu perfil'}</p></div>
             </div>
             <Field label="Nombre visible"><input value={form.name} maxLength={40} required onChange={event => change({ name: event.target.value })}/>
@@ -62,6 +64,9 @@ function AccountForm({ account }: { account: Account }) {
                 {saved && <span className="flex items-center gap-1.5 text-sm text-success"><Check size={16}/>Guardado</span>}
             </div>
         </form></Card>}
+
+        {/* Avatar: se guarda al momento. */}
+        {tab === 'avatar' && <Card><AvatarPicker/></Card>}
 
         {/* Entrenamiento: los cambios se guardan al momento. */}
         {tab === 'training' && <Card className="flex flex-col divide-y divide-line">
