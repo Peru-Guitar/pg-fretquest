@@ -95,7 +95,7 @@ export default function LoginPage() {
         <Card className="p-6 md:p-8">
             <RhythmPicker value={rhythm} onChange={setRhythm}/>
             <h2 className="mt-9 text-xl">¿Cuánto dura cada sesión?</h2>
-            <p className="mt-1 mb-4 text-sm text-muted">En la sesión repites los ejercicios de tu plan hasta completar el tiempo. Si completas tu sesión, ese día cuenta para tu ritmo; si no, no pasa nada.</p>
+            <p className="mt-1 mb-4 text-sm text-muted">Es el tiempo que quieres practicar al día. Si lo completas, ese día cuenta para tu ritmo; si no, no pasa nada.</p>
             <SessionPicker value={sessionMinutes} onChange={setSessionLength}/>
             <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyGoal(rhythm); setSessionMinutes(sessionMinutes); navigate(ROUTES.plan); }}>Ver mi plan <ArrowRight size={18}/></Button>
         </Card>

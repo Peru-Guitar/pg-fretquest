@@ -81,14 +81,12 @@ export const moduleUrl = (moduleId: string) => `${ROUTES.exercises}/${moduleSlug
 export const lessonUrl = (moduleId: string, lessonId: string) => `${moduleUrl(moduleId)}/${lessonSlug(lessonId)}`;
 /**
  * La página de un ejercicio ES su sala de práctica (misma URL que `lessonUrl`). Sin ejercicio, el primero del módulo.
- * `query`: «sesion»…
  */
-export const practiceUrl = (moduleId: string, lessonId?: string, query?: string) => {
+export const practiceUrl = (moduleId: string, lessonId?: string) => {
   const lesson = lessonId ?? courses.find(course => course.id === moduleId)?.lessons.find(item => item.type === "practice")?.id;
-  return `${lesson ? lessonUrl(moduleId, lesson) : moduleUrl(moduleId)}${query ? `?${query}` : ""}`;
+  return lesson ? lessonUrl(moduleId, lesson) : moduleUrl(moduleId);
 };
 /** Sala de práctica del ejercicio (`…/ejercicio`); la página de la lección queda para su objetivo. */
-export const exerciseUrl = (moduleId: string, lessonId: string, query?: string) =>
-  `${lessonUrl(moduleId, lessonId)}/ejercicio${query ? `?${query}` : ""}`;
+export const exerciseUrl = (moduleId: string, lessonId: string) => `${lessonUrl(moduleId, lessonId)}/ejercicio`;
 /** Perfil de un usuario (Comunidad; el admin ve además sus datos privados). Va por `?uid=` porque la exportación estática no tiene rutas por usuario. */
 export const userProfileUrl = (uid: string) => `${ROUTES.userProfile}?uid=${encodeURIComponent(uid)}`;

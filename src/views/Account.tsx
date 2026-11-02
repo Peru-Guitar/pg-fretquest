@@ -74,7 +74,7 @@ function AccountForm({ account }: { account: Account }) {
             </section>
             <section className="pt-7">
                 <h2 className="text-lg">Duración de cada sesión</h2>
-                <p className="mt-1 mb-4 text-sm text-muted">Repites los ejercicios de tu plan hasta completarla. Si la completas, el día cuenta para tu ritmo.</p>
+                <p className="mt-1 mb-4 text-sm text-muted">Es el tiempo que quieres practicar al día. Si lo completas, ese día cuenta para tu ritmo.</p>
                 <SessionPicker value={account.sessionMinutes ?? DEFAULT_SESSION_MINUTES} onChange={setSessionMinutes}/>
             </section>
         </Card>}

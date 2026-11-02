@@ -9,21 +9,12 @@ const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_S = 0.12;
 
 let ctx: AudioContext | null = null;
-let bus: GainNode | null = null;
-/** Contexto compartido; los clics pasan por `clickBus` para poder grabarlos. */
+/** Contexto compartido. */
 export function audio(): AudioContext {
   ctx ??= new AudioContext();
   if (ctx.state === "suspended") void ctx.resume();
   return ctx;
 }
-export function clickBus(): GainNode {
-  if (!bus) {
-    bus = audio().createGain();
-    bus.connect(audio().destination);
-  }
-  return bus;
-}
-
 function click(at: number, accent: boolean) {
   const ac = audio();
   const osc = ac.createOscillator();
@@ -32,7 +23,7 @@ function click(at: number, accent: boolean) {
   gain.gain.setValueAtTime(0.0001, at);
   gain.gain.exponentialRampToValueAtTime(accent ? 1 : 0.7, at + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
-  osc.connect(gain).connect(clickBus());
+  osc.connect(gain).connect(ac.destination);
   osc.start(at);
   osc.stop(at + 0.06);
 }

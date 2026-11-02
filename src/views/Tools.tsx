@@ -3,13 +3,11 @@
 import { ROUTES } from '@/lib/routes';
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from '@/lib/router';
-import { ArrowRight, Gauge, Mic, MicOff, Minus, Music2, Pause, Play, Plus, Square } from 'lucide-react';
+import { ArrowRight, Gauge, Mic, MicOff, Minus, Music2, Pause, Play, Plus } from 'lucide-react';
 import { BackLink, Badge, Button, Caption, Card, PageTitle } from '@/components/ui';
-import { AudioPlayer } from '@/components/ui/AudioPlayer';
 import { cn } from '@/lib/cn';
 import { useMetronome } from '@/lib/audio/metronome';
 import { useAudioDevices, useMicPitch } from '@/lib/audio/mic';
-import { MAX_TAKE_S, useRecorder } from '@/lib/audio/recorder';
 import { DeviceSelect, LevelMeter } from '@/components/exercise/AudioInput';
 import { GUITAR_STRINGS, centsBetween, nearestString } from '@/lib/audio/pitch';
 
@@ -122,20 +120,10 @@ export function TunerPage() {
     </ToolLayout>;
 }
 
-const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 const MIN_BPM = 30;
 const MAX_BPM = 300;
 const METERS = [{ label: '1/4', beats: 1 }, { label: '2/4', beats: 2 }, { label: '3/4', beats: 3 }, { label: '4/4', beats: 4 }, { label: '5/4', beats: 5 }, { label: '6/8', beats: 6 }, { label: '7/8', beats: 7 }];
-const REC_MESSAGES: Partial<Record<string, string>> = {
-    idle: 'Graba hasta 1 minuto con el clic y escúchate. La toma queda solo en este navegador.',
-    starting: 'Pidiendo acceso a la entrada de audio…',
-    recording: 'Grabando guitarra + clic…',
-    denied: 'Permiso de micrófono denegado. Actívalo en la configuración del navegador.',
-    unsupported: 'Tu navegador no permite grabar audio.',
-    error: 'No se encontró ninguna entrada de audio disponible.',
-};
-
 /** Aro del tempo: el arco marca el BPM en el rango y destella en cada pulso. */
 function TempoRing({ tempo, pulse, accent }: { tempo: number; pulse: number; accent: boolean }) {
     const r = 88;
@@ -176,18 +164,6 @@ export function MetronomePage() {
         setPulse({ count: 0, beat: 0 });
         setPlaying(false);
     };
-    const audio = useAudioDevices();
-    const rec = useRecorder(audio.deviceId, stopMetronome);
-    const recording = rec.status === 'recording';
-    const toggleRecording = async () => {
-        if (recording) {
-            rec.stop();
-            return stopMetronome();
-        }
-        if (!await rec.start()) return;
-        await audio.refresh();
-        setPlaying(true);
-    };
     const changeTempo = (value: number) => setTempo(Math.max(MIN_BPM, Math.min(MAX_BPM, value)));
     const stepButton = 'grid size-14 shrink-0 place-items-center rounded-xl border border-line-strong bg-raised/60 text-fg shadow-[0_6px_20px_#0006] transition hover:border-accent/60 md:size-18 [&_svg]:size-7';
 
@@ -214,19 +190,8 @@ export function MetronomePage() {
                 className={cn(chip(beats === meter.beats), 'text-sm')}>{meter.label}</button>)}
         </div>
 
-        <div className="mx-auto mt-14 flex max-w-md flex-col gap-4">
-            <DeviceSelect audio={audio}/>
-            {recording && <LevelMeter level={rec.level}/>}
+        <div className="mt-14 flex justify-center">
+            <Button size="lg" className="min-w-52 text-lg" onClick={() => playing ? stopMetronome() : setPlaying(true)}>{playing ? <Pause className="fill-current"/> : <Play className="fill-current"/>} {playing ? 'Detener' : 'Iniciar'}</Button>
         </div>
-        <div className="mt-6 flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="min-w-52 text-lg" disabled={recording} onClick={() => playing ? stopMetronome() : setPlaying(true)}>{playing ? <Pause className="fill-current"/> : <Play className="fill-current"/>} {playing ? 'Detener' : 'Iniciar'}</Button>
-            <Button size="lg" variant={recording ? 'danger' : 'secondary'} className="min-w-52 text-lg" disabled={rec.status === 'starting'} onClick={() => void toggleRecording()}>
-                {recording ? <Square className="fill-current"/> : <span className="size-6 rounded-full bg-[#ff5f5f] shadow-[0_0_12px_#ff5f5f66]"/>}
-                {recording ? <>Detener <span className="font-mono tabular-nums">{formatTime(Math.max(0, MAX_TAKE_S - rec.elapsed) + 0.999)}</span></> : 'Grabar · 1:00'}
-            </Button>
-        </div>
-        {rec.take && !recording && <div className="mt-8"><AudioPlayer key={rec.take.url} src={rec.take.url} duration={rec.take.duration} label="tu grabación"/></div>}
-        {REC_MESSAGES[rec.status] && <Caption className="mt-4 justify-center">{REC_MESSAGES[rec.status]}</Caption>}
-
     </ToolLayout>;
 }

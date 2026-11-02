@@ -1,6 +1,6 @@
 import type { Speed } from '@/data/practiceStudies';
 import { ROUTES } from '@/lib/routes';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Clock3, Trophy, X } from 'lucide-react';
@@ -22,7 +22,7 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Ma
  * Resumen al terminar las rondas de una práctica, a pantalla completa con el fondo borroso:
  * rondas, velocidad y tiempo. No se guarda nada.
  */
-export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress, children, onClose }: { rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null; children?: ReactNode; onClose: () => void }) {
+export function PracticeSummary({ rounds, bpm, seconds, progress, onClose }: { rounds: number; speed: Speed; bpm: number; seconds: number; progress: SummaryProgress | null; onClose: () => void }) {
     const signedIn = useAccount() !== null;
     // Minutos que suma esta práctica a la de hoy (solo con sesión y si el día aún no estaba completo).
     const goal = progress?.goalMinutes ?? 0;
@@ -55,8 +55,8 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                 <button type="button" aria-label="Cerrar resumen" onClick={onClose} className="absolute top-3 right-3 z-10 grid size-9 place-items-center rounded text-muted hover:bg-white/5 hover:text-fg"><X size={16}/></button>
                 <div className="relative mx-auto flex w-full max-w-lg flex-col items-center">
                     <span className="grid size-14 place-items-center rounded-full bg-gold text-canvas"><Trophy size={26}/></span>
-                    <h2 className="mt-4 text-3xl">{sessionMinutes ? '¡Sesión completada!' : '¡Terminaste!'}</h2>
-                    <p className="mt-1 font-serif text-lg text-fg-soft italic">{sessionMinutes ? `${sessionMinutes} minutos de práctica: hoy cuenta para tu ritmo.` : 'Otra sesión que suma a tu técnica.'}</p>
+                    <h2 className="mt-4 text-3xl">¡Terminaste!</h2>
+                    <p className="mt-1 font-serif text-lg text-fg-soft italic">Otra sesión que suma a tu técnica.</p>
 
                     <dl className="mt-6 grid w-full grid-cols-3 gap-2">
                         {stats.map(([label, value, unit]) => <div key={label} className="rounded-xl border border-white/10 bg-white/4 px-2 py-3">
@@ -69,7 +69,6 @@ export function PracticeSummary({ rounds, bpm, seconds, sessionMinutes, progress
                         <span className="block h-2 flex-1 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full', after >= goal ? 'bg-success' : 'bg-blue')} style={{ width: `${after / goal * 100}%` }}/></span>
                         <span className={cn('shrink-0 font-mono text-xs', after >= goal ? 'font-bold text-success' : 'text-fg-soft')}>{after >= goal ? '¡Hoy completo!' : `${after}/${goal} min hoy`}</span>
                     </div>}
-                    {children && <div className="mt-6 w-full">{children}</div>}
 
                     <p className="mt-4 text-xs text-muted">¿Te trabaste o quieres que te corrijan? <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Pide ayuda en el grupo de WhatsApp</a>.</p>
 

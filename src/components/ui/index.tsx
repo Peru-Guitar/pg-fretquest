@@ -1,4 +1,4 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Link } from "@/lib/router";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -17,10 +17,6 @@ export function LinkButton({ to, children, variant = "primary", size, className 
   return <Link to={to} className={cn(buttonClass(variant, size), className)}>{children}<ArrowRight size={16} /></Link>;
 }
 
-export function IconButton({ active, className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
-  return <button className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-line bg-white/2 transition hover:bg-white/5", active && "text-accent", className)} {...props} />;
-}
-
 /* ── Texto ───────────────────────────────────────────────── */
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
@@ -35,30 +31,10 @@ export function Badge({ children, icon = true, className }: { children: ReactNod
   return <span className={cn("inline-flex items-center gap-1.5 rounded border border-accent/25 bg-accent/5 px-2 py-1.5 text-4xs font-black tracking-[0.15em] text-accent-strong xs:whitespace-nowrap", className)}>{icon && <Sparkles size={13} />}{children}</span>;
 }
 
-export function Tags({ items, className }: { items: ReactNode[]; className?: string }) {
-  return <div className={cn("flex flex-wrap gap-2", className)}>{items.map((item, index) => <span key={index} className="rounded-[5px] border border-violet/20 bg-violet/5 px-3 py-2 text-2xs text-fg-soft">{item}</span>)}</div>;
-}
-
 /* ── Superficies ─────────────────────────────────────────── */
 
 export function Card({ as: Tag = "section", className, children }: { as?: "section" | "div" | "aside" | "form"; className?: string; children: ReactNode }) {
   return <Tag className={cn("rounded-2xl border border-line bg-card p-5.5 xl:p-6.5", className)}>{children}</Tag>;
-}
-
-export function TipCard({ symbol = "✦", title, children }: { symbol?: string; title: string; children: ReactNode }) {
-  return <div className="rounded-lg border border-line bg-card p-6">
-    <span className="text-3xl text-accent-strong">{symbol}</span>
-    <h3 className="my-2 text-accent">{title}</h3>
-    <p className="text-sm leading-loose text-fg-soft">{children}</p>
-  </div>;
-}
-
-export function IconTile({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn("grid size-10.5 shrink-0 place-items-center rounded-lg border border-violet/15 bg-violet/5 text-accent-strong", className)}>{children}</span>;
-}
-
-export function Avatar({ children, size = "md", className }: { children: ReactNode; size?: "sm" | "md"; className?: string }) {
-  return <span className={cn("grid shrink-0 place-items-center rounded-[10px] border border-blue/30 bg-brand-soft font-black text-accent", size === "sm" ? "size-8 text-sm" : "size-9.5", className)}>{children}</span>;
 }
 
 export function EmptyState({ icon, title, children, action }: { icon: ReactNode; title: string; children: ReactNode; action?: ReactNode }) {
@@ -67,16 +43,6 @@ export function EmptyState({ icon, title, children, action }: { icon: ReactNode;
     <h2 className="mb-2.5 text-fg">{title}</h2>
     <p>{children}</p>
     {action && <div className="mt-5">{action}</div>}
-  </div>;
-}
-
-/* ── Progreso ────────────────────────────────────────────── */
-
-/** Barra de progreso. `value` va de 0 a 100. */
-export function Meter({ value, label, tone = "brand", size = "sm", className }: { value: number; label: string; tone?: "brand" | "success" | "blue"; size?: "sm" | "md" | "lg"; className?: string }) {
-  const pct = Math.max(0, Math.min(100, value));
-  return <div className={cn("w-full overflow-hidden rounded-full bg-line", { sm: "h-1.5", md: "h-2.5", lg: "h-3" }[size], className)} role="progressbar" aria-label={label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-    <div className={cn("h-full rounded-full transition-[width] duration-500 ease-out", { brand: "bg-blue", success: "bg-success", blue: "bg-blue" }[tone])} style={{ width: `${pct}%` }} />
   </div>;
 }
 
@@ -98,28 +64,8 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
   </div>;
 }
 
-export function Toggle({ title, text, defaultOn = true }: { title: string; text: string; defaultOn?: boolean }) {
-  const [enabled, setEnabled] = useState(defaultOn);
-  return <div className="my-6 flex items-center justify-between gap-5 border-b border-line py-5">
-    <div><h3>{title}</h3><p className="mt-2 text-xs leading-relaxed text-muted">{text}</p></div>
-    <button type="button" role="switch" aria-checked={enabled} aria-label={title} onClick={() => setEnabled(!enabled)} className={cn("h-6 w-10 shrink-0 rounded-full p-0.75", enabled ? "bg-blue" : "bg-line-strong")}>
-      <span className={cn("block size-4.5 rounded-full transition-transform", enabled ? "translate-x-4 bg-white" : "bg-fg-soft")} />
-    </button>
-  </div>;
-}
-
 export function Field({ label, children, className }: { label: ReactNode; children: ReactNode; className?: string }) {
   return <label className={cn("my-5.5 flex flex-col gap-2 text-sm text-fg-soft", className)}>{label}{children}</label>;
-}
-
-/* ── Layout ──────────────────────────────────────────────── */
-
-/** Contenido principal + columna lateral. Bajo lg la columna pasa debajo (en 2 columnas desde md). */
-export function DetailLayout({ children, aside }: { children: ReactNode; aside: ReactNode }) {
-  return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-4.5 xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-6">
-    <div className="flex min-w-0 flex-col gap-6">{children}</div>
-    <aside className="grid min-w-0 content-start items-start gap-5 md:max-lg:grid-cols-2 lg:gap-6">{aside}</aside>
-  </div>;
 }
 
 /* ── Encabezados ─────────────────────────────────────────── */

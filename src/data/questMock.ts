@@ -1199,14 +1199,3 @@ export const latestLessons = (count: number) => courses
  .sort((a, b) => b.lesson.added!.localeCompare(a.lesson.added!))
  .slice(0, count);
 
-/** Velocidades fijas (BPM con notas en corcheas). Los nombres describen la exigencia del ejercicio, no el nivel de quien toca. Cada lección acota su rango con `tempo.min` / `tempo.max`. */
-export const tempos = [
- { bpm: 40, name: 'Base' },
- { bpm: 60, name: 'Estable' },
- { bpm: 80, name: 'Fluido' },
- { bpm: 100, name: 'Intenso' },
- { bpm: 120, name: 'Exigente' },
- { bpm: 140, name: 'Muy exigente' },
- { bpm: 160, name: 'Extremo' },
-] as const;
-export const tempoName = (bpm: number) => tempos.find(tempo => tempo.bpm === bpm)?.name ?? `${bpm} BPM`;

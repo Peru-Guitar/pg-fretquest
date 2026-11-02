@@ -10,15 +10,6 @@ function ArtistPhoto({ id, name, className }: { id: string; name: string; classN
     </span>;
 }
 
-/** Etiqueta pequeña con el autor del ejercicio (listas). */
-export function ArtistTag({ id }: { id: string }) {
-    const artist = artists[id];
-    if (!artist) return null;
-    return <span className="inline-flex items-center gap-1.5 rounded-full border border-blue/40 bg-blue/10 py-0.5 pr-2.5 pl-0.5 text-2xs font-bold text-accent">
-        <ArtistPhoto id={id} name={artist.name} className="size-5 text-[0.5rem]"/>{artist.name}
-    </span>;
-}
-
 /** Crédito destacado del autor (pantalla del ejercicio). */
 export function ArtistCredit({ id, transcribedBy }: { id: string; transcribedBy?: string }) {
     const artist = artists[id];
