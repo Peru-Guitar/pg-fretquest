@@ -118,15 +118,6 @@ export const setSessionMinutes = (minutes: number) => {
   void setDoc(doc(db, "users", account.uid), { sessionMinutes: minutes }, { merge: true }).catch(() => { /* queda local */ });
 };
 
-/**
- * Sesión del plan en curso: se repiten los ejercicios hasta completar el tiempo.
- * Vive en localStorage para sobrevivir al cambio de lección. `autostart`: al abrir la siguiente lección, abre sola la preparación.
- */
-export type PlanSession = { startedAt: number; minutes: number; autostart?: boolean };
-const sessionStore = createLocalStore<PlanSession | null>("fretquest.planSession", null);
-export const usePlanSession = sessionStore.use;
-export const getPlanSession = sessionStore.get;
-export const setPlanSession = sessionStore.set;
 export const setWeeklyGoal = (days: number) => {
   const account = store.get();
   if (!account) return;

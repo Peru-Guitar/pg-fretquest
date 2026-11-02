@@ -114,14 +114,5 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Ranking precalculado: lo escribe solo una Cloud Function (más adelante); se lee con sesión iniciada.
-    match /rankings/{week} {
-      allow read: if signedIn();
-      allow write: if false;
-      match /entries/{uid} {
-        allow read: if signedIn();
-        allow write: if false;
-      }
-    }
   }
 }

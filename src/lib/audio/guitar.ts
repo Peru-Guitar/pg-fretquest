@@ -21,16 +21,11 @@ const OPEN_STRINGS = [64, 59, 55, 50, 45, 40];
 let tone: Tone = null;
 let sampler: Tone = null;
 let clicker: Tone = null;
-/** Salida propia de los clics: la grabación de la práctica toma el metrónomo de aquí, sin la guitarra de guía. */
-let clicks: Tone = null;
-/** Las mismas muestras como búferes sueltos: el slide las reproduce cambiando la velocidad sobre la marcha. */
+/** Las mismas muestras como búferes sueltos: el bend y el vibrato las reproducen cambiando la velocidad sobre la marcha. */
 let buffers: Tone = null;
-/** Armónicos: la misma guitarra sin graves (suena delgada y brillante) más un poco de tono puro. */
-let harmonics: Tone = null;
-let bell: Tone = null;
-/** Entrada de la distorsión: el slide se conecta aquí para sonar igual que el resto. */
+/** Entrada de la distorsión: el bend y el vibrato se conectan aquí para sonar igual que el resto. */
 let drive: Tone = null;
-/** Slides sonando, para cortarlos al detener. */
+/** Bends y vibratos sonando, para cortarlos al detener. */
 const slides = new Set<AudioBufferSourceNode>();
 /** Salida común: permite cortar todo el sonido de golpe al detener. */
 let master: Tone = null;
@@ -67,24 +62,12 @@ export function prepare(): Promise<void> {
       urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`])),
       baseUrl: SAMPLE_BASE,
     });
-    const thin = new tone.Filter(1400, "highpass").connect(drive);
-    harmonics = new tone.Sampler({
-      urls: Object.fromEntries(SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`])),
-      baseUrl: SAMPLE_BASE,
-      release: 0.8,
-      volume: -6,
-    }).connect(thin);
-    bell = new tone.PolySynth(tone.Synth, {
-      oscillator: { type: "sine" },
-      envelope: { attack: 0.002, decay: 1.2, sustain: 0, release: 0.4 },
-      volume: -26,
-    }).connect(cabinet);
     // Clic corto del metrónomo: «tick» agudo en el tiempo, «tac» más grave en el contratiempo.
     clicker = new tone.Synth({
       oscillator: { type: "square" },
       envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 },
       volume: -8,
-    }).connect((clicks = new tone.Gain(1).connect(master)));
+    }).connect(master);
     await tone.loaded();
   })().catch((error) => {
     loading = null; // permite reintentar
@@ -108,15 +91,6 @@ function unlock(): void {
   source.start();
 }
 
-/** Toca una nota. `string`: 1 (aguda) a 6 (grave). */
-export function play(string: number, fret: number, durationSec: number): void {
-  if (!sampler) return;
-  const open = OPEN_STRINGS[string - 1];
-  if (open === undefined) return;
-  const frequency = tone.Frequency(open + fret, "midi").toFrequency();
-  sampler.triggerAttackRelease(frequency, Math.max(0.15, durationSec), tone.now(), 0.85);
-}
-
 /** Toca una nota en un instante del reloj de audio (para programar con antelación). `velocity` baja el volumen (0.85 por defecto). */
 export function playAt(string: number, fret: number, durationSec: number, time: number, velocity = 0.85): void {
   if (!sampler) return;
@@ -125,60 +99,8 @@ export function playAt(string: number, fret: number, durationSec: number, time: 
   sampler.triggerAttackRelease(tone.Frequency(open + fret, "midi").toFrequency(), Math.max(0.05, durationSec), time, velocity);
 }
 
-/** Semitonos que suena un armónico natural sobre la cuerda al aire, según el traste. */
-const HARMONICS: Record<number, number> = { 3: 31, 4: 28, 5: 24, 7: 19, 9: 28, 12: 12, 16: 28, 19: 19, 24: 24 };
-
-/** Armónico natural sobre `fret` (5, 7, 12…). Otros trastes suenan una octava arriba de la nota pisada. */
-export function harmonic(string: number, fret: number, durationSec: number): void {
-  if (!harmonics) return;
-  const open = OPEN_STRINGS[string - 1];
-  if (open === undefined) return;
-  const frequency = tone.Frequency(open + (HARMONICS[fret] ?? fret + 12), "midi").toFrequency();
-  const length = Math.max(0.6, durationSec);
-  harmonics.triggerAttackRelease(frequency, length, tone.now(), 0.9);
-  bell.triggerAttackRelease(frequency, length, tone.now(), 0.7);
-}
-
 /**
- * Slide de `fromFret` a `toFret` (sube o baja) con un solo ataque: suena la muestra más cercana y su
- * velocidad sube o baja hasta la nota destino. `holdSec` es lo que dura la nota inicial antes de deslizar
- * y `totalSec` la duración completa, incluida la nota destino.
- */
-export function slide(string: number, fromFret: number, toFret: number, holdSec: number, totalSec: number): void {
-  if (!buffers?.loaded || !drive) return;
-  const open = OPEN_STRINGS[string - 1];
-  if (open === undefined) return;
-  const from = open + fromFret;
-  const midis = SAMPLES.map((n) => tone.Frequency(n).toMidi() as number);
-  const nearest = midis.reduce((a, b) => (Math.abs(b - from) < Math.abs(a - from) ? b : a));
-  const rate = (midi: number) => Math.pow(2, (midi - nearest) / 12);
-
-  const ac = audio();
-  const src = ac.createBufferSource();
-  src.buffer = buffers.get(SAMPLES[midis.indexOf(nearest)]).get();
-  const gain = ac.createGain();
-  src.connect(gain);
-  tone.connect(gain, drive);
-
-  const t = ac.currentTime;
-  // Recorrido rápido, como un slide real: cuanto más lejos, un poco más largo.
-  const glide = Math.min(0.25, 0.04 + Math.abs(toFret - fromFret) * 0.025, Math.max(0.03, totalSec - holdSec));
-  const end = t + Math.max(holdSec + glide + 0.1, totalSec);
-  src.playbackRate.setValueAtTime(rate(from), t);
-  src.playbackRate.setValueAtTime(rate(from), t + holdSec);
-  src.playbackRate.exponentialRampToValueAtTime(rate(open + toFret), t + holdSec + glide);
-  // Mismo nivel que el sampler (-13 dB, fuerza 0.85) y una caída corta al final, sin clic.
-  gain.gain.setValueAtTime(0.19, t);
-  gain.gain.setValueAtTime(0.19, end - 0.08);
-  gain.gain.linearRampToValueAtTime(0, end);
-  src.start(t);
-  src.stop(end);
-  slides.add(src);
-  src.onended = () => slides.delete(src);
-}
-
-/**
- * Nota con bend y/o vibrato en un instante del reloj de audio: como el slide, suena la muestra más cercana y su velocidad
+ * Nota con bend y/o vibrato en un instante del reloj de audio: suena la muestra más cercana y su velocidad
  * sigue la afinación. El bend sube en ~0,15 s y se sostiene (el pre-bend ya empieza arriba); con `release` vuelve en el
  * último tercio. El vibrato oscila ±¼ de semitono a 5,5 Hz y entra después del bend (o desde el inicio si no hay bend).
  */
@@ -225,19 +147,6 @@ export function clickAt(time: number, accent: boolean): void {
   clicker?.triggerAttackRelease(accent ? 1800 : 1100, 0.03, time, accent ? 1 : 0.6);
 }
 
-/** Lleva también los clics del metrónomo a `node` (la grabación). Requiere `prepare`. */
-export function connectClicks(node: AudioNode): void {
-  clicks?.connect(node);
-}
-
-export function disconnectClicks(node: AudioNode): void {
-  try {
-    clicks?.disconnect(node);
-  } catch {
-    // No estaba conectado.
-  }
-}
-
 /** Tone.js ya cargado (tras `prepare`). */
 export function getTone(): Tone {
   return tone;
@@ -258,12 +167,8 @@ function cut(instrument: Tone, time: number): void {
 export function silence(): void {
   if (!tone || !master) return;
   const now = tone.now();
-  // Sin su release (0,25–0,8 s): si no, la cola seguiría sonando y se oiría al volver a reproducir.
-  for (const instrument of [sampler, harmonics]) cut(instrument, now);
-  const release = bell?.get().envelope.release;
-  bell?.set({ envelope: { release: 0.01 } });
-  bell?.releaseAll(now);
-  if (release !== undefined) bell?.set({ envelope: { release } });
+  // Sin su release (0,25 s): si no, la cola seguiría sonando y se oiría al volver a reproducir.
+  cut(sampler, now);
   for (const src of slides) src.stop();
   slides.clear();
   // Rampa de 10 ms (sin «clic») y se queda en 0: las colas de las notas ya no se oyen. `prepare` la vuelve a subir.

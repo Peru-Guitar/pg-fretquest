@@ -18,7 +18,7 @@ const POINTS = [
  * Preparación de la práctica: qué va a pasar al empezar y la configuración (`children`: velocidad, rondas, guía).
  * Sale siempre antes de practicar; cancelar no inicia nada.
  */
-export function PracticeIntro({ children, canStart = true, starting = false, error, onStart, onCancel }: { children: ReactNode; canStart?: boolean; /** Esperando a que todo esté listo para la cuenta de entrada. */ starting?: boolean; error?: string; onStart: () => void; onCancel: () => void }) {
+export function PracticeIntro({ children, starting = false, error, onStart, onCancel }: { children: ReactNode; /** Esperando a que todo esté listo para la cuenta de entrada. */ starting?: boolean; error?: string; onStart: () => void; onCancel: () => void }) {
     const [imageOk, setImageOk] = useState(true);
     // Sin scroll detrás y Escape para cancelar.
     useScrollLock();
@@ -49,7 +49,7 @@ export function PracticeIntro({ children, canStart = true, starting = false, err
                 <div className="mt-6 flex flex-col gap-3">{children}</div>
                 {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
                 <div className="mt-6 flex flex-wrap gap-3">
-                    <Button onClick={onStart} disabled={!canStart || starting}>{starting ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Comenzar práctica</Button>
+                    <Button onClick={onStart} disabled={starting}>{starting ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Comenzar práctica</Button>
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
                 </div>
             </div>
@@ -65,15 +65,14 @@ export function PracticeField({ label, icon: Icon, children }: { label: ReactNod
     </label>;
 }
 
-/** Opción que se activa con un interruptor; `note` aparece debajo (en rojo si es `warning`). `compact`: una fila con la altura de los selectores. */
-export function PracticeOption({ icon: Icon, title, note, warning, compact, checked, onChange }: { icon: LucideIcon; title: string; note?: ReactNode; warning?: boolean; compact?: boolean; checked: boolean; onChange: (checked: boolean) => void }) {
-    return <label className={cn('flex cursor-pointer gap-3 rounded-xl border transition', compact ? 'items-center px-3 py-1.5' : 'items-start p-3.5', checked ? 'border-accent/40 bg-accent/5' : 'border-line bg-sunken/50 hover:border-line-strong')}>
-        {!compact && <span className={cn('grid size-8 shrink-0 place-items-center rounded-lg', checked ? 'bg-accent/15 text-accent' : 'bg-white/5 text-muted')}><Icon size={16}/></span>}
+/** Opción que se activa con un interruptor, en una fila con la altura de los selectores; `note` aparece debajo del título. */
+export function PracticeOption({ title, note, checked, onChange }: { title: string; note?: ReactNode; checked: boolean; onChange: (checked: boolean) => void }) {
+    return <label className={cn('flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-1.5 transition', checked ? 'border-accent/40 bg-accent/5' : 'border-line bg-sunken/50 hover:border-line-strong')}>
         <span className="min-w-0 flex-1">
             <span className="block text-sm font-bold text-fg">{title}</span>
-            {note && <span className={cn('block text-xs', compact ? 'truncate' : 'mt-0.5 leading-relaxed', warning ? 'text-danger' : 'text-muted')}>{note}</span>}
+            {note && <span className="block truncate text-xs text-muted">{note}</span>}
         </span>
         <input type="checkbox" role="switch" checked={checked} onChange={event => onChange(event.target.checked)} className="peer sr-only"/>
-        <span aria-hidden className={cn("relative h-5 w-9 shrink-0 rounded-full bg-white/15 transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent after:absolute after:top-0.5 after:left-0.5 after:size-4 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4", !compact && 'mt-1')}/>
+        <span aria-hidden className="relative h-5 w-9 shrink-0 rounded-full bg-white/15 transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent after:absolute after:top-0.5 after:left-0.5 after:size-4 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4"/>
     </label>;
 }

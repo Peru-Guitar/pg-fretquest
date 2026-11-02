@@ -26,8 +26,6 @@ export type PlayOptions = {
   startAt?: number;
   /** Rondas que toca (1 por defecto). */
   rounds?: number;
-  /** En vez de `rounds`: repite hasta esta hora (ms); se consulta al final de cada ronda, que siempre termina. */
-  until?: () => number;
   /** Descanso en silencio entre rondas, en segundos (0 por defecto). */
   restSeconds?: number;
   /** Cuenta de entrada antes de cada ronda. */
@@ -42,8 +40,6 @@ export type PlayOptions = {
   onStep?: (index: number) => void;
   /** Descanso: segundos que faltan, una vez por segundo. */
   onRest?: (secondsLeft: number) => void;
-  /** Terminó una ronda. */
-  onRoundEnd?: (round: number) => void;
   /** Terminó todo, tras `rounds` rondas. */
   onEnd?: (rounds: number) => void;
 };
@@ -57,7 +53,7 @@ const COUNT_DOWN = 4;
  * todo lo de esta reproducción vive aquí y se desecha al terminar. Devuelve la función que la detiene.
  * Requiere `prepare`.
  */
-export function playPattern({ bpm, pattern, notesPerBeat = 1, startAt = 0, rounds = 1, until, restSeconds = 0, countIn = false, guideVelocity = 0.85, onRoundStart, onCount, onStep, onRest, onRoundEnd, onEnd }: PlayOptions): () => void {
+export function playPattern({ bpm, pattern, notesPerBeat = 1, startAt = 0, rounds = 1, restSeconds = 0, countIn = false, guideVelocity = 0.85, onRoundStart, onCount, onStep, onRest, onEnd }: PlayOptions): () => void {
   const tone = getTone();
   const context = tone.getContext();
   const click = 60 / bpm;
@@ -113,8 +109,7 @@ export function playPattern({ bpm, pattern, notesPerBeat = 1, startAt = 0, round
       position += length;
     });
     events.push({ time: start + totalSteps * step, run: (time) => {
-      notify(time, () => onRoundEnd?.(round));
-      if (until ? Date.now() < until() : round < rounds) {
+      if (round < rounds) {
         for (let i = 0; i < restSeconds; i++) notify(time + i, () => onRest?.(restSeconds - i));
         addRound(round + 1, time + restSeconds);
       } else { context.off("tick", tick); notify(time, () => onEnd?.(round));

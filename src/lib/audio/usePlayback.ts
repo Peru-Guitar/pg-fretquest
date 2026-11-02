@@ -12,14 +12,10 @@ export type PlaybackStatus = "idle" | "preparing" | "intro" | "starting" | "coun
 type View = { status: PlaybackStatus; round: number; count: number; pulse: number; step: number; startedAt: number; soundError: boolean };
 
 /** Qué suena: lo mismo para Reproducir y Practicar, cambian solo las opciones. */
-export type PlayPlan = Pick<PlayOptions, "bpm" | "pattern" | "notesPerBeat" | "startAt" | "rounds" | "until" | "restSeconds" | "countIn" | "guideVelocity">;
+export type PlayPlan = Pick<PlayOptions, "bpm" | "pattern" | "notesPerBeat" | "startAt" | "rounds" | "restSeconds" | "countIn" | "guideVelocity">;
 
 type Options = {
   plan: (demo: boolean) => PlayPlan;
-  /** Empieza un descanso entre rondas, de estos segundos. */
-  onRest?: (seconds: number) => void;
-  /** Terminó una ronda de práctica. */
-  onRoundEnd?: () => void;
   /** Terminaron todas las rondas de la práctica. `startedAt` ya descuenta los descansos: no son tiempo de práctica. */
   onFinish: (rounds: number, startedAt: number) => void;
 };
@@ -60,11 +56,7 @@ export function usePlayback(options: Options) {
       },
       onCount: (count) => setView((current) => ({ ...current, count, pulse: current.pulse + 1 })),
       onStep: (step) => setView((current) => ({ ...current, status: demo ? "demo" : "playing", step })),
-      onRest: (left) => {
-        if (left === rest) latest.current.onRest?.(rest);
-        setView((current) => ({ ...current, status: "rest", count: left, pulse: current.pulse + 1, step: -1 }));
-      },
-      onRoundEnd: () => { if (!demo) latest.current.onRoundEnd?.(); },
+      onRest: (left) => setView((current) => ({ ...current, status: "rest", count: left, pulse: current.pulse + 1, step: -1 })),
       onEnd: (rounds) => {
         stop();
         if (!demo) latest.current.onFinish(rounds, startedAt);

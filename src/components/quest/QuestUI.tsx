@@ -1,42 +1,10 @@
 import { moduleUrl } from '@/lib/routes';
 import { Link } from '@/lib/router';
-import { ArrowRight, Guitar } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { courses } from '@/data/questMock';
 import { cn } from '@/lib/cn';
 import { Card } from '@/components/ui';
 import { initials, toneOf } from '@/lib/avatar';
-
-const artTones: Record<string, { bg: string; fg: string }> = {
-    riff: { bg: 'from-[#1d4a7a] via-[#111a30] via-62% to-[#0b0f1c]', fg: 'text-[#5ab8ec]' },
-    chord: { bg: 'from-[#2a5f8f] via-[#14203a] via-65% to-[#0b0f1c]', fg: 'text-[#a8c9f4]' },
-    rhythm: { bg: 'from-[#285890] via-[#1c2a4c] via-65% to-[#111e31]', fg: 'text-[#a8c9f4]' },
-    solo: { bg: 'from-[#173c66] via-[#101829] via-65% to-[#0b0f1c]', fg: 'text-[#5ab8ec]' },
-};
-
-/** Ilustración decorativa. `card` = cabecera de tarjeta, `hero` = fondo del bloque principal, `cover` = portada de módulo. */
-export function GuitarArt({ variant = 'riff', layout = 'card' }: { variant?: string; layout?: 'card' | 'hero' | 'cover' }) {
-    const tone = layout === 'hero' ? { bg: '', fg: 'text-accent' } : artTones[variant] ?? artTones.riff;
-    const hero = layout === 'hero';
-    const center = 'absolute top-1/2 -translate-1/2';
-    return <div aria-hidden="true" className={cn(
-        'isolate overflow-hidden',
-        layout === 'card' && 'relative h-44 bg-radial-[at_60%_35%]',
-        layout === 'cover' && 'absolute inset-y-0 right-0 left-1/5 bg-radial-[at_65%_35%]',
-        hero && 'absolute inset-y-0 right-0 left-1/5 opacity-30 mask-[linear-gradient(90deg,transparent,#000_23%)] xs:left-[36%] xs:opacity-100',
-        !hero && tone.bg,
-    )}>
-        <div className={cn(center, 'rounded-full border border-[#5ab8ec25]', hero ? 'left-4/5 size-82 md:left-2/3' : 'left-1/2 size-70')}/>
-        <div className={cn(center, 'rounded-full border border-[#5ab8ec25]', hero ? 'left-4/5 size-115 md:left-2/3' : 'left-1/2 size-90')}/>
-        <div className="absolute -top-[35%] -left-[10%] h-[140%] w-[180%] -rotate-35 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_47px,#5ab8ec0b_48px,#5ab8ec0b_49px)]"/>
-        <Guitar strokeWidth={0.9} className={cn(
-            center, 'drop-', tone.fg,
-            hero ? 'left-9/10 size-72 rotate-[-26deg] xs:left-3/4 md:left-[76%] lg:left-2/3 xl:left-[76%] lg:size-80 xl:size-72 2xl:left-2/3 2xl:size-82' : 'left-1/2 size-57 -rotate-24',
-        )}/>
-        <span className={cn('absolute top-1/5 left-1/5 text-2xl', tone.fg)}>✦</span>
-        <span className={cn('absolute right-1/6 bottom-1/5 text-base', tone.fg)}>+</span>
-        <span className={cn('absolute bottom-3 text-4xs tracking-[0.25em] text-muted', hero ? 'right-6 hidden md:block' : 'left-4.5')}>FQ / PLAY YOUR WAY</span>
-    </div>;
-}
 
 /** Caras superpuestas de quienes practicaron el módulo o la lección esta semana (hasta `max`; el resto, «+N»). */
 export function Practicing({ people, max = 5 }: { people: { uid: string; name: string }[]; max?: number }) {

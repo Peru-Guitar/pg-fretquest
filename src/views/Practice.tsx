@@ -9,9 +9,9 @@ import { FIGURES, pickingOf, practiceStudies, speedName, speedPlan, type Speed, 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
+import { Link, useParams } from '@/lib/router';
 import { courses, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Timer, Trash2, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, Square, Target, Timer, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
@@ -20,9 +20,7 @@ import { usePlayback } from '@/lib/audio/usePlayback';
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
 import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
-import { InputLevel, RoundRecordings } from '@/components/practice/RoundRecordings';
-import { usePracticeRecorder } from '@/lib/audio/practiceRecorder';
-import { addTotalSeconds, DEFAULT_SESSION_MINUTES, getPlanSession, levelLabel, planFor, recordPractice, setPlanSession, useAccount, usePlanSession } from '@/lib/account';
+import { addTotalSeconds, DEFAULT_SESSION_MINUTES, levelLabel, recordPractice, useAccount } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { LevelUpDialog } from '@/components/practice/LevelUpDialog';
@@ -61,15 +59,6 @@ const REST_OPTIONS: RichOption<number>[] = [
 const GUIDE_VELOCITY = 0.08;
 /** Fuerza de la guitarra al escuchar con Reproducir. */
 const LISTEN_VELOCITY = 0.3;
-/**
- * TODO(deuda técnica): grabación por ronda apagada hasta pulirla. Pendiente:
- * - Probarla con interfaces de varios canales (p. ej. Quad Cortex): el navegador solo toma los canales 1/2,
- *   que pueden traer la señal seca (DI) en vez de la procesada.
- * - Con parlantes, el micrófono capta la guía por el aire (solo la mezcla digital la excluye).
- * - Revisar el flujo completo en el navegador: permiso, cambio de entrada, tomas al detener a mano, Safari/iOS.
- * Con `true` vuelve la opción «Grabar cada ronda» en la preparación; el resto ya está conectado.
- */
-const RECORDING_ENABLED = false;
 // Un mensaje por pantalla (cuenta o descanso). Nunca repite uno ya visto, tampoco entre prácticas; al verlos todos, vuelve a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
@@ -173,16 +162,6 @@ function Elapsed({ since }: { since: number }) {
     return <span className="font-mono text-lg font-bold text-fg tabular-nums" aria-label="Tiempo transcurrido">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span>;
 }
 
-/** Tiempo restante de la sesión del plan, refrescado cada cuarto de segundo. */
-function Remaining({ until }: { until: number }) {
-    const [seconds, setSeconds] = useState(() => Math.max(0, Math.ceil((until - now()) / 1000)));
-    useEffect(() => {
-        const id = setInterval(() => setSeconds(Math.max(0, Math.ceil((until - now()) / 1000))), 250);
-        return () => clearInterval(id);
-    }, [until]);
-    return <span className="flex items-baseline gap-1.5 font-mono text-lg font-bold text-accent tabular-nums" aria-label="Tiempo restante de la sesión">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}<small className="font-sans text-2xs font-normal text-muted">restantes</small></span>;
-}
-
 export default function PracticePage({ mode }: { mode: Mode }) {
     // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
     const { modulo, leccion } = useParams();
@@ -195,29 +174,15 @@ export default function PracticePage({ mode }: { mode: Mode }) {
 function PracticeView({ mode }: { mode: Mode }) {
     const { modulo, leccion } = useParams();
     const exerciseId = moduleIdFromSlug(modulo);
-    const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const hasPractice = (course: typeof courses[number]) => course.lessons.some(lesson => lesson.type === 'practice');
     const activeModule = courses.find(course => course.id === exerciseId && hasPractice(course)) ?? courses.find(course => course.id === 'fingering')!;
-    // La sesión del plan sigue al pasar entre Objetivo y Ejercicio.
-    const search = searchParams.toString();
     const practiceLessons = activeModule.lessons.filter((lesson): lesson is PracticeLesson => lesson.type === 'practice');
     const activeExercise = practiceLessons.find(lesson => lesson.id === lessonIdFromSlug(activeModule.id, leccion)) ?? practiceLessons[0];
     const study = practiceStudies[activeExercise.id];
-    // Sesión del plan (?session): se repiten las rondas hasta completar el tiempo; «Siguiente lección» no la corta.
-    const planSession = usePlanSession();
     const account = useAccount();
     // Quiénes practicaron esta lección esta semana (datos y caché de Comunidad).
     const { data: community } = useCommunity(account !== null);
     const practicing = community?.byLesson[activeExercise.id] ?? [];
-    const session = searchParams.has('sesion') ? planSession : null;
-    const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
-    const nextInPlan = (() => {
-        if (!account?.level) return null;
-        const lessons = planFor(account.level).flatMap(block => block.lessons.map(lesson => ({ moduleId: block.moduleId, lesson })));
-        const index = lessons.findIndex(item => item.lesson.id === activeExercise.id);
-        return lessons.length > 1 ? lessons[(index + 1) % lessons.length] : null;
-    })();
     useEffect(() => { setLastExercise({ moduleId: activeModule.id, exerciseId: activeExercise.id }); }, [activeModule.id, activeExercise.id]);
     const pattern = study?.pattern ?? PATTERN;
     const picks = pickingOf(pattern, study?.picking, study?.legatoFrom);
@@ -246,22 +211,15 @@ function PracticeView({ mode }: { mode: Mode }) {
     const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
     const suggestedRounds = activeExercise.rounds ?? 1;
     const [rounds, setRounds] = useState(suggestedRounds);
-    const [finished, setFinished] = useState<{ rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
-    // Grabación opcional, una toma por ronda: en memoria, se escucha al final y se borra al cerrar el resumen.
-    const recorder = usePracticeRecorder();
-    const { clear: clearTakes, startTake } = recorder;
-    const [record, setRecord] = useState(false);
-    // Entrada de audio elegida para grabar ("" = la predeterminada). No se guarda: cada visita parte de la predeterminada.
-    const [inputId, setInputId] = useState('');
+    const [finished, setFinished] = useState<{ rounds: number; speed: Speed; bpm: number; seconds: number; progress: SummaryProgress | null } | null>(null);
     // Si la práctica subió el nivel, la celebración sale al cerrar el resumen (con el total nuevo, en segundos).
     const [levelUp, setLevelUp] = useState<number | null>(null);
     const pendingLevelUp = useRef<number | null>(null);
     const closeSummary = useCallback(() => {
         setFinished(null);
-        clearTakes();
         setLevelUp(pendingLevelUp.current);
         pendingLevelUp.current = null;
-    }, [clearTakes]);
+    }, []);
     // Nota elegida en la tablatura: Reproducir empieza desde ahí (Practicar siempre toca el patrón completo).
     const [from, setFrom] = useState<number | null>(null);
     // Al cambiar de ejercicio vuelve al valor por defecto de su tablatura.
@@ -281,11 +239,11 @@ function PracticeView({ mode }: { mode: Mode }) {
     const restSeconds = REST_OPTIONS.some(option => option.value === savedRest) ? savedRest : 0;
     const [messages, setMessages] = useState(MOTIVATION);
     // Al salir el resumen se registra la práctica (solo con sesión iniciada); el modal muestra los minutos sumados.
-    const finish = (rounds: number, startedAt: number, session?: { sessionMinutes: number; seconds: number }) => {
+    const finish = (rounds: number, startedAt: number) => {
         const endedAt = new Date();
         const startedAtDate = new Date(startedAt);
         const seconds = (endedAt.getTime() - startedAtDate.getTime()) / 1000;
-        setFinished({ rounds, speed, bpm, seconds: session?.seconds ?? seconds, sessionMinutes: session?.sessionMinutes, progress: null });
+        setFinished({ rounds, speed, bpm, seconds, progress: null });
         if (!account) return;
         recordPractice(activeExercise.id);
         const goalMinutes = account.sessionMinutes ?? DEFAULT_SESSION_MINUTES;
@@ -303,20 +261,13 @@ function PracticeView({ mode }: { mode: Mode }) {
     };
     const playback = usePlayback({
         // Mismo punto de entrada: Reproducir empieza desde la nota elegida, una pasada y sin cuenta.
-        // Practicar empieza siempre desde cero, con cuenta, guía bajita y sus rondas (en sesión, hasta completar el tiempo).
+        // Practicar empieza siempre desde cero, con cuenta, guía bajita y sus rondas.
         plan: demo => {
             const base = { bpm, pattern, notesPerBeat: FIGURES[figure].notesPerBeat };
             if (demo) return { ...base, startAt: from ?? 0, guideVelocity: LISTEN_VELOCITY };
-            return { ...base, rounds, until: session ? () => { const current = getPlanSession(); return current ? current.startedAt + current.minutes * 60_000 : 0; } : undefined, restSeconds, countIn: true, guideVelocity: practiceGuide ? GUIDE_VELOCITY : 0 };
+            return { ...base, rounds, restSeconds, countIn: true, guideVelocity: practiceGuide ? GUIDE_VELOCITY : 0 };
         },
-        // En sesión el descanso tampoco gasta tiempo: el reloj se corre esos segundos.
-        onRest: seconds => { const current = getPlanSession(); if (current) setPlanSession({ ...current, startedAt: current.startedAt + seconds * 1000 }); },
-        onRoundEnd: () => recorder.endTake(),
-        onFinish: (number, startedAt) => {
-            if (!session) { finish(number, startedAt); return; }
-            setPlanSession(null);
-            finish(number, startedAt, { sessionMinutes: session.minutes, seconds: (now() - session.startedAt) / 1000 });
-        },
+        onFinish: finish,
     });
     const { status, round, count, pulse, step, startedAt, soundError, stop: stopPlayback } = playback;
     const listening = status === 'demoLoading' || status === 'demo';
@@ -329,52 +280,19 @@ function PracticeView({ mode }: { mode: Mode }) {
     const showIntro = status === 'intro' || status === 'starting';
     useScrollLock(status === 'countdown' || status === 'rest');
     useScrollLock(stage);
-    // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
-    useEffect(() => { if (status === 'playing') startTake(round); }, [status, round, startTake]);
-    // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
-    const { close: closeInput, open: openInput } = recorder;
-    useEffect(() => { if (status === 'idle') closeInput(); }, [status, closeInput]);
-    const recordRef = useRef({ record, inputId });
-    useEffect(() => { recordRef.current = { record, inputId }; }, [record, inputId]);
-    useEffect(() => { if (status === 'intro' && recordRef.current.record) void openInput(recordRef.current.inputId); }, [status, openInput]);
     const message = messages[(2 * (round - 1) + (status === 'rest' ? 1 : 0)) % messages.length];
     const messageShown = status === 'countdown' || status === 'rest';
     useEffect(() => {
         if (messageShown && !seenMessagesStore.get().includes(message)) seenMessagesStore.set([...seenMessagesStore.get(), message]);
     }, [messageShown, message]);
-    const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
-    const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
     // Practicar parte siempre de cero (menos la configuración: velocidad, rondas y guía): ninguna nota marcada.
     const openIntro = () => { setFrom(null); setFinished(null); void playback.openIntro(); };
-    // Una práctica nueva borra las tomas anteriores.
-    const startPractice = () => { recorder.clear(); setMessages(nextMessages()); void playback.begin(); };
+    const startPractice = () => { setMessages(nextMessages()); void playback.begin(); };
     const playDemo = () => { setFinished(null); void playback.playDemo(); };
 
-    // Detener a mano corta la sesión: ese día no cuenta (no pasa nada). Salir de la página, en cambio, no la borra.
-    const userStop = () => { if (session) setPlanSession(null); stopPlayback(); };
-    const goNext = () => {
-        if (!nextInPlan || !session) return;
-        stopPlayback();
-        setPlanSession({ ...session, autostart: true });
-        navigate(exerciseUrl(nextInPlan.moduleId, nextInPlan.lesson.id, 'sesion'));
-    };
-
     const playDemoRef = useRef(playDemo);
-    const userStopRef = useRef(userStop);
     const openIntroRef = useRef(openIntro);
-    useEffect(() => { playDemoRef.current = playDemo; userStopRef.current = userStop; openIntroRef.current = openIntro; });
-    // Al abrir una lección de la sesión sale la preparación, como en cualquier práctica. Se difiere un tick y se cancela en la limpieza:
-    // así, si React monta dos veces (StrictMode en desarrollo), solo la abre el montaje que se queda.
-    useEffect(() => {
-        if (!searchParams.has('sesion') || !getPlanSession()?.autostart) return;
-        const id = setTimeout(() => {
-            const current = getPlanSession();
-            if (!current?.autostart) return;
-            setPlanSession({ ...current, autostart: false });
-            openIntroRef.current();
-        }, 0);
-        return () => clearTimeout(id);
-    }, [searchParams]);
+    useEffect(() => { playDemoRef.current = playDemo; openIntroRef.current = openIntro; });
     // Espacio reproduce el ejercicio (desde la nota elegida, si hay una); Practicar se inicia solo con su botón.
     // Escape quita la nota elegida: Reproducir vuelve a empezar desde el inicio.
     // Con un modal abierto, o mientras Practicar se prepara, Espacio no reproduce nada.
@@ -405,11 +323,11 @@ function PracticeView({ mode }: { mode: Mode }) {
         if (!active) return;
         const onKey = (event: KeyboardEvent) => {
             if (event.key === ' ' && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) event.preventDefault();
-            if (event.key === 'Escape') userStopRef.current();
+            if (event.key === 'Escape') stopPlayback();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [active]);
+    }, [active, stopPlayback]);
 
     // Scroll automático: mantiene centrada la fila de la tablatura que está sonando.
     const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -450,9 +368,8 @@ function PracticeView({ mode }: { mode: Mode }) {
         <Button disabled={preparing} onClick={playDemo} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
         <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" disabled={preparing} onClick={openIntro}>{preparing ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Practicar</Button>
     </>;
-    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{speedName(speed)} · {bpm} BPM</b>{recorder.recording && <> · <span className="inline-flex items-center gap-1.5 font-bold text-danger"><span className="size-2 animate-pulse rounded-full bg-danger"/>REC</span></>}</span>;
-    const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
-    const stopButton = <Button variant="secondary" onClick={userStop} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
+    const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{speedName(speed)} · {bpm} BPM</b></span>;
+    const stopButton = <Button variant="secondary" onClick={stopPlayback} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
 
     const tempoSelect = <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} originalBpm={study?.originalBpm} suggested={suggestedSpeed}/>;
 
@@ -473,7 +390,7 @@ function PracticeView({ mode }: { mode: Mode }) {
             {(['goal', 'practice'] as const).map(value => {
                 const { label, icon: Icon } = modeInfo[value];
                 const selected = mode === value;
-                return <Link key={value} to={value === 'goal' ? lessonUrl(activeModule.id, activeExercise.id) : exerciseUrl(activeModule.id, activeExercise.id, search)} role="tab" aria-selected={selected} aria-disabled={active} className={cn(
+                return <Link key={value} to={value === 'goal' ? lessonUrl(activeModule.id, activeExercise.id) : exerciseUrl(activeModule.id, activeExercise.id)} role="tab" aria-selected={selected} aria-disabled={active} className={cn(
                     '-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     selected ? 'border-violet text-accent-strong' : 'border-transparent text-muted hover:text-fg',
                 )}><Icon size={16}/>{label}</Link>;
@@ -542,7 +459,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                         <h2 className="mt-2 flex items-center gap-3 text-[1.1875rem]">{activeExercise.title}<DifficultySignal difficulty={activeExercise.difficulty}/></h2>
                     </div>
                     <div className={cn('flex flex-wrap items-center gap-3', !(active && status !== 'demoLoading') && 'w-full sm:w-auto')}>
-                        {active && status !== 'demoLoading' ? <>{session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAt}/>}{nextButton}{stopButton}</> : tempoSelect}
+                        {active && status !== 'demoLoading' ? <><Elapsed since={startedAt}/>{stopButton}</> : tempoSelect}
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3 xl:px-5.5">
@@ -570,12 +487,11 @@ function PracticeView({ mode }: { mode: Mode }) {
                             <p className="truncate font-bold text-fg">{activeExercise.title}</p>
                             {playingInfo}
                         </div>
-                        {session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAt}/>}
-                        {nextButton}
+                        <Elapsed since={startedAt}/>
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro onCancel={stopPlayback} onStart={startPractice} starting={status === 'starting'} error={soundError ? 'No pudimos cargar el sonido. Revisa tu conexión e inténtalo otra vez.' : undefined} canStart={!record || recorder.status === 'ready'}>
+                {showIntro && <PracticeIntro onCancel={stopPlayback} onStart={startPractice} starting={status === 'starting'} error={soundError ? 'No pudimos cargar el sonido. Revisa tu conexión e inténtalo otra vez.' : undefined}>
                     {/* Los cuatro ajustes siempre visibles, para que el modal no cambie de tamaño: uno por fila en móvil, en 2×2 desde sm. */}
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
                         <PracticeField label="Velocidad" icon={Gauge}>
@@ -583,41 +499,16 @@ function PracticeView({ mode }: { mode: Mode }) {
                         </PracticeField>
                         <div className="flex min-w-0 flex-col gap-1.5">
                             <span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Headphones size={13}/>Guía</span>
-                            <PracticeOption compact icon={Music} title="Tablatura de guía" note="Muy bajita" checked={practiceGuide} onChange={setPracticeGuide}/>
+                            <PracticeOption title="Tablatura de guía" note="Muy bajita" checked={practiceGuide} onChange={setPracticeGuide}/>
                         </div>
-                        {session
-                            ? <div className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Repeat size={13}/>Sesión</span><p className="text-sm text-fg-soft"><b>{session.minutes} min</b>: rondas hasta completar el tiempo</p></div>
-                            : <PracticeField label="Rondas" icon={Repeat}><RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/></PracticeField>}
+                        <PracticeField label="Rondas" icon={Repeat}><RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/></PracticeField>
                         <PracticeField label={<>Descanso <span className="font-normal tracking-normal normal-case">· no suma al progreso</span></>} icon={Timer}>
-                            <RichSelect label="Descanso entre rondas" options={REST_OPTIONS} value={restSeconds} onChange={practiceRestStore.set} disabled={!session && rounds === 1} full/>
+                            <RichSelect label="Descanso entre rondas" options={REST_OPTIONS} value={restSeconds} onChange={practiceRestStore.set} disabled={rounds === 1} full/>
                         </PracticeField>
                     </div>
-                    {RECORDING_ENABLED && <>
-                    <PracticeOption icon={Mic} title="Grabar cada ronda" checked={record} onChange={toggleRecord} warning={record && (recorder.status === 'denied' || recorder.status === 'none')}
-                        note={!record ? 'Al terminar eliges una ronda y te escuchas: es la mejor forma de notar errores de tiempo y de limpieza. Queda solo en tu dispositivo y se borra al cerrar el resumen.'
-                            : recorder.status === 'denied' ? 'No tenemos permiso para usar tu entrada de audio. Actívalo en el navegador e inténtalo de nuevo.'
-                            : recorder.status === 'none' ? 'No encontramos ninguna entrada de audio. Conecta tu interfaz o micrófono.'
-                            : 'Se graba tu entrada con el metrónomo; la guía no se graba. Con audífonos queda más limpio.'}/>
-                    {record && recorder.status !== 'denied' && recorder.status !== 'none' && <div className="grid gap-3 rounded-xl border border-line bg-sunken/50 p-3.5">
-                        <PracticeField label="Entrada de audio" icon={Mic}>
-                            <select value={inputId} onChange={event => changeInput(event.target.value)} disabled={recorder.status !== 'ready'} className="min-h-10 w-full py-1.5 font-bold text-fg">
-                                <option value="">Entrada predeterminada</option>
-                                {recorder.devices.map(device => <option key={device.deviceId} value={device.deviceId}>{device.label || 'Entrada de audio'}</option>)}
-                            </select>
-                        </PracticeField>
-                        <InputLevel analyser={recorder.analyser} ready={recorder.status === 'ready'}/>
-                    </div>}
-                    </>}
                 </PracticeIntro>}
                 {levelUp !== null && <LevelUpDialog seconds={levelUp} onClose={() => setLevelUp(null)}/>}
-                {!active && finished && <PracticeSummary {...finished} onClose={closeSummary}>
-                    {recorder.takes.length > 0 && <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo y se borra al cerrar este resumen."/>}
-                </PracticeSummary>}
-                {/* Detenida a mano no hay resumen: las tomas quedan aquí hasta borrarlas o empezar otra práctica. */}
-                {!active && !finished && recorder.takes.length > 0 && <div className="flex flex-col gap-2 border-t border-line px-4 py-3 sm:flex-row sm:items-start xl:px-5.5">
-                    <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo: se borra al salir o al empezar otra práctica."/>
-                    <Button variant="secondary" onClick={recorder.clear} className="shrink-0"><Trash2 size={15}/>Borrar</Button>
-                </div>}
+                {!active && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
                 <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
                     <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${rhythmLabel}.`}>
                         {bars.map((bar, barIndex) => <div key={barIndex} ref={element => { rowRefs.current[barIndex] = element; }}>
@@ -672,7 +563,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                 </div>, document.body)}
             </section>)}
         </div>}
-        {!active && !session && <LessonPager moduleId={activeModule.id} moduleTitle={activeModule.title} lessons={practiceLessons} current={activeExercise} mode={mode}/>}
+        {!active && <LessonPager moduleId={activeModule.id} moduleTitle={activeModule.title} lessons={practiceLessons} current={activeExercise} mode={mode}/>}
     </>;
 }
 

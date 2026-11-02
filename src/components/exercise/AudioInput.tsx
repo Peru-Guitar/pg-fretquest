@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Mic, MicOff, Waves } from "lucide-react";
-import type { AudioDevices, MicPitch } from "@/lib/audio/mic";
-import { TunerDialog } from "./TunerDialog";
+import { Mic } from "lucide-react";
+import type { AudioDevices } from "@/lib/audio/mic";
 
 export function LevelMeter({ level, segments = 16 }: { level: number; segments?: number }) {
   return (
@@ -29,24 +27,3 @@ export function DeviceSelect({ audio, className = "" }: { audio: AudioDevices; c
   );
 }
 
-export function AudioInput({ audio, mic }: { audio: AudioDevices; mic: MicPitch }) {
-  const [tuner, setTuner] = useState(false);
-  const listening = mic.status === "on";
-
-  return (
-    <div className="flex flex-col gap-3">
-      <DeviceSelect audio={audio} />
-      <LevelMeter level={mic.level} />
-      <p className="text-xs text-muted">Toca fuerte: el nivel debe llegar a la zona amarilla sin tocar la roja.</p>
-      <div className="flex flex-wrap gap-x-4 gap-y-2">
-        <button type="button" onClick={listening ? mic.stop : mic.start} disabled={mic.status === "starting"} className="inline-flex items-center gap-2 text-sm font-bold text-blue hover:text-fg disabled:opacity-50">
-          {listening ? <MicOff className="size-4" aria-hidden /> : <Mic className="size-4" aria-hidden />}{listening ? "Detener entrada" : "Activar entrada"}
-        </button>
-        <button type="button" onClick={() => setTuner(true)} className="inline-flex items-center gap-2 text-sm font-bold text-blue hover:text-fg">
-          <Waves className="size-4" aria-hidden />Prueba de sonido y afinación
-        </button>
-      </div>
-      {tuner && <TunerDialog audio={audio} mic={mic} onClose={() => setTuner(false)} />}
-    </div>
-  );
-}
