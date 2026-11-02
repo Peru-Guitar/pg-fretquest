@@ -17,7 +17,7 @@ const practiceModules = courses.filter(course => course.available && course.less
 const CATALOG = [
  { value: practiceModules.reduce((total, course) => total + course.lessons.filter(lesson => lesson.type === 'practice').length, 0), label: 'ejercicios' },
  { value: practiceModules.length, label: 'módulos' },
- { value: new Set(practiceModules.flatMap(course => course.lessons.filter(lesson => lesson.type === 'practice').map(lesson => lesson.difficulty))).size, label: 'niveles' },
+ { value: new Set(practiceModules.flatMap(course => course.lessons.filter(lesson => lesson.type === 'practice').map(lesson => lesson.difficulty))).size, label: 'intensidades' },
 ];
 
 export default function HomePage() {
@@ -69,13 +69,13 @@ export default function HomePage() {
    <div className="hidden shrink-0 lg:block"><Badge>ENTRENAMIENTO TÉCNICO</Badge></div>
   </div>
 
-  {/* Sin sesión: invitación destacada a entrar (plan según tu nivel + progreso guardado). */}
+  {/* Sin sesión: invitación destacada a entrar (plan a tu medida + progreso guardado). */}
   {hydrated && !account && <section className="relative mb-5 overflow-hidden rounded-xl border border-line bg-card p-5 md:p-6">
    <div className="relative flex flex-wrap items-center justify-between gap-5">
     <div className="max-w-2xl">
      <h2 className="text-xl md:text-2xl">Entra y entrena con un plan hecho para ti</h2>
      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-fg-soft">
-      {['Plan según tu nivel', 'Tu progreso guardado', 'Tu lugar en la comunidad'].map(item => <li key={item} className="flex items-center gap-1.5"><Check size={15} className="text-success"/>{item}</li>)}
+      {['Plan a tu medida', 'Tu progreso guardado', 'Tu lugar en la comunidad'].map(item => <li key={item} className="flex items-center gap-1.5"><Check size={15} className="text-success"/>{item}</li>)}
      </ul>
     </div>
     <Link to={ROUTES.login} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-brand hover:bg-brand-strong px-6 font-bold text-white transition hover:-translate-y-0.5"><LogIn size={18}/>Entrar gratis</Link>
@@ -107,7 +107,7 @@ export default function HomePage() {
       <LinkButton to={practiceUrl(currentModule.id, lastLesson.id)}><Play size={17} fill="currentColor"/>Empezar a practicar</LinkButton>
       {practicedModule && plan && plan.next.lesson.id !== lastLesson.id && <LinkButton to={practiceUrl(plan.next.moduleId, plan.next.lesson.id)} variant="secondary">Sigue en tu plan: {plan.next.lesson.title}</LinkButton>}
      </div>
-     {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu nivel</Link> para tener tu plan.</p>}
+     {account && !account.level && <p className="mt-4 text-xs text-muted"><Link to={ROUTES.login} className="text-accent hover:underline">Elige tu intensidad</Link> para tener tu plan.</p>}
     </div></div>
     <CommunityPulse embedded/>
    </section>
@@ -125,7 +125,7 @@ export default function HomePage() {
    </Link>)}
   </div>
 
-  <SectionTitle title={level ? `Para tu nivel · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
+  <SectionTitle title={level ? `Para tu intensidad · ${levelLabel(level)}` : 'Lecciones para empezar'} to={ROUTES.exercises} label="Ver todos los ejercicios" className="mt-7 mb-4"/>
   <div className="mb-7.5 space-y-6">{levelModules.map(module =>
    <section key={module.moduleId} className="relative overflow-hidden rounded-xl border border-line p-4 md:p-5">
     <img src={module.image} alt="" width={960} height={640} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover"/>

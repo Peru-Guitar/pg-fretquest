@@ -20,12 +20,13 @@ import { usePlayback } from '@/lib/audio/usePlayback';
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
 import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
-import { addTotalSeconds, DEFAULT_SESSION_MINUTES, levelLabel, recordPractice, useAccount } from '@/lib/account';
+import { addTotalSeconds, levelLabel, recordPractice, useAccount } from '@/lib/account';
 import { ArtistCredit } from '@/components/quest/ArtistCredit';
 import { PracticeSummary, type SummaryProgress } from '@/components/practice/PracticeSummary';
 import { LevelUpDialog } from '@/components/practice/LevelUpDialog';
 import { levelFromSeconds } from '@/lib/ranks';
-import { getProgress, recordFinishedPractice, todayOf } from '@/lib/progressDb';
+import { DEFAULT_WEEKLY_HOURS } from '@/lib/domain/weeklyGoal';
+import { getProgress, recordFinishedPractice, weekSecondsOf } from '@/lib/progressDb';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { useCommunity } from '@/lib/community';
 import { PeopleThisWeek } from '@/components/quest/QuestUI';
@@ -260,10 +261,10 @@ function PracticeView({ mode }: { mode: Mode }) {
         setFinished({ rounds, speed, bpm, seconds, progress: null });
         if (!account) return;
         recordPractice(activeExercise.id);
-        const goalMinutes = account.sessionMinutes ?? DEFAULT_SESSION_MINUTES;
-        const before = todayOf(getProgress());
-        setFinished(value => value && { ...value, progress: { beforeSeconds: before?.seconds ?? 0, addedSeconds: seconds, goalMinutes, completedBefore: before?.completed ?? false } });
-        recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm })
+        const goalHours = account.weeklyHours ?? DEFAULT_WEEKLY_HOURS;
+        const beforeSeconds = weekSecondsOf(getProgress());
+        setFinished(value => value && { ...value, progress: { beforeSeconds, addedSeconds: seconds, goalHours } });
+        recordFinishedPractice({ name: account.name, level: account.level, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm })
             .then(saved => {
                 if (!saved) return;
                 const before = account.totalSeconds ?? 0;

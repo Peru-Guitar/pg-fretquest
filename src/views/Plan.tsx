@@ -8,9 +8,10 @@ import { courses, } from '@/data/questMock';
 import { ArtistHeader } from '@/components/quest/ArtistCredit';
 import { groupByArtist } from '@/data/artists';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
-import { DEFAULT_RHYTHM, DEFAULT_SESSION_MINUTES, levelLabel, nextLevel, planFor, suggestion, useAccount } from '@/lib/account';
+import { DEFAULT_WEEKLY_HOURS, timeLabel } from '@/lib/domain/weeklyGoal';
+import { levelLabel, nextLevel, planFor, suggestion, useAccount } from '@/lib/account';
 import { fullDateTime, timeAgo } from '@/lib/timeAgo';
-import { completedDaysThisWeek, todayOf, useProgress } from '@/lib/progressDb';
+import { weekSecondsOf, useProgress } from '@/lib/progressDb';
 import { cn } from '@/lib/cn';
 
 const now = () => Date.now();
@@ -44,11 +45,10 @@ export default function PlanPage() {
     const recommendations = courses.find(course => course.id === 'recommendations' && course.available);
     const today = suggestion(account);
     const upgrade = nextLevel(level);
-    const goal = account.weeklyGoal ?? DEFAULT_RHYTHM;
-    const sessionMinutes = account.sessionMinutes ?? DEFAULT_SESSION_MINUTES;
-    // Progreso real (Firestore): minutos de hoy, días completados esta semana y resumen por lección.
-    const todayMinutes = Math.floor((todayOf(progress)?.seconds ?? 0) / 60);
-    const practiced = completedDaysThisWeek(progress);
+    const goal = account.weeklyHours ?? DEFAULT_WEEKLY_HOURS;
+    // Progreso real (Firestore): horas de esta semana y resumen por lección.
+    const practiced = weekSecondsOf(progress);
+    const goalSeconds = goal * 3600;
     // Tiempo por lección esta semana (chip del registro).
     const weekSeconds: Record<string, number> = {};
     for (const day of Object.values(progress.days)) for (const [lessonId, lesson] of Object.entries(day.lessons ?? {})) weekSeconds[lessonId] = (weekSeconds[lessonId] ?? 0) + (lesson.seconds ?? 0);
@@ -62,7 +62,7 @@ export default function PlanPage() {
     };
 
     return <>
-        <PageTitle eyebrow="MI PLAN" title={`Plan ${levelLabel(level)}`} text="Una guía de lo que te conviene practicar según tu nivel. Tu nivel lo cambias en Mis datos.">
+        <PageTitle eyebrow="MI PLAN" title={`Plan ${levelLabel(level)}`} text="Una guía de lo que te conviene practicar según tu intensidad. La cambias en Mi cuenta.">
             <Link to={ROUTES.guide} className="text-sm font-bold text-accent hover:underline">¿Cómo funciona? →</Link>
         </PageTitle>
 
@@ -77,35 +77,21 @@ export default function PlanPage() {
             <span><b className="block text-sm text-fg">{title}</b><span className="text-xs leading-relaxed text-muted">{text}</span></span>
         </li>)}</ul>
 
-        {/* Práctica de hoy: minutos que faltan para completar el tiempo diario. DATOS FIJOS por ahora (todayMinutes).
-            Con el ritmo de la semana ya cumplido, desaparece: lo que practiques de más suma igual. */}
-        {practiced < goal && <section className="mb-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg">{todayMinutes >= sessionMinutes
-                    ? <>¡Completaste tu progreso de hoy! <span className="text-success">✓</span></>
-                    : <>Te faltan <span className="font-mono text-accent">{sessionMinutes - todayMinutes} min</span> para completar tu progreso de hoy</>}</h2>
-                <span className="font-mono text-sm text-muted">{Math.min(todayMinutes, sessionMinutes)}/{sessionMinutes} min</span>
-            </div>
-            <span className="mt-2.5 block h-2.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full transition-[width]', todayMinutes >= sessionMinutes ? 'bg-success' : 'bg-blue')} style={{ width: `${Math.min(100, todayMinutes / sessionMinutes * 100)}%` }}/></span>
-        </section>}
-
-
-
         {/* Resumen del plan: cifras grandes separadas por divisores. */}
         <section className="relative mb-6 overflow-hidden rounded-2xl border border-line bg-card">
             <dl className="relative grid grid-cols-2 divide-line md:grid-cols-4 md:divide-x">
                 {[
-                    { label: 'Tu semana', value: `${Math.min(practiced, goal)}/${goal}`, unit: 'días', tone: practiced >= goal ? 'text-success' : 'text-fg', bar: Math.min(1, practiced / goal) },
+                    { label: 'Tu semana', value: timeLabel(practiced), unit: `de ${goal} h`, tone: practiced >= goalSeconds ? 'text-success' : 'text-fg', bar: Math.min(1, practiced / goalSeconds) },
                     { label: 'Prácticas', value: String(totals.count), unit: totals.count === 1 ? 'vez' : 'veces', tone: 'text-accent' },
                     { label: 'Última práctica', value: totals.last ? timeAgo(totals.last) : '—', unit: '', tone: 'text-fg' },
                     { label: 'Lecciones', value: `${totals.practiced}/${totals.lessons}`, unit: 'practicadas', tone: 'text-fg' },
                 ].map(item => <div key={item.label} className="px-5 py-5 md:px-7 md:py-6">
                     <dt className="text-3xs font-black tracking-[0.18em] text-muted uppercase">{item.label}</dt>
-                    <dd className="mt-2 flex items-baseline gap-2"><b className={cn('font-mono text-3xl md:text-4xl', item.tone)}>{item.value}</b><span className="text-sm text-muted">{item.unit}</span></dd>
+                    <dd className="mt-2 flex flex-wrap items-baseline gap-x-2"><b className={cn('font-mono text-3xl md:text-4xl', item.tone)}>{item.value}</b><span className="text-sm text-muted">{item.unit}</span></dd>
                     {item.bar !== undefined && <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full', item.bar >= 1 ? 'bg-success' : 'bg-blue')} style={{ width: `${item.bar * 100}%` }}/></span>}
                 </div>)}
             </dl>
-            <p className="relative border-t border-line px-5 py-3 text-xs text-muted md:px-7">{practiced >= goal ? '¡Cumpliste tu ritmo esta semana! Lo que practiques de más, suma igual.' : `Te ${goal - practiced === 1 ? 'falta 1 día' : `faltan ${goal - practiced} días`} para cumplir tu ritmo. Recomendado: al menos media hora cada día.`} <Link to={ROUTES.account} className="text-accent hover:underline">Cambiar ritmo</Link></p>
+            <p className="relative border-t border-line px-5 py-3 text-xs text-muted md:px-7">{practiced >= goalSeconds ? '¡Cumpliste tu meta esta semana! Lo que practiques de más, suma igual.' : `Te faltan ${timeLabel(Math.ceil((goalSeconds - practiced) / 60) * 60)} para cumplir tu meta.`} <Link to={ROUTES.training} className="text-accent hover:underline">Cambiar meta</Link></p>
         </section>
 
         {today?.finished && upgrade && <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 border-blue/40">
@@ -114,7 +100,7 @@ export default function PlanPage() {
                 <p className="mt-1 text-sm text-muted">¿Te sientes listo para {levelLabel(upgrade)}? Tú decides.</p>
             </div>
             <div className="flex gap-2">
-                <Link to={ROUTES.account} className="grid min-h-10 place-items-center rounded-md bg-brand px-4 text-sm font-bold text-white">Cambiar mi nivel</Link>
+                <Link to={ROUTES.training} className="grid min-h-10 place-items-center rounded-md bg-brand px-4 text-sm font-bold text-white">Cambiar mi intensidad</Link>
                 <span className="grid min-h-10 place-items-center px-3 text-sm text-muted">o sigue repasando</span>
             </div>
         </Card>}
@@ -135,7 +121,7 @@ export default function PlanPage() {
             </Link>)}</div>
         </Card>}
 
-        {blocks.length === 0 ? <Card><p className="text-sm text-muted">Todavía no hay ejercicios de nivel {levelLabel(level)}. Mientras tanto, practica libre en Ejercicios.</p></Card>
+        {blocks.length === 0 ? <Card><p className="text-sm text-muted">Todavía no hay ejercicios de intensidad {levelLabel(level)}. Mientras tanto, practica libre en Ejercicios.</p></Card>
         : <ol className="flex flex-col gap-5">{blocks.map((block, blockIndex) => <li key={block.moduleId}>
             <Card>
                 <p className="text-3xs font-black tracking-[0.18em] text-accent-strong">MÓDULO {blockIndex + (recommendations ? 2 : 1)}</p>

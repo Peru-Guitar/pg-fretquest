@@ -10,6 +10,7 @@ export const ROUTES = {
   exercises: "/ejercicios",
   plan: "/mi-plan",
   account: "/mi-cuenta",
+  training: "/mi-cuenta?tab=entrenamiento",
   community: "/comunidad",
   login: "/entrar",
   join: "/unirse",

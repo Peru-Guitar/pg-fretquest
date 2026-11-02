@@ -1,3 +1,4 @@
+import { weeklyHoursOf } from "@/lib/domain/weeklyGoal";
 import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { courses, type Difficulty } from "@/data/questMock";
@@ -18,8 +19,8 @@ export type UserProfile = {
   name: string;
   level: Difficulty | null;
   city?: string; country?: string; guitar?: string;
-  weeklyGoal?: number; sessionMinutes?: number;
-  seconds: number; days: number; completed: number; attempts: number;
+  weeklyHours?: number;
+  seconds: number; days: number; attempts: number;
   first?: string; last?: string;
   /** Minutos de esta semana, lunes → domingo. */
   week: number[];
@@ -57,10 +58,9 @@ async function fetchProfile(uid: string): Promise<UserProfile> {
     at: Date.now(), uid,
     name: info.name ?? "Sin nombre",
     level: info.level ?? null,
-    city: info.city, country: info.country, guitar: info.guitar, weeklyGoal: info.weeklyGoal, sessionMinutes: info.sessionMinutes,
+    city: info.city, country: info.country, guitar: info.guitar, weeklyHours: weeklyHoursOf(info),
     seconds: info.totalSeconds ?? lessons.reduce((sum, lesson) => sum + lesson.seconds, 0),
     days: progress.practiceDays,
-    completed: progress.completedDays,
     attempts: progress.practices,
     first: progress.firstDate ?? undefined, last: progress.lastDate ?? undefined,
     week: week.map(Math.round),

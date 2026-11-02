@@ -6,8 +6,9 @@ import { Navigate, useNavigate, useSearchParams, useHydrated } from '@/lib/route
 import { ArrowRight, LogIn, Loader2 } from 'lucide-react';
 import { Button, Card, Eyebrow, PageTitle } from '@/components/ui';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
-import { DEFAULT_RHYTHM, DEFAULT_SESSION_MINUTES, LEVELS, levelLabel, setLevel, setSessionMinutes, setWeeklyGoal, signIn, useAccount } from '@/lib/account';
-import { RhythmPicker, SessionPicker } from '@/components/quest/RhythmPicker';
+import { LEVELS, levelLabel, setLevel, setWeeklyHours, signIn, useAccount } from '@/lib/account';
+import { DEFAULT_WEEKLY_HOURS } from '@/lib/domain/weeklyGoal';
+import { WeeklyHoursPicker } from '@/components/quest/WeeklyHoursPicker';
 import type { Difficulty } from '@/data/questMock';
 import { cn } from '@/lib/cn';
 
@@ -49,9 +50,8 @@ export default function LoginPage() {
     const [answers, setAnswers] = useState<number[]>([]);
     const [picked, setPicked] = useState<Difficulty | null>(null);
     const [signingIn, setSigningIn] = useState(false);
-    const [choosingRhythm, setChoosingRhythm] = useState(false);
-    const [rhythm, setRhythm] = useState(DEFAULT_RHYTHM);
-    const [sessionMinutes, setSessionLength] = useState(DEFAULT_SESSION_MINUTES);
+    const [choosingGoal, setChoosingGoal] = useState(false);
+    const [weeklyHours, setHours] = useState(DEFAULT_WEEKLY_HOURS);
     const [error, setError] = useState('');
     const answered = answers.length === QUESTIONS.length;
     const suggested = answered ? suggestLevel(answers) : 'base';
@@ -65,24 +65,24 @@ export default function LoginPage() {
                 <img src="/icons/quest-mark.svg" alt="" className="mx-auto h-16 w-16 drop-shadow-[0_0_20px_#3198dc55]"/>
                 <Eyebrow className="mt-6 justify-center">BIENVENIDO A FRET QUEST</Eyebrow>
                 <h1 className="mt-3 text-4xl md:text-5xl">Entra para tener tu plan</h1>
-                <p className="mx-auto mt-4 max-w-md text-base text-muted">El temario completo es libre. Con tu cuenta te sugerimos qué practicar según tu nivel y guardamos tu progreso.</p>
+                <p className="mx-auto mt-4 max-w-md text-base text-muted">El temario completo es libre. Con tu cuenta te sugerimos qué practicar a tu medida y guardamos tu progreso.</p>
                 <Button className="mx-auto mt-10 min-h-14 w-full max-w-md text-base" disabled={signingIn} onClick={() => { setError(''); setSigningIn(true); signIn().catch((reason: { code?: string }) => { if (reason.code !== 'auth/popup-closed-by-user' && reason.code !== 'auth/cancelled-popup-request') setError('No se pudo entrar. Inténtalo de nuevo.'); }).finally(() => setSigningIn(false)); }}><LogIn size={20}/>{signingIn ? 'Entrando…' : 'Entrar con Google'}</Button>
                 {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
             </div>
         </Card>
     </div>;
 
-    // Paso aparte del cuestionario: el ritmo semanal.
-    // Con nivel ya guardado se salta el cuestionario: al plan, o al ritmo si aún no lo eligió.
-    // `?repetir` (desde Mis datos) vuelve a hacer el cuestionario.
+    // Paso aparte del cuestionario: la meta semanal.
+    // Con nivel ya guardado se salta el cuestionario: al plan, o a la meta si aún no la eligió.
+    // `?repetir` (desde Mi cuenta) vuelve a hacer el cuestionario.
     // Cuenta nueva en este navegador: esperar a Firestore antes de decidir si hace falta el cuestionario.
     if (account.synced === false && !account.level) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
-    if (account.level && !retake && account.weeklyGoal && !choosingRhythm) return <Navigate to={ROUTES.plan} replace/>;
-    const showRhythm = choosingRhythm || (!!account.level && !retake);
+    if (account.level && !retake && account.weeklyHours && !choosingGoal) return <Navigate to={ROUTES.plan} replace/>;
+    const showGoal = choosingGoal || (!!account.level && !retake);
 
-    // Pasos del alta: 1 cuestionario · 2 nivel · 3 ritmo. Mismo ancho y cabecera que el resto de páginas.
-    const stepNumber = showRhythm ? 3 : answered ? 2 : 1;
-    const steps = ['Cuestionario', 'Tu nivel', 'Tu ritmo'];
+    // Pasos del alta: 1 cuestionario · 2 intensidad · 3 meta. Mismo ancho y cabecera que el resto de páginas.
+    const stepNumber = showGoal ? 3 : answered ? 2 : 1;
+    const steps = ['Cuestionario', 'Tu intensidad', 'Tu meta'];
     const header = (eyebrow: string, title: string, text: string) => <>
         <ol className="mb-7 flex flex-wrap gap-2">{steps.map((label, index) => <li key={label} className={cn('flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold',
             index + 1 === stepNumber ? 'border-blue bg-blue/15 text-fg' : index + 1 < stepNumber ? 'border-success/40 text-success' : 'border-line text-muted')}>
@@ -90,19 +90,16 @@ export default function LoginPage() {
         <PageTitle eyebrow={eyebrow} title={title} text={text}/>
     </>;
 
-    if (showRhythm) return <>
-        {header('UN ÚLTIMO PASO', '¿Cuántos días por semana quieres practicar?', 'Puedes practicar el día que quieras: el ritmo es tu meta semanal, para que sientas tu progreso. Lo cambias cuando quieras.')}
+    if (showGoal) return <>
+        {header('UN ÚLTIMO PASO', '¿Cuántas horas por semana quieres practicar?', 'Repártelas como quieras: la meta es para que sientas tu progreso. La cambias cuando quieras.')}
         <Card className="p-6 md:p-8">
-            <RhythmPicker value={rhythm} onChange={setRhythm}/>
-            <h2 className="mt-9 text-xl">¿Cuánto dura cada sesión?</h2>
-            <p className="mt-1 mb-4 text-sm text-muted">Es el tiempo que quieres practicar al día. Si lo completas, ese día cuenta para tu ritmo; si no, no pasa nada.</p>
-            <SessionPicker value={sessionMinutes} onChange={setSessionLength}/>
-            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyGoal(rhythm); setSessionMinutes(sessionMinutes); navigate(ROUTES.plan); }}>Ver mi plan <ArrowRight size={18}/></Button>
+            <WeeklyHoursPicker value={weeklyHours} onChange={setHours}/>
+            <Button className="mt-8 min-h-13 px-8 text-base" onClick={() => { setWeeklyHours(weeklyHours); navigate(ROUTES.plan); }}>Ver mi plan <ArrowRight size={18}/></Button>
         </Card>
     </>;
 
     return <>
-        {header(`HOLA, ${account.name.toUpperCase()}`, answered ? 'Este es tu nivel' : '¿Cuál es tu nivel?', 'Siete preguntas rápidas. Responde con honestidad: solo sirve para sugerirte ejercicios y puedes cambiarlo cuando quieras.')}
+        {header(`HOLA, ${account.name.toUpperCase()}`, answered ? 'Esta es tu intensidad' : '¿Qué intensidad te conviene?', 'Siete preguntas rápidas. Responde con honestidad: solo sirve para sugerirte ejercicios y puedes cambiarla cuando quieras.')}
 
         {!answered && <Card className="relative overflow-hidden p-6 md:p-10">
             <div className="relative">
@@ -131,7 +128,7 @@ export default function LoginPage() {
                 <span className="text-sm text-muted">{LEVEL_TEXT[option]}</span>
                 {option === suggested && <span className="rounded-full bg-blue/20 px-2.5 py-0.5 text-3xs font-black tracking-wider text-accent">SUGERIDO</span>}
             </button>)}</div>
-            <Button className="mt-8 min-h-13 px-8 text-base" disabled={!level} onClick={() => { if (level) { setLevel(level); if (account.weeklyGoal) navigate(ROUTES.plan); else setChoosingRhythm(true); } }}>Continuar <ArrowRight size={18}/></Button>
+            <Button className="mt-8 min-h-13 px-8 text-base" disabled={!level} onClick={() => { if (level) { setLevel(level); if (account.weeklyHours) navigate(ROUTES.plan); else setChoosingGoal(true); } }}>Continuar <ArrowRight size={18}/></Button>
         </Card>}
     </>;
 }

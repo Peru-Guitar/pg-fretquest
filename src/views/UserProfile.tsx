@@ -98,7 +98,7 @@ function Header({ profile }: { profile: UserProfile }) {
                     <span className="rounded-md bg-blue/15 px-2 py-0.5 font-bold text-accent">{profile.level ? `Plan ${levelLabel(profile.level)}` : 'Sin plan'}</span>
                     {place && <span className="flex items-center gap-1"><MapPin size={13}/>{place}</span>}
                     {profile.guitar && <span className="flex items-center gap-1"><Guitar size={13}/>{profile.guitar}</span>}
-                    {profile.weeklyGoal && <span className="flex items-center gap-1"><Target size={13}/>{profile.weeklyGoal} días/sem · {profile.sessionMinutes ?? 30} min</span>}
+                    {profile.weeklyHours && <span className="flex items-center gap-1"><Target size={13}/>Meta: {profile.weeklyHours} h/sem</span>}
                 </p>
                 <p className="mt-1.5 text-2xs text-subtle">Desde {dateLabel(profile.first)} · última práctica {dateLabel(profile.last)}</p>
                 <p className="mt-1 text-2xs text-subtle">Datos de las {new Date(profile.at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} · se actualizan cada 30 min</p>
@@ -134,7 +134,7 @@ export default function UserProfilePage() {
         <RankCard seconds={data.seconds}/>
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo total" detail={data.days ? `${Math.round(data.seconds / 60 / data.days)} min por día` : undefined}/>
-            <Stat icon={<CalendarDays size={20}/>} value={String(data.days)} label="Días practicados" detail={`${data.completed} con la meta cumplida`}/>
+            <Stat icon={<CalendarDays size={20}/>} value={String(data.days)} label="Días practicados"/>
             <Stat icon={<Repeat size={20}/>} value={String(data.attempts)} label="Ejercicios terminados" detail={`${data.lessons.length} lecciones distintas`}/>
             <Stat icon={<Target size={20}/>} value={`${thisWeek} min`} label="Esta semana"/>
         </div>

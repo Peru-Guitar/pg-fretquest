@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { ROUTES, practiceUrl, userProfileUrl } from '@/lib/routes';
 import { Link, useHydrated } from '@/lib/router';
 import { Activity, CalendarRange, Crown, Flame, Guitar, Loader2, LogIn, Users } from 'lucide-react';
@@ -53,7 +54,7 @@ const titleCase = (word: string) => word.charAt(0).toUpperCase() + word.slice(1)
 const shortDay = (date: Date) => date.toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '');
 
 /**
- * La semana del reporte, en una franja a todo el ancho bajo el título: fechas, cuánto lleva (un tramo por día)
+ * La semana del reporte, en una franja a todo el ancho bajo el título: fechas, los días en una línea de tiempo (hoy resaltado),
  * cuándo se reinicia y cuándo se actualizó. En móvil los bloques bajan uno debajo de otro.
  */
 function WeekBar({ updatedAt }: { updatedAt: number }) {
@@ -65,7 +66,13 @@ function WeekBar({ updatedAt }: { updatedAt: number }) {
             <p className="flex items-center gap-1.5 text-3xs font-black tracking-[0.18em] text-accent"><CalendarRange size={13}/>SEMANA ACTUAL</p>
             <p className="text-lg font-black text-fg">{shortDay(new Date(y, m - 1, d))} – {shortDay(new Date(y, m - 1, d + 6))}</p>
         </div>
-        <div className="flex min-w-0 flex-1 gap-1" aria-hidden>{DAYS.map((day, index) => <span key={day} title={day} className={cn('h-1.5 flex-1 rounded-full', index < today ? 'bg-blue/60' : index === today ? 'bg-accent' : 'bg-white/12')}/>)}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-2">{DAYS.map((day, index) => <Fragment key={day}>
+            {index > 0 && <span aria-hidden className="h-px min-w-1 flex-1 bg-white/15"/>}
+            <span aria-current={index === today ? 'date' : undefined} className={cn('flex shrink-0 flex-col items-center leading-tight', index === today ? 'text-accent' : 'text-subtle')}>
+                <span className="text-3xs font-bold uppercase">{day}</span>
+                <b className="font-mono text-sm">{String(new Date(y, m - 1, d + index).getDate()).padStart(2, '0')}</b>
+            </span>
+        </Fragment>)}</div>
         <div className="shrink-0 text-xs text-fg-soft lg:text-right">
             <p>Se reinicia <b className="text-accent">{left === 1 ? 'mañana' : `en ${left} días`}</b></p>
             <p className="text-muted">Última actualización {timeAgo(updatedAt)}</p>
@@ -128,7 +135,7 @@ export default function CommunityPage() {
 
         <Card className="mb-6">
             <SectionTitle title="Ranking de la semana" className="mb-1"/>
-            <Caption>Por tiempo practicado de lunes a domingo, sin importar el nivel; en empate, por días distintos.</Caption>
+            <Caption>Por tiempo practicado de lunes a domingo, sin importar la intensidad; en empate, por días distintos.</Caption>
 
             {/* Podio: 2º · 1º · 3º */}
             <ol className="mt-8 grid grid-cols-3 items-end gap-2 sm:gap-3 md:gap-5">{[1, 0, 2].map(place => {
@@ -179,11 +186,11 @@ export default function CommunityPage() {
                 <Caption>Quién entrena esta semana, por rango</Caption>
                 <RankDistribution byRank={data.byRank}/>
             </Card> : <Card>
-                <SectionTitle title="Niveles de la comunidad" className="mb-1"/>
-                <Caption>Quién entrena esta semana, por nivel</Caption>
+                <SectionTitle title="Intensidad de la comunidad" className="mb-1"/>
+                <Caption>Quién entrena esta semana, por intensidad</Caption>
                 <ul className="mt-5 flex flex-col gap-4">{LEVELS.map(level => <li key={level} className="text-sm">
                     <div className="mb-1.5 flex items-center gap-3">
-                        <span className="flex-1 text-fg-soft">{levelLabel(level)}{account?.level === level && <span className="ml-2 text-2xs font-bold text-accent">TU NIVEL</span>}</span>
+                        <span className="flex-1 text-fg-soft">{levelLabel(level)}{account?.level === level && <span className="ml-2 text-2xs font-bold text-accent">TU INTENSIDAD</span>}</span>
                         <b className="font-mono">{WEEK.byLevel[level]}%</b>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/8"><span className="block h-full rounded-full bg-blue" style={{ width: `${WEEK.byLevel[level]}%` }}/></div>

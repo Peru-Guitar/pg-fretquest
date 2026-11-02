@@ -11,9 +11,9 @@ import { courses } from '@/data/questMock';
 const MODULES = courses.filter(course => course.available && course.id !== 'recommendations');
 
 const STEPS = [
-    { icon: ListChecks, title: 'Un plan según tu nivel', text: 'Siete preguntas rápidas y te sugerimos qué practicar, de básico a experto.' },
+    { icon: ListChecks, title: 'Un plan a tu medida', text: 'Siete preguntas rápidas y te sugerimos qué practicar, de básico a experto.' },
     { icon: Gauge, title: 'Practica con metrónomo y tablatura', text: 'Cada ejercicio trae su patrón, digitación y tempos para subir la velocidad con control.' },
-    { icon: TrendingUp, title: 'Mide tu progreso', text: 'Tu ritmo semanal, tus récords de BPM y tus sesiones quedan guardados.' },
+    { icon: TrendingUp, title: 'Mide tu progreso', text: 'Tus horas de la semana, tus récords de BPM y tus sesiones quedan guardados.' },
     { icon: Users, title: 'Entrena en comunidad', text: 'Es un gimnasio, no un curso: tú entrenas y, si quieres que te corrijan, la comunidad te ayuda en el grupo de WhatsApp.' },
 ];
 
