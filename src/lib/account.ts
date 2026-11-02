@@ -120,7 +120,7 @@ export const setSessionMinutes = (minutes: number) => {
 
 /**
  * Sesión del plan en curso: se repiten los ejercicios hasta completar el tiempo.
- * Vive en localStorage para sobrevivir al cambio de lección. `autostart`: al abrir la siguiente lección, arranca sola.
+ * Vive en localStorage para sobrevivir al cambio de lección. `autostart`: al abrir la siguiente lección, abre sola la preparación.
  */
 export type PlanSession = { startedAt: number; minutes: number; autostart?: boolean };
 const sessionStore = createLocalStore<PlanSession | null>("fretquest.planSession", null);

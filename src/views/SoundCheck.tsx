@@ -7,7 +7,7 @@ import { isAdmin, useAccount } from '@/lib/account';
 import { courses, type PracticeLesson } from '@/data/questMock';
 import { FIGURES, practiceStudies, speedName, speedPlan } from '@/data/practiceStudies';
 import { prepare } from '@/lib/audio/guitar';
-import { scheduleRound } from '@/lib/audio/practiceRound';
+import { playPattern } from '@/lib/audio/practiceRound';
 import { Link } from '@/lib/router';
 import { practiceUrl } from '@/lib/routes';
 import { DIFFICULTY } from '@/lib/difficulty';
@@ -34,7 +34,7 @@ export default function SoundCheckPage() {
         setStep(-1);
         try { await prepare(); } catch { stop(); return; }
         const plan = speedPlan(study.figure, study.speed ?? 2, study.originalBpm);
-        cancelRef.current = scheduleRound(plan.bpm, study.pattern, { guide: true, countIn: false, notesPerBeat: FIGURES[plan.figure].notesPerBeat, onCount: () => {}, onStep: setStep, onEnd: stop });
+        cancelRef.current = playPattern({ bpm: plan.bpm, pattern: study.pattern, notesPerBeat: FIGURES[plan.figure].notesPerBeat, onStep: setStep, onEnd: stop });
     };
     useEffect(() => () => cancelRef.current?.(), []);
 
