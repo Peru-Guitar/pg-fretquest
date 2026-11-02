@@ -11,12 +11,12 @@ import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from '@/lib/router';
 import { courses, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Trash2, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Mic, Music, Play, Repeat, Save, SkipForward, Square, Target, Timer, Trash2, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
-import { prepare } from '@/lib/audio/guitar';
-import { scheduleRound, setRoundBpm, type PatternNote } from '@/lib/audio/practiceRound';
+import { type PatternNote } from '@/lib/audio/practiceRound';
+import { usePlayback } from '@/lib/audio/usePlayback';
 import { setLastExercise } from '@/lib/progress';
 import { PracticeField, PracticeIntro, PracticeOption } from '@/components/practice/PracticeIntro';
 import { RichSelect, SpeedSelect, type RichOption } from '@/components/practice/SpeedSelect';
@@ -36,20 +36,31 @@ const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
 /** Guitarra de guía al practicar: prendida por defecto y recordada en este navegador. */
 const practiceGuideStore = createLocalStore('fq-practice-guide', true);
+/** Descanso entre rondas, en segundos: se recuerda en este navegador. */
+const practiceRestStore = createLocalStore('fq-practice-rest', 0);
 /** Marca de ataque sobre cada nota de la tablatura. */
 const STROKES: Record<Stroke, { mark: string; title: string; legato?: boolean }> = { down: { mark: '⊓', title: 'Downstroke' }, up: { mark: 'V', title: 'Upstroke' }, hammer: { mark: 'h', title: 'Hammer-on', legato: true }, pull: { mark: 'p', title: 'Pull-off', legato: true }, slide: { mark: 's', title: 'Slide', legato: true }, tap: { mark: 'T', title: 'Tapping' }, rest: { mark: '𝄽', title: 'Silencio' } };
 /** Medida del bend como se escribe en tablatura: ½ = medio tono, full = un tono. */
 const bendLabel = (semitones: number) => semitones === 1 ? '½' : semitones === 2 ? 'full' : semitones === 3 ? '1½' : `${semitones / 2}`;
 // Rondas por práctica; siempre empieza en 1.
 const ROUND_OPTIONS: RichOption<number>[] = [
-    { value: 1, badge: '1', title: '1 ronda', detail: 'Una pasada completa' },
-    { value: 3, badge: '3', title: '3 rondas', detail: 'Calentamiento corto' },
-    { value: 5, badge: '5', title: '5 rondas', detail: 'Práctica estándar' },
-    { value: 7, badge: '7', title: '7 rondas', detail: 'Para fijar el patrón' },
-    { value: 10, badge: '10', title: '10 rondas', detail: 'Resistencia' },
+    { value: 1, title: '1 ronda', detail: 'Una pasada completa' },
+    { value: 3, title: '3 rondas', detail: 'Calentamiento corto' },
+    { value: 5, title: '5 rondas', detail: 'Práctica estándar' },
+    { value: 7, title: '7 rondas', detail: 'Para fijar el patrón' },
+    { value: 10, title: '10 rondas', detail: 'Resistencia' },
+];
+const REST_OPTIONS: RichOption<number>[] = [
+    { value: 0, title: 'Sin descanso', detail: 'Solo la cuenta de entrada' },
+    { value: 5, title: '5 segundos', detail: 'Para respirar' },
+    { value: 10, title: '10 segundos', detail: 'Para soltar la mano' },
+    { value: 15, title: '15 segundos', detail: 'Para aflojar los dedos' },
+    { value: 20, title: '20 segundos', detail: 'Para descansar de verdad' },
 ];
 /** Fuerza de la guitarra de guía al practicar: apenas una referencia bajo el metrónomo. */
 const GUIDE_VELOCITY = 0.08;
+/** Fuerza de la guitarra al escuchar con Reproducir. */
+const LISTEN_VELOCITY = 0.3;
 /**
  * TODO(deuda técnica): grabación por ronda apagada hasta pulirla. Pendiente:
  * - Probarla con interfaces de varios canales (p. ej. Quad Cortex): el navegador solo toma los canales 1/2,
@@ -59,7 +70,7 @@ const GUIDE_VELOCITY = 0.08;
  * Con `true` vuelve la opción «Grabar cada ronda» en la preparación; el resto ya está conectado.
  */
 const RECORDING_ENABLED = false;
-// Un mensaje por ronda, en orden; al acabarse vuelven a empezar.
+// Un mensaje por pantalla (cuenta o descanso). Nunca repite uno ya visto, tampoco entre prácticas; al verlos todos, vuelve a empezar.
 const MOTIVATION = [
     'Despacio y limpio: la velocidad llega sola.',
     'Cada ronda limpia cuenta más que una rápida.',
@@ -71,7 +82,74 @@ const MOTIVATION = [
     'Menos fuerza, más control.',
     'Hoy tocas mejor que ayer.',
     'Disfrútalo: estás construyendo tu técnica.',
+    'Lo difícil de hoy será lo fácil de mañana.',
+    'Toca como si alguien te estuviera escuchando.',
+    'Relaja la mano: la tensión frena tus dedos.',
+    'Una nota limpia vale más que diez apuradas.',
+    'El metrónomo no es tu enemigo: es tu mejor maestro.',
+    'No busques velocidad, busca control.',
+    'Mantén los dedos cerca de las cuerdas.',
+    'Si te sale lento, ya vas por buen camino.',
+    'Cada repetición deja huella en tus manos.',
+    'Respira hondo y vuelve a empezar.',
+    'Hoy no tiene que salir perfecto: tiene que salir mejor.',
+    'Afloja la púa: no hace falta apretarla tanto.',
+    'Tu oído también está entrenando.',
+    'Pequeños avances, todos los días.',
+    'Equivocarse también es practicar.',
+    'Siente el pulso antes de tocar.',
+    'La paciencia también se entrena.',
+    'Nadie nació tocando así: todos empezaron lento.',
+    'Deja que el ritmo te lleve.',
+    'Tu yo de hace un mes estaría orgulloso.',
+    'Busca el sonido, no solo la nota.',
+    'Hombros abajo, muñeca suelta.',
+    'Lo estás haciendo mejor de lo que crees.',
+    'Mira menos el diapasón y escucha más.',
+    'Cinco minutos bien hechos valen más que una hora distraída.',
+    'La memoria de tus dedos se construye así.',
+    'Un error a tiempo se corrige a tiempo.',
+    'Toca con intención cada nota.',
+    'Ya estás aquí: eso es lo más difícil.',
+    'Los grandes también repiten lo básico.',
+    'Silencia lo que no debe sonar.',
+    'Mejor corto y todos los días que largo y de vez en cuando.',
+    'Si te duele, para: cuidar tus manos también es técnica.',
+    'Busca que tu mano izquierda y la púa lleguen juntas.',
+    'No cuentes los errores: cuenta las rondas.',
+    'Una ronda más cerca de tu meta.',
+    'La técnica es libertad para tocar lo que imaginas.',
+    'Hazlo fácil, aunque todavía no lo sea.',
+    'Cada día suena un poco más a ti.',
+    'Concéntrate solo en esta ronda.',
+    'La calma también se escucha en tu sonido.',
+    'Si se complica, baja la velocidad sin culpa.',
+    'El progreso se nota cuando miras hacia atrás.',
+    'Toca parejo: ninguna nota vale menos que otra.',
+    'Tus manos aprenden incluso cuando no lo notas.',
+    'Sigue: hoy cuenta.',
+    'La música empieza en la cabeza; tus dedos la siguen.',
+    'Dedos ligeros, mente tranquila.',
+    'Ese pasaje difícil ya te teme un poco.',
+    'Tu guitarra agradece cada minuto que le das.',
 ];
+/** Mensajes ya vistos en este navegador. */
+const seenMessagesStore = createLocalStore<string[]>('fq-practice-seen-messages', []);
+const shuffled = <T,>(items: T[]) => {
+    const list = [...items];
+    for (let i = list.length - 1; i > 0; i--) {
+        const other = Math.floor(Math.random() * (i + 1));
+        [list[i], list[other]] = [list[other], list[i]];
+    }
+    return list;
+};
+/** Orden de mensajes de una práctica: primero los que aún no salieron. */
+const nextMessages = () => {
+    const seen = new Set(seenMessagesStore.get());
+    const fresh = MOTIVATION.filter(message => !seen.has(message));
+    if (!fresh.length) { seenMessagesStore.set([]); return shuffled(MOTIVATION); }
+    return [...shuffled(fresh), ...shuffled(MOTIVATION.filter(message => seen.has(message)))];
+};
 
 // Ejercicio real: cromático 1-2-3-4 por las seis cuerdas (6ª → 1ª) y 4-3-2-1 de vuelta (1ª → 6ª), una nota por clic.
 const PATTERN: PatternNote[] = [
@@ -79,7 +157,6 @@ const PATTERN: PatternNote[] = [
     ...[1, 2, 3, 4, 5, 6].flatMap(string => [8, 7, 6, 5].map(fret => ({ string, fret }))),
 ];
 export type Mode = 'goal' | 'practice';
-type Phase = 'idle' | 'loading' | 'countdown' | 'playing';
 
 const modeInfo = {
     goal: { label: 'Objetivo', text: 'Lee de qué trata el ejercicio antes de tocar.', icon: Target },
@@ -133,11 +210,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Quiénes practicaron esta lección esta semana (datos y caché de Comunidad).
     const { data: community } = useCommunity(account !== null);
     const practicing = community?.byLesson[activeExercise.id] ?? [];
-    const [showIntro, setShowIntro] = useState(false);
     const session = searchParams.has('sesion') ? planSession : null;
     const sessionEnd = session ? session.startedAt + session.minutes * 60_000 : 0;
-    const sessionRef = useRef(session);
-    useEffect(() => { sessionRef.current = session; }, [session]);
     const nextInPlan = (() => {
         if (!account?.level) return null;
         const lessons = planFor(account.level).flatMap(block => block.lessons.map(lesson => ({ moduleId: block.moduleId, lesson })));
@@ -170,13 +244,9 @@ function PracticeView({ mode }: { mode: Mode }) {
     }
     // Una fila incompleta con 6 notas o más las reparte en todo el ancho; con menos, quedan alineadas con las filas completas.
     const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
-    const [phase, setPhase] = useState<Phase>('idle');
-    const [round, setRound] = useState(1);
     const suggestedRounds = activeExercise.rounds ?? 1;
     const [rounds, setRounds] = useState(suggestedRounds);
     const [finished, setFinished] = useState<{ rounds: number; speed: Speed; bpm: number; seconds: number; sessionMinutes?: number; progress: SummaryProgress | null } | null>(null);
-    const startedAt = useRef(0);
-    const [startedAtView, setStartedAtView] = useState(0);
     // Grabación opcional, una toma por ronda: en memoria, se escucha al final y se borra al cerrar el resumen.
     const recorder = usePracticeRecorder();
     const { clear: clearTakes, startTake } = recorder;
@@ -203,88 +273,25 @@ function PracticeView({ mode }: { mode: Mode }) {
         setFinished(null);
         setFrom(null);
     }
-    const roundsRef = useRef(rounds);
-    useEffect(() => { roundsRef.current = rounds; }, [rounds]);
-    const [count, setCount] = useState(-1);
-    const [pulse, setPulse] = useState(0);
-    useScrollLock(phase === 'countdown');
-    const [step, setStep] = useState(-1);
-    const [listening, setListening] = useState(false);
-    // Guitarra de guía al practicar: muy bajita (al escuchar suena normal). Prendida por defecto; se recuerda.
+    // Guitarra de guía al practicar: muy bajita. Prendida por defecto; se recuerda.
     const practiceGuide = practiceGuideStore.use();
     const setPracticeGuide = practiceGuideStore.set;
-    const practiceGuideRef = useRef(practiceGuide);
-    useEffect(() => { practiceGuideRef.current = practiceGuide; }, [practiceGuide]);
-    const active = phase !== 'idle';
-    // Practicar (no Reproducir) se muestra en su propia pantalla completa: la tablatura gana todo el espacio.
-    const stage = active && !listening;
-    useScrollLock(stage);
-    const cancelRef = useRef<(() => void) | null>(null);
-    const bpmRef = useRef(bpm);
-    useEffect(() => {
-        bpmRef.current = bpm;
-        if (cancelRef.current) setRoundBpm(bpm);
-    }, [bpm]);
-    const phaseRef = useRef(phase);
-    useEffect(() => { phaseRef.current = phase; }, [phase]);
-    // Cada ronda: cuenta de entrada → patrón con metrónomo.
-    // Escuchar: una ronda con guitarra, sin cuenta. Práctica: las rondas elegidas (1, 3, 5, 7 o 10).
-    const runRound = (number: number, listen: boolean) => {
-        setRound(number);
-        setStep(-1);
-        setCount(-1);
-        setPhase(listen ? 'playing' : 'countdown');
-        const offset = listen ? from ?? 0 : 0;
-        cancelRef.current = scheduleRound(bpmRef.current, pattern.slice(offset), {
-            // El metrónomo siempre marca negras (un clic por pulso), sin importar la figura de la tablatura.
-            notesPerBeat: FIGURES[figure].notesPerBeat,
-            guide: listen || practiceGuideRef.current,
-            guideVelocity: listen ? undefined : GUIDE_VELOCITY,
-            countIn: !listen,
-            onCount: value => { setCount(value); setPulse(beat => beat + 1); },
-            onStep: index => { setPhase('playing'); setStep(index + offset); },
-            onEnd: () => {
-                if (listen) { stop(); return; }
-                recorder.endTake();
-                const current = sessionRef.current;
-                if (current) {
-                    // En sesión: rondas sin fin hasta que se acabe el tiempo; la ronda en curso siempre termina.
-                    if (now() < current.startedAt + current.minutes * 60_000) { runRound(number + 1, false); return; }
-                    stop(); setPlanSession(null);
-                    finish(number, { sessionMinutes: current.minutes, seconds: (now() - current.startedAt) / 1000 });
-                    return;
-                }
-                if (number >= roundsRef.current) { stop(); finish(number); return; }
-                runRound(number + 1, false);
-            },
-        });
-    };
-    // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
-    useEffect(() => { if (phase === 'playing' && !listening) startTake(round); }, [phase, listening, round, startTake]);
-    // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
-    // Si estaba sonando «Reproducir», se corta: la preparación arranca con la tablatura limpia, sin nota marcada.
-    const openIntro = () => { stopRef.current(); setFrom(null); setShowIntro(true); if (record) void recorder.open(inputId); };
-    const closeIntro = () => { setShowIntro(false); recorder.close(); };
-    const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
-    const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
-    // Una práctica nueva borra las tomas anteriores.
-    const startPractice = () => {
-        recorder.clear();
-        setShowIntro(false);
-        void start(false);
-    };
+    // Un valor guardado que ya no está en la lista (p. ej. 3 s) cuenta como sin descanso, igual que lo muestra el selector.
+    const savedRest = practiceRestStore.use();
+    const restSeconds = REST_OPTIONS.some(option => option.value === savedRest) ? savedRest : 0;
+    const [messages, setMessages] = useState(MOTIVATION);
     // Al salir el resumen se registra la práctica (solo con sesión iniciada); el modal muestra los minutos sumados.
-    const finish = (rounds: number, session?: { sessionMinutes: number; seconds: number }) => {
+    const finish = (rounds: number, startedAt: number, session?: { sessionMinutes: number; seconds: number }) => {
         const endedAt = new Date();
-        const startedAtDate = new Date(startedAt.current);
+        const startedAtDate = new Date(startedAt);
         const seconds = (endedAt.getTime() - startedAtDate.getTime()) / 1000;
-        setFinished({ rounds, speed, bpm: bpmRef.current, seconds: session?.seconds ?? seconds, sessionMinutes: session?.sessionMinutes, progress: null });
+        setFinished({ rounds, speed, bpm, seconds: session?.seconds ?? seconds, sessionMinutes: session?.sessionMinutes, progress: null });
         if (!account) return;
         recordPractice(activeExercise.id);
         const goalMinutes = account.sessionMinutes ?? DEFAULT_SESSION_MINUTES;
         const before = todayOf(getProgress());
         setFinished(value => value && { ...value, progress: { beforeSeconds: before?.seconds ?? 0, addedSeconds: seconds, goalMinutes, completedBefore: before?.completed ?? false } });
-        recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm: bpmRef.current })
+        recordFinishedPractice({ name: account.name, level: account.level, sessionMinutes: goalMinutes, lessonId: activeExercise.id, startedAt: startedAtDate, endedAt, rounds, speed, bpm })
             .then(saved => {
                 if (!saved) return;
                 const before = account.totalSeconds ?? 0;
@@ -294,64 +301,105 @@ function PracticeView({ mode }: { mode: Mode }) {
             })
             .catch(() => setFinished(value => value && { ...value, progress: null }));
     };
-    const start = async (listen: boolean) => {
-        // Nunca dos rondas a la vez: la anterior (si sigue sonando) se corta antes de empezar.
-        cancelRef.current?.();
-        cancelRef.current = null;
-        setStep(-1);
-        setFinished(null);
-        // Practicar es siempre desde el inicio: se borra la nota elegida en la tablatura, venga de donde venga.
-        if (!listen) setFrom(null);
-        setListening(listen);
-        setCount(-1);
-        setPhase('loading');
-        try { await prepare(); } catch { setPhase('idle'); return; }
-        startedAt.current = now();
-        setStartedAtView(startedAt.current);
-        runRound(1, listen);
-    };
-    const stop = () => { cancelRef.current?.(); cancelRef.current = null; if (!listening) recorder.close(); setStep(-1); setRound(1); setPhase('idle'); };
+    const playback = usePlayback({
+        // Mismo punto de entrada: Reproducir empieza desde la nota elegida, una pasada y sin cuenta.
+        // Practicar empieza siempre desde cero, con cuenta, guía bajita y sus rondas (en sesión, hasta completar el tiempo).
+        plan: demo => {
+            const base = { bpm, pattern, notesPerBeat: FIGURES[figure].notesPerBeat };
+            if (demo) return { ...base, startAt: from ?? 0, guideVelocity: LISTEN_VELOCITY };
+            return { ...base, rounds, until: session ? () => { const current = getPlanSession(); return current ? current.startedAt + current.minutes * 60_000 : 0; } : undefined, restSeconds, countIn: true, guideVelocity: practiceGuide ? GUIDE_VELOCITY : 0 };
+        },
+        // En sesión el descanso tampoco gasta tiempo: el reloj se corre esos segundos.
+        onRest: seconds => { const current = getPlanSession(); if (current) setPlanSession({ ...current, startedAt: current.startedAt + seconds * 1000 }); },
+        onRoundEnd: () => recorder.endTake(),
+        onFinish: (number, startedAt) => {
+            if (!session) { finish(number, startedAt); return; }
+            setPlanSession(null);
+            finish(number, startedAt, { sessionMinutes: session.minutes, seconds: (now() - session.startedAt) / 1000 });
+        },
+    });
+    const { status, round, count, pulse, step, startedAt, soundError, stop: stopPlayback } = playback;
+    const listening = status === 'demoLoading' || status === 'demo';
+    // Practicar (no Reproducir) se muestra en su propia pantalla completa: la tablatura gana todo el espacio.
+    const stage = status === 'countdown' || status === 'playing' || status === 'rest';
+    const active = listening || stage;
+    const preparing = status === 'preparing';
+    // La nota elegida sigue marcada hasta que suena la primera: así no parpadea mientras Reproducir arranca.
+    const showFrom = !active || (listening && step < 0);
+    const showIntro = status === 'intro' || status === 'starting';
+    useScrollLock(status === 'countdown' || status === 'rest');
+    useScrollLock(stage);
+    // Cada ronda se graba desde que suena (sin la cuenta de entrada) hasta su final.
+    useEffect(() => { if (status === 'playing') startTake(round); }, [status, round, startTake]);
+    // Con «Grabar», la entrada se abre en la preparación (al activarla o al volver a abrirla) para ver que llega señal.
+    const { close: closeInput, open: openInput } = recorder;
+    useEffect(() => { if (status === 'idle') closeInput(); }, [status, closeInput]);
+    const recordRef = useRef({ record, inputId });
+    useEffect(() => { recordRef.current = { record, inputId }; }, [record, inputId]);
+    useEffect(() => { if (status === 'intro' && recordRef.current.record) void openInput(recordRef.current.inputId); }, [status, openInput]);
+    const message = messages[(2 * (round - 1) + (status === 'rest' ? 1 : 0)) % messages.length];
+    const messageShown = status === 'countdown' || status === 'rest';
+    useEffect(() => {
+        if (messageShown && !seenMessagesStore.get().includes(message)) seenMessagesStore.set([...seenMessagesStore.get(), message]);
+    }, [messageShown, message]);
+    const toggleRecord = (value: boolean) => { setRecord(value); if (value) void recorder.open(inputId); else recorder.close(); };
+    const changeInput = (id: string) => { setInputId(id); void recorder.open(id); };
+    // Practicar parte siempre de cero (menos la configuración: velocidad, rondas y guía): ninguna nota marcada.
+    const openIntro = () => { setFrom(null); setFinished(null); void playback.openIntro(); };
+    // Una práctica nueva borra las tomas anteriores.
+    const startPractice = () => { recorder.clear(); setMessages(nextMessages()); void playback.begin(); };
+    const playDemo = () => { setFinished(null); void playback.playDemo(); };
 
     // Detener a mano corta la sesión: ese día no cuenta (no pasa nada). Salir de la página, en cambio, no la borra.
-    const userStop = () => { if (sessionRef.current) setPlanSession(null); stop(); };
+    const userStop = () => { if (session) setPlanSession(null); stopPlayback(); };
     const goNext = () => {
-        if (!nextInPlan || !sessionRef.current) return;
-        stop();
-        setPlanSession({ ...sessionRef.current, autostart: true });
+        if (!nextInPlan || !session) return;
+        stopPlayback();
+        setPlanSession({ ...session, autostart: true });
         navigate(exerciseUrl(nextInPlan.moduleId, nextInPlan.lesson.id, 'sesion'));
     };
 
-    const stopRef = useRef(stop);
-    const startRef = useRef(start);
+    const playDemoRef = useRef(playDemo);
     const userStopRef = useRef(userStop);
-    useEffect(() => { stopRef.current = stop; startRef.current = start; userStopRef.current = userStop; });
-    // Al abrir una lección de la sesión, arranca sola. Se difiere un tick y se cancela en la limpieza:
-    // así, si React monta dos veces (StrictMode en desarrollo), solo arranca el montaje que se queda.
+    const openIntroRef = useRef(openIntro);
+    useEffect(() => { playDemoRef.current = playDemo; userStopRef.current = userStop; openIntroRef.current = openIntro; });
+    // Al abrir una lección de la sesión sale la preparación, como en cualquier práctica. Se difiere un tick y se cancela en la limpieza:
+    // así, si React monta dos veces (StrictMode en desarrollo), solo la abre el montaje que se queda.
     useEffect(() => {
         if (!searchParams.has('sesion') || !getPlanSession()?.autostart) return;
         const id = setTimeout(() => {
             const current = getPlanSession();
             if (!current?.autostart) return;
             setPlanSession({ ...current, autostart: false });
-            void startRef.current(false);
+            openIntroRef.current();
         }, 0);
         return () => clearTimeout(id);
     }, [searchParams]);
-    // Al salir de la página se corta el sonido.
-    useEffect(() => () => stopRef.current(), []);
     // Espacio reproduce el ejercicio (desde la nota elegida, si hay una); Practicar se inicia solo con su botón.
     // Escape quita la nota elegida: Reproducir vuelve a empezar desde el inicio.
+    // Con un modal abierto, o mientras Practicar se prepara, Espacio no reproduce nada.
+    const blocked = status !== 'idle' || finished !== null || levelUp !== null;
     useEffect(() => {
-        if (active) return;
+        if (blocked) return;
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') { setFrom(null); return; }
-            if (event.key !== ' ' || event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
+            if (event.key !== ' ' || event.repeat) return;
+            // Sobre un control, Espacio activa ese control (p. ej. Practicar); las notas de la tablatura sí dejan reproducir.
+            const target = event.target instanceof Element ? event.target : null;
+            if (target?.closest('button, a, input, select, textarea, [role="button"]') && !target.closest('[data-tab-note]')) return;
             event.preventDefault();
-            void startRef.current(true);
+            playDemoRef.current();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [active]);
+    }, [blocked]);
+    // Mientras Practicar se prepara, Escape lo cancela.
+    useEffect(() => {
+        if (!preparing) return;
+        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') stopPlayback(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [preparing, stopPlayback]);
     // Escape detiene (al escuchar y al practicar). Espacio no hace nada mientras suena: no se detiene por accidente.
     useEffect(() => {
         if (!active) return;
@@ -366,7 +414,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Scroll automático: mantiene centrada la fila de la tablatura que está sonando.
     const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
     // Durante la cuenta de entrada se muestra la primera fila.
-    const currentRow = phase === 'countdown' ? 0 : step < 0 ? -1 : bars.filter(bar => bar.start <= step).length - 1;
+    const currentRow = status === 'countdown' || status === 'rest' ? 0 : step < 0 ? -1 : bars.filter(bar => bar.start <= step).length - 1;
     useEffect(() => {
         // Con el selector abierto no se desplaza: el navegador cierra la lista de opciones al hacer scroll.
         if (currentRow >= 0 && !(document.activeElement instanceof HTMLSelectElement)) rowRefs.current[currentRow]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -386,7 +434,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     // La barra fija se alinea con la tarjeta del ejercicio (la columna de contenido, no toda la ventana).
     const sectionRef = useRef<HTMLElement | null>(null);
     const [barBox, setBarBox] = useState({ left: 0, width: 0 });
-    const showBar = active && !stage && phase !== 'loading' && headerHidden;
+    const showBar = status === 'demo' && headerHidden;
     useEffect(() => {
         if (!showBar) return;
         const measure = () => {
@@ -399,8 +447,8 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [showBar]);
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
-        <Button onClick={() => start(true)} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
-        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" onClick={openIntro}><Play size={16} fill="currentColor"/>Practicar</Button>
+        <Button disabled={preparing} onClick={playDemo} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
+        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" disabled={preparing} onClick={openIntro}>{preparing ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Practicar</Button>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : session ? <>Sesión de {session.minutes} min · ronda <b className="text-fg-soft">{round}</b></> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{speedName(speed)} · {bpm} BPM</b>{recorder.recording && <> · <span className="inline-flex items-center gap-1.5 font-bold text-danger"><span className="size-2 animate-pulse rounded-full bg-danger"/>REC</span></>}</span>;
     const nextButton = session && nextInPlan && !listening ? <Button variant="secondary" onClick={goNext} title={nextInPlan.lesson.title}><SkipForward size={15}/>Siguiente lección</Button> : null;
@@ -408,12 +456,11 @@ function PracticeView({ mode }: { mode: Mode }) {
 
     const tempoSelect = <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} originalBpm={study?.originalBpm} suggested={suggestedSpeed}/>;
 
-    const roundsSelect = <RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/>;
 
     // La misma tarjeta del ejercicio; al practicar va en una capa a pantalla completa (en <body>, por el `transform` de <main>).
     const inStage = (content: ReactNode) => stage
         // Mientras suena no hay scroll a mano: la tablatura baja sola siguiendo la nota (el scroll automático sí funciona).
-        ? createPortal(<div role="region" aria-label="Modo práctica" className={cn('fixed inset-0 z-40 bg-canvas p-3 md:p-6', phase === 'playing' ? 'overflow-hidden' : 'overflow-y-auto')}>{content}</div>, document.body)
+        ? createPortal(<div role="region" aria-label="Modo práctica" className={cn('fixed inset-0 z-40 bg-canvas p-3 md:p-6', status === 'playing' ? 'overflow-hidden' : 'overflow-y-auto')}>{content}</div>, document.body)
         : content;
 
     return <>
@@ -494,12 +541,12 @@ function PracticeView({ mode }: { mode: Mode }) {
                         <Eyebrow>{activeModule.title.toUpperCase()}</Eyebrow>
                         <h2 className="mt-2 flex items-center gap-3 text-[1.1875rem]">{activeExercise.title}<DifficultySignal difficulty={activeExercise.difficulty}/></h2>
                     </div>
-                    <div className={cn('flex flex-wrap items-center gap-3', !(active && phase !== 'loading') && 'w-full sm:w-auto')}>
-                        {active && phase !== 'loading' ? <>{session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAtView}/>}{nextButton}{stopButton}</> : tempoSelect}
+                    <div className={cn('flex flex-wrap items-center gap-3', !(active && status !== 'demoLoading') && 'w-full sm:w-auto')}>
+                        {active && status !== 'demoLoading' ? <>{session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAt}/>}{nextButton}{stopButton}</> : tempoSelect}
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3 xl:px-5.5">
-                    {phase === 'idle'
+                    {!active
                         ? <>
                             {startChoices}
                             {/* Nota elegida en la tablatura: se quita con Esc, con «Quitar» o tocándola otra vez. En móvil baja a su propia línea. */}
@@ -512,7 +559,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                                 </button>
                             </p>}
                         </>
-                        : phase === 'loading'
+                        : status === 'demoLoading'
                             ? <Button disabled className="min-w-40"><Loader2 size={17} className="animate-spin"/>Cargando sonido…</Button>
                             : playingInfo}
                 </div>
@@ -523,23 +570,28 @@ function PracticeView({ mode }: { mode: Mode }) {
                             <p className="truncate font-bold text-fg">{activeExercise.title}</p>
                             {playingInfo}
                         </div>
-                        {session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAtView}/>}
+                        {session && !listening ? <Remaining until={sessionEnd}/> : <Elapsed since={startedAt}/>}
                         {nextButton}
                         {stopButton}
                     </div>
                 </div>, document.body)}
-                {showIntro && <PracticeIntro onCancel={closeIntro} onStart={startPractice} canStart={!record || recorder.status === 'ready'}>
-                    {/* Velocidad y rondas: una por fila en móvil, en dos columnas desde sm. */}
+                {showIntro && <PracticeIntro onCancel={stopPlayback} onStart={startPractice} starting={status === 'starting'} error={soundError ? 'No pudimos cargar el sonido. Revisa tu conexión e inténtalo otra vez.' : undefined} canStart={!record || recorder.status === 'ready'}>
+                    {/* Los cuatro ajustes siempre visibles, para que el modal no cambie de tamaño: uno por fila en móvil, en 2×2 desde sm. */}
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-3">
                         <PracticeField label="Velocidad" icon={Gauge}>
                             <SpeedSelect value={speed} onChange={setSpeed} figure={baseFigure} originalBpm={study?.originalBpm} suggested={suggestedSpeed} full/>
                         </PracticeField>
+                        <div className="flex min-w-0 flex-col gap-1.5">
+                            <span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Headphones size={13}/>Guía</span>
+                            <PracticeOption compact icon={Music} title="Tablatura de guía" note="Muy bajita" checked={practiceGuide} onChange={setPracticeGuide}/>
+                        </div>
                         {session
                             ? <div className="flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-2xs font-bold tracking-wider text-muted uppercase"><Repeat size={13}/>Sesión</span><p className="text-sm text-fg-soft"><b>{session.minutes} min</b>: rondas hasta completar el tiempo</p></div>
-                            : <PracticeField label="Rondas" icon={Repeat}>{roundsSelect}</PracticeField>}
+                            : <PracticeField label="Rondas" icon={Repeat}><RichSelect label="Rondas" options={ROUND_OPTIONS} value={rounds} onChange={setRounds} suggested={suggestedRounds} full/></PracticeField>}
+                        <PracticeField label={<>Descanso <span className="font-normal tracking-normal normal-case">· no suma al progreso</span></>} icon={Timer}>
+                            <RichSelect label="Descanso entre rondas" options={REST_OPTIONS} value={restSeconds} onChange={practiceRestStore.set} disabled={!session && rounds === 1} full/>
+                        </PracticeField>
                     </div>
-                    <PracticeOption icon={Headphones} title="Tablatura de guía, muy bajita" checked={practiceGuide} onChange={setPracticeGuide} 
-                        note={practiceGuide ? 'La guía sonará por debajo del metrónomo.' : 'Una referencia suave por debajo del metrónomo.'}/>
                     {RECORDING_ENABLED && <>
                     <PracticeOption icon={Mic} title="Grabar cada ronda" checked={record} onChange={toggleRecord} warning={record && (recorder.status === 'denied' || recorder.status === 'none')}
                         note={!record ? 'Al terminar eliges una ronda y te escuchas: es la mejor forma de notar errores de tiempo y de limpieza. Queda solo en tu dispositivo y se borra al cerrar el resumen.'
@@ -558,11 +610,11 @@ function PracticeView({ mode }: { mode: Mode }) {
                     </>}
                 </PracticeIntro>}
                 {levelUp !== null && <LevelUpDialog seconds={levelUp} onClose={() => setLevelUp(null)}/>}
-                {phase === 'idle' && finished && <PracticeSummary {...finished} onClose={closeSummary}>
+                {!active && finished && <PracticeSummary {...finished} onClose={closeSummary}>
                     {recorder.takes.length > 0 && <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo y se borra al cerrar este resumen."/>}
                 </PracticeSummary>}
                 {/* Detenida a mano no hay resumen: las tomas quedan aquí hasta borrarlas o empezar otra práctica. */}
-                {phase === 'idle' && !finished && recorder.takes.length > 0 && <div className="flex flex-col gap-2 border-t border-line px-4 py-3 sm:flex-row sm:items-start xl:px-5.5">
+                {!active && !finished && recorder.takes.length > 0 && <div className="flex flex-col gap-2 border-t border-line px-4 py-3 sm:flex-row sm:items-start xl:px-5.5">
                     <RoundRecordings takes={recorder.takes} onPlay={recorder.markHeard} note="Solo está en tu dispositivo: se borra al salir o al empezar otra práctica."/>
                     <Button variant="secondary" onClick={recorder.clear} className="shrink-0"><Trash2 size={15}/>Borrar</Button>
                 </div>}
@@ -593,8 +645,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                                         {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
                                         {note.string === row + 1
-                                            ? <button type="button" disabled={active} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
-                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : !active && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && 'cursor-pointer hover:text-fg', !active && from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
+                                            ? <button type="button" data-tab-note disabled={active || preparing} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
+                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : showFrom && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && 'cursor-pointer hover:text-fg', from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
                                             : <span className="invisible z-10 px-1 text-base">{note.fret}</span>}
                                         {/* Bend: flecha y medida arriba a la derecha (con release, flecha de vuelta). Vibrato: onda a la derecha. */}
                                         {note.string === row + 1 && note.bend && <span title={`${note.prebend ? 'Pre-bend' : 'Bend'} ${bendLabel(note.bend)}${note.release ? ' y release' : ''}`} className="absolute -top-2.5 left-1/2 z-20 ml-2 font-sans text-2xs leading-none font-bold whitespace-nowrap text-accent-strong">{note.prebend ? 'PB ' : ''}{note.prebend ? '↘' : note.release ? '↗↘' : '↗'} {bendLabel(note.bend)}</span>}
@@ -605,15 +657,16 @@ function PracticeView({ mode }: { mode: Mode }) {
                         </div>)}
                     </div>
                 </div>
-                {/* Cuenta de entrada: pantalla completa con el fondo borroso. Al practicar sale ya mientras carga el sonido, sin hueco.
+                {/* Cuenta de entrada: pantalla completa con el fondo borroso. 
                     Va en <body> porque el `transform` animado de <main> encerraría un `fixed`. */}
-                {(phase === 'countdown' || (phase === 'loading' && !listening)) && createPortal(<div role="status" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-sunken/60 px-6 text-center backdrop-blur-md">
+                {(status === 'countdown' || status === 'rest') && createPortal(<div role="status" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-sunken/60 px-6 text-center backdrop-blur-md">
                     {count < 0
                         ? <span key={pulse} className="block size-28 animate-pop rounded-full bg-violet/60 shadow-[0_0_80px_#3198dc88] md:size-36"/>
-                        : <span key={pulse} className={cn('block animate-pop font-black leading-none text-accent-strong', count > 0 ? 'text-[9rem] md:text-[12rem]' : 'text-6xl md:text-7xl')}>{count > 0 ? count : `Ronda ${round}`}</span>}
+                        : <span key={pulse} className={cn('block animate-pop font-black leading-none', status === 'rest' ? 'font-mono text-7xl text-white tabular-nums md:text-9xl' : count > 0 ? 'text-[9rem] text-accent-strong md:text-[12rem]' : 'text-6xl text-accent-strong md:text-7xl')}>{status === 'rest' ? `0:${String(count).padStart(2, '0')}` : count > 0 ? count : `Ronda ${round}`}</span>}
                     <div>
-                        <p className="text-2xl font-bold md:text-3xl">{round === 1 ? 'Prepárate' : 'Siguiente ronda'}</p>
-                        <p className="mx-auto mt-3 max-w-md font-serif text-lg text-fg-soft italic md:text-xl">{MOTIVATION[(round - 1) % MOTIVATION.length]}</p>
+                        <p className="text-2xl font-bold md:text-3xl">{status === 'rest' ? 'Descansa' : round === 1 ? 'Prepárate' : 'Siguiente ronda'}</p>
+                        <p className="mx-auto mt-3 max-w-md font-serif text-lg text-fg-soft italic md:text-xl">{message}</p>
+                        {status === 'rest' && <p className="mt-3 text-sm text-muted">Este tiempo no cuenta como práctica.</p>}
                         <p className="mt-3 text-sm text-muted"><kbd className="rounded border border-line-strong px-1.5 font-mono text-xs">Esc</kbd> para cancelar</p>
                     </div>
                 </div>, document.body)}

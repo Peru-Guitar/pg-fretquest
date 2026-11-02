@@ -4,14 +4,14 @@ import { Check, ChevronDown } from 'lucide-react';
 import { FIGURES, speedPlan, speedsOf, type Figure, type Speed } from '@/data/practiceStudies';
 import { cn } from '@/lib/cn';
 
-export type RichOption<T> = { value: T; badge: string; title: string; detail: string };
+export type RichOption<T> = { value: T; title: string; detail: string };
 
 /**
  * Desplegable con título y descripción por opción (velocidad, rondas). `suggested` se marca como «Sugerida».
  * `full`: ocupa todo el ancho (en el diálogo de práctica); sin él, 16 rem en la cabecera (todo el ancho en móvil).
  * La lista va en <body> con posición fija para que no la recorte un diálogo con scroll; se abre hacia arriba si abajo no cabe.
  */
-export function RichSelect<T extends number>({ label, options, value, onChange, suggested, full }: { label: string; options: RichOption<T>[]; value: T; onChange: (value: T) => void; suggested?: T; full?: boolean }) {
+export function RichSelect<T extends number>({ label, options, value, onChange, suggested, full, disabled }: { label: string; options: RichOption<T>[]; value: T; onChange: (value: T) => void; suggested?: T; full?: boolean; disabled?: boolean }) {
     const [open, setOpen] = useState(false);
     const root = useRef<HTMLDivElement>(null);
     const list = useRef<HTMLUListElement>(null);
@@ -45,7 +45,6 @@ export function RichSelect<T extends number>({ label, options, value, onChange, 
     const current = options.find(option => option.value === value) ?? options[0];
 
     const row = (option: RichOption<T>) => <>
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue/15 font-mono text-base font-black text-accent-strong">{option.badge}</span>
         <span className="min-w-0 flex-1 text-left">
             <b className="block truncate text-sm text-fg">{option.title}{option.value === suggested && <span className="ml-1.5 text-2xs font-bold text-accent">Sugerida</span>}</b>
             <span className="block truncate text-xs text-muted">{option.detail}</span>
@@ -53,15 +52,15 @@ export function RichSelect<T extends number>({ label, options, value, onChange, 
     </>;
 
     return <div ref={root} className={cn('relative', full ? 'w-full' : 'w-full sm:w-64')}>
-        <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={label} onClick={() => setOpen(!open)}
-            className={cn('flex w-full items-center gap-3 rounded-xl border bg-field p-1.5 pr-3 transition', open ? 'border-blue' : 'border-line-strong hover:border-blue/60')}>
+        <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={label} disabled={disabled} onClick={() => setOpen(!open)}
+            className={cn('flex w-full items-center gap-3 rounded-xl border bg-field px-3 py-1.5 transition disabled:cursor-not-allowed disabled:opacity-50', open ? 'border-blue' : 'border-line-strong enabled:hover:border-blue/60')}>
             {row(current)}
             <ChevronDown size={17} className={cn('shrink-0 text-muted transition', open && 'rotate-180')}/>
         </button>
         {open && createPortal(<ul ref={list} role="listbox" aria-label={label} style={place} className="fixed z-[60] overflow-hidden rounded-xl border border-line-strong bg-raised p-1.5 shadow-[0_20px_60px_#0009]">
             {options.map(option => <li key={option.value}>
                 <button type="button" role="option" aria-selected={option.value === value} onClick={() => { onChange(option.value); setOpen(false); }}
-                    className={cn('flex w-full items-center gap-3 rounded-lg p-1.5 pr-2.5 transition', option.value === value ? 'bg-blue/12' : 'hover:bg-white/5')}>
+                    className={cn('flex w-full items-center gap-3 rounded-lg px-2.5 py-1.5 transition', option.value === value ? 'bg-blue/12' : 'hover:bg-white/5')}>
                     {row(option)}
                     {option.value === value && <Check size={16} className="shrink-0 text-accent"/>}
                 </button>
@@ -72,10 +71,10 @@ export function RichSelect<T extends number>({ label, options, value, onChange, 
 
 /** Velocidad: cada nivel con su nombre y, debajo, cómo suena en esta lección (figura y BPM). `figure`: la figura base. */
 export function SpeedSelect({ value, onChange, figure, originalBpm, suggested, full }: { value: Speed; onChange: (speed: Speed) => void; figure: Figure; originalBpm?: number; suggested: Speed; full?: boolean }) {
-    // Ordenados por notas por segundo: «Original» queda en su lugar, no siempre al final. El número es la posición.
+    // Ordenados por notas por segundo: «Original» queda en su lugar, no siempre al final.
     const options = speedsOf(originalBpm)
         .map(({ speed, name }) => ({ speed, name, plan: speedPlan(figure, speed, originalBpm) }))
         .sort((a, b) => a.plan.bpm * FIGURES[a.plan.figure].notesPerBeat - b.plan.bpm * FIGURES[b.plan.figure].notesPerBeat)
-        .map(({ speed, name, plan }, index): RichOption<Speed> => ({ value: speed, badge: String(index + 1), title: name, detail: `${plan.bpm} BPM · ${plan.figure}` }));
+        .map(({ speed, name, plan }): RichOption<Speed> => ({ value: speed, title: name, detail: `${plan.bpm} BPM · ${plan.figure}` }));
     return <RichSelect label="Velocidad" options={options} value={value} onChange={onChange} suggested={suggested} full={full}/>;
 }
