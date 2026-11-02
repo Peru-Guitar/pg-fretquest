@@ -98,7 +98,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
                 {/* Izquierda, tu semana (horas); a la derecha, tu rango (horas) junto a tu cuenta. La intensidad va en el menú, como tu plan. */}
                 <WeekStrip className="-ml-3 hidden md:flex"/>
-                <div className="flex items-center gap-3">
+                {/* ml-auto: sin sesión no hay semana y justify-between dejaría la cuenta a la izquierda. */}
+                <div className="ml-auto flex items-center gap-3">
                     <RankBadge className="hidden md:flex"/>
                     <AccountBar/>
                 </div>

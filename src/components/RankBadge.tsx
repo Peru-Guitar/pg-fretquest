@@ -2,12 +2,13 @@ import { useHydrated } from '@/lib/router';
 import { useAccount } from '@/lib/account';
 import { levelFromSeconds } from '@/lib/ranks';
 import { RankGlyph } from '@/components/RankIcon';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { TIER_BAR, TIER_COLOR } from '@/components/quest/rankStyle';
 import { cn } from '@/lib/cn';
 
 /**
  * Tu rango de compromiso (por horas practicadas), con el icono, el nombre del rango, el nivel
- * y una barra con el progreso al siguiente nivel.
+ * y una barra de XP por bloques con el progreso al siguiente nivel.
  */
 export function RankBadge({ className }: { className?: string }) {
     const account = useAccount();
@@ -23,7 +24,7 @@ export function RankBadge({ className }: { className?: string }) {
                 <b className={cn('truncate', TIER_COLOR[rank.rank.tier])}>{rank.rank.name}</b>
                 <b className="font-mono whitespace-nowrap text-fg">Nv. {rank.level}</b>
             </span>
-            <span className="block h-1 overflow-hidden rounded-full bg-white/15"><span className={cn('block h-full rounded-full', TIER_BAR[rank.rank.tier])} style={{ width: `${rank.progress * 100}%` }}/></span>
+            <SegmentedBar progress={rank.progress} color={TIER_BAR[rank.rank.tier]}/>
         </span>
     </span>;
 }
