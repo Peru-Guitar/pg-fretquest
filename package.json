@@ -1,6 +1,6 @@
 {
-  "name": "fret-quest",
-  "version": "0.10.1",
+  "name": "@pg/fretquest",
+  "version": "0.11.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

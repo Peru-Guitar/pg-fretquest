@@ -1,69 +1,71 @@
 ---
 name: new-lesson
-description: Crea o edita una lección de FretQuest (lectura o práctica con tablatura) a partir de las ideas del usuario. Úsalo cuando pida "nueva lección", "nuevo ejercicio", "agrega una práctica", "nueva lectura", "agrega escalas/modos/patrones" o comparta un patrón, lick o archivo de Guitar Pro (MusicXML) para practicar.
+description: Creates or edits a Fret Quest lesson (reading or tab practice) from the user's ideas. Use when the user asks for "nueva lección", "nuevo ejercicio", "agrega una práctica", "nueva lectura", "agrega escalas/modos/patrones", or shares a pattern, lick or Guitar Pro file (MusicXML) to practice.
 ---
 
-# Lección nueva en FretQuest
+# New lesson in Fret Quest
 
-La idea y el patrón son del usuario; tú los pasas al formato de la app, redactas los textos y propones variantes (marcadas como propuesta).
+The idea and the pattern come from the user. You bring them to the app's format, write the texts and propose variants (marked as proposals).
 
-## Dónde vive cada cosa
+## Where things live
 
-| Archivo | Qué va ahí |
+| File | What goes there |
 |---|---|
-| `src/data/questMock.ts` | Ficha de cada lección dentro de su módulo (`moduleFixtures`), y la fecha en `ADDED`. |
-| `src/data/practiceStudies.ts` | El contenido de cada práctica: textos y tablatura (`practiceStudies[id]`). |
+| `src/data/questMock.ts` | Each lesson's card inside its module (`moduleFixtures`), and its date in `ADDED`. |
+| `src/data/practiceStudies.ts` | Each practice's content: texts and tab (`practiceStudies[id]`). |
 
-- Solo se ven los módulos de la lista `available` (al final de `questMock.ts`). Si el módulo no está, avisa.
-- Si no es obvio en qué módulo va, pregunta.
-- Para series (modos, posiciones, parejas de cuerdas), usa una lista de datos + una función que genere el estudio, como `SCALE_MODES`, `OCTAVE_MODES` o `TWO_STRING_PATTERNS`. No copies el mismo objeto a mano.
+- Only modules in the `available` list (at the end of `questMock.ts`) are visible. If the module isn't there, say so.
+- If the module isn't obvious, ask.
+- For series (modes, positions, string pairs), use a data list plus a function that generates the study, like `SCALE_MODES`, `OCTAVE_MODES` or `TWO_STRING_PATTERNS`. Don't copy the same object by hand.
 
-## Ficha en `questMock.ts`
+## Card in `questMock.ts`
 
 ```ts
 { id: 'modulo-tema-01', title: 'G menor por octavas', category: 'Modos por octavas', type: 'practice',
   difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 }
 ```
 
-- **Título único en toda la app.** El slug de la URL sale del título (`tests/slugs.test.ts` lo comprueba).
-- **`difficulty`:** escalas y patrones van en `intermedio` salvo que el usuario pida otra.
-- **`category`:** agrupa las lecciones dentro del módulo. Con más de 12 lecciones y 2 grupos o más, la página del módulo las muestra en pestañas.
-- **Fecha:** agrega el id a `ADDED` con la fecha de hoy, para que salga en «Últimas lecciones agregadas».
-- `minutes` se guarda pero nunca se muestra.
+- **Title unique across the app.** The URL slug comes from the title (checked by `tests/slugs.test.ts`).
+- **`difficulty`:** scales and patterns use `intermedio` unless the user asks otherwise.
+- **`category`:** groups lessons inside the module. With more than 12 lessons and 2 or more groups, the module page shows them in tabs.
+- **Date:** add the id to `ADDED` with today's date, so it appears in «Últimas lecciones agregadas».
+- `minutes` is stored but never shown.
 
-## Estudio en `practiceStudies.ts`
+## Study in `practiceStudies.ts`
 
 ```ts
 {
-    description: 'Lo que transmite el ejercicio (ver «Textos»).',
+    description: 'What the exercise conveys (see "Texts").',
     notation: 'G menor (G A Bb C D Eb F) · Semicorcheas · Púa alternada continua',
-    goal: 'Qué debe lograr quien practica.',
-    steps: ['Cómo se recorre.', 'Digitación y púa.', 'Detalle clave.'],
-    mistakes: ['Error típico.', 'Otro error típico.'],
-    criterion: 'Cuándo subir el BPM.',
+    goal: 'What the player should achieve.',
+    steps: ['How it is played through.', 'Fingering and picking.', 'Key detail.'],
+    mistakes: ['Typical mistake.', 'Another typical mistake.'],
+    criterion: 'When to raise the BPM.',
     figure: 'semicorcheas',   // negras | corcheas | tresillos | semicorcheas | sextillos
-    speed: 2,                 // 1–5, velocidad sugerida
+    speed: 2,                 // 1–5, suggested speed
     ...withSections([{ title: 'Subida', pattern }, { title: 'Bajada', pattern }]),
 }
 ```
 
-- **Tablatura:** lista de `{ string, fret }`; cuerda 1 = e aguda, 6 = E grave. Cada sección empieza en una fila nueva.
-- **`picking`:** `alternate` por defecto; `legato` para arpegios/sweep; `tapping` con `tap: true` en las notas de la mano derecha.
-- **Patrón del usuario (tab o MusicXML):** transcríbelo tal cual y muéstraselo en texto para confirmar. Si algo parece un error, pregunta; no lo corrijas.
-- **Patrones generados:** imprime los trastes y revisa que ninguno pase del ~traste 18. Si se pasa, propón otra tónica o cuerda.
-- Si el usuario quiere escucharlo antes, genera un `.musicxml` (cuerda/traste en `<technical>`) y déjalo en el Escritorio.
+- **Tab:** a list of `{ string, fret }`; string 1 = high e, 6 = low E. Each section starts on a new row.
+- **`picking`:** `alternate` by default; `legato` for arpeggios/sweep; `tapping` with `tap: true` on right-hand notes.
+- **User's pattern (tab or MusicXML):** transcribe it as is and show it as text to confirm. If something looks like a mistake, ask; don't correct it.
+- **Generated patterns:** print the frets and check that none go past about fret 18. If one does, propose another root or string.
+- If the user wants to hear it first, generate a `.musicxml` (string/fret in `<technical>`) and leave it on the Desktop.
 
-## Textos
+## Texts
 
-- **`description`: describe el sonido, no la técnica.** Qué color o sensación tiene, a qué suena, quién lo usa, para qué sirve. Trastes, fórmulas y notas van en `notation` y `steps`. Modelo:
+Lesson texts are written in Spanish.
+
+- **`description`: describe the sound, not the technique.** What color or feeling it has, what it sounds like, who uses it, what it's for. Frets, formulas and notes go in `notation` and `steps`. Model:
   > Un patrón para ganar velocidad: dos cuerdas, tres notas en cada una y la misma forma siempre. Cada compás sube una nota y la escala menor se abre en horizontal.
-- **Máximo 200 caracteres** (el test lo comprueba).
-- **Cada descripción es única**, aunque la lección sea una variante de otra: di qué la hace distinta (otra cuerda, otra zona del mástil, otro color). El test lo comprueba.
-- Español, tuteo, frases cortas. Notas en sistema americano (C D E…, Bb), nunca Do Re Mi.
-- Sin motivación vacía ni puntos, niveles o récords.
+- **200 characters at most** (checked by the test).
+- **Each description is unique**, even when the lesson is a variant of another: say what makes it different (another string, another neck area, another color). Checked by the test.
+- Spanish, informal "tú", short sentences. Notes in American notation (C D E…, Bb), never Do Re Mi.
+- No empty motivation, points, levels or records.
 
-## Al terminar
+## When finished
 
-- `npx tsc --noEmit`, `npx eslint src` y `npx vitest run tests/slugs.test.ts`.
-- Da la ruta para probarla: `/ejercicios/<slug-del-módulo>/<slug-del-título>` (slugs de módulo en `src/lib/routes.ts`).
-- No hagas commit si no te lo piden. **Nunca hagas push**: solo con la skill `push` y un pedido explícito.
+- `npx tsc --noEmit`, `npx eslint src` and `npx vitest run tests/slugs.test.ts`.
+- Give the route to try it: `/ejercicios/<module-slug>/<title-slug>` (module slugs are in `src/lib/routes.ts`).
+- Don't commit unless asked. **Never push**: only with the `push` skill and an explicit request.

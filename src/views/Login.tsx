@@ -74,7 +74,7 @@ export default function LoginPage() {
 
     // Paso aparte del cuestionario: el ritmo semanal.
     // Con nivel ya guardado se salta el cuestionario: al plan, o al ritmo si aún no lo eligió.
-    // `?repetir` (desde Mi cuenta) vuelve a hacer el cuestionario.
+    // `?repetir` (desde Mis datos) vuelve a hacer el cuestionario.
     // Cuenta nueva en este navegador: esperar a Firestore antes de decidir si hace falta el cuestionario.
     if (account.synced === false && !account.level) return <div className="grid place-items-center py-24 text-muted"><Loader2 className="animate-spin"/></div>;
     if (account.level && !retake && account.weeklyGoal && !choosingRhythm) return <Navigate to={ROUTES.plan} replace/>;

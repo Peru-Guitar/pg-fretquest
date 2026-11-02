@@ -14,7 +14,7 @@ export type Account = {
   /** De Firebase Auth / Google: solo lectura. */
   uid: string;
   email: string;
-  /** Datos propios del usuario, independientes de Google: los edita en Mi cuenta. */
+  /** Datos propios del usuario, independientes de Google: los edita en Mis datos. */
   name: string;
   city?: string;
   country?: string;
@@ -42,7 +42,7 @@ export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOut = () => firebaseSignOut(auth);
 
 // Sesión de Firebase → cuenta. Si es otro usuario (o la primera vez), se crea con el nombre de Google;
-// a partir de ahí el nombre es del usuario (lo edita en Mi cuenta).
+// a partir de ahí el nombre es del usuario (lo edita en Mis datos).
 // Solo en el navegador: al generar el HTML estático no hay sesión que escuchar.
 if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
   // Progreso en vivo (días de la semana y resúmenes por lección) solo con sesión.

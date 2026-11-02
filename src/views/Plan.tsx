@@ -62,7 +62,7 @@ export default function PlanPage() {
     };
 
     return <>
-        <PageTitle eyebrow="MI PLAN" title={`Plan ${levelLabel(level)}`} text="Una guía de lo que te conviene practicar según tu nivel. Tu nivel lo cambias en Mi cuenta.">
+        <PageTitle eyebrow="MI PLAN" title={`Plan ${levelLabel(level)}`} text="Una guía de lo que te conviene practicar según tu nivel. Tu nivel lo cambias en Mis datos.">
             <Link to={ROUTES.guide} className="text-sm font-bold text-accent hover:underline">¿Cómo funciona? →</Link>
         </PageTitle>
 
