@@ -2,14 +2,15 @@
 
 import { ROUTES } from '@/lib/routes';
 import { useState } from 'react';
-import { Link, Navigate } from '@/lib/router';
+import { Link, Navigate, useNavigate, useSearchParams } from '@/lib/router';
 import { Check, Dumbbell, UserRound } from 'lucide-react';
 import { Button, Card, Field, PageTitle } from '@/components/ui';
-import { DEFAULT_RHYTHM, DEFAULT_SESSION_MINUTES, LEVELS, setSessionMinutes, levelLabel, setLevel, setWeeklyGoal, updateProfile, useAccount, type Account } from '@/lib/account';
+import { LEVELS, levelLabel, setLevel, setWeeklyHours, updateProfile, useAccount, type Account } from '@/lib/account';
 import { cn } from '@/lib/cn';
-import { RhythmSelect, SessionPicker } from '@/components/quest/RhythmPicker';
+import { DEFAULT_WEEKLY_HOURS } from '@/lib/domain/weeklyGoal';
+import { WeeklyHoursPicker } from '@/components/quest/WeeklyHoursPicker';
 
-/** Mis datos: datos propios del usuario, separados de Google (de Google solo viene el correo). */
+/** Mi cuenta: datos propios del usuario, separados de Google (de Google solo viene el correo). */
 export default function AccountPage() {
     const account = useAccount();
     if (!account) return <Navigate to={ROUTES.login} replace/>;
@@ -20,7 +21,10 @@ export default function AccountPage() {
 function AccountForm({ account }: { account: Account }) {
     const [form, setForm] = useState({ name: account.name, city: account.city ?? '', country: account.country ?? '', guitar: account.guitar ?? '' });
     const [saved, setSaved] = useState(false);
-    const [tab, setTab] = useState<'profile' | 'training'>('profile');
+    // La pestaña va en la URL (`?tab=entrenamiento`), para poder enlazarla abierta.
+    const [params] = useSearchParams();
+    const navigate = useNavigate();
+    const tab = params.get('tab') === 'entrenamiento' ? 'training' : 'profile';
     const change = (changes: Partial<typeof form>) => { setForm({ ...form, ...changes }); setSaved(false); };
     const name = form.name.trim();
     const save = (event: React.FormEvent) => {
@@ -34,9 +38,9 @@ function AccountForm({ account }: { account: Account }) {
     const tabs = [{ id: 'profile', label: 'Perfil', icon: UserRound }, { id: 'training', label: 'Entrenamiento', icon: Dumbbell }] as const;
 
     return <div className="mx-auto max-w-3xl">
-        <PageTitle eyebrow="TU CUENTA" title="Mis datos" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
-        <div role="tablist" aria-label="Secciones de Mis datos" className="mb-6 flex gap-1 border-b border-line">
-            {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+        <PageTitle eyebrow="TU CUENTA" title="Mi cuenta" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
+        <div role="tablist" aria-label="Secciones de Mi cuenta" className="mb-6 flex gap-1 border-b border-line">
+            {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigate(id === 'training' ? ROUTES.training : ROUTES.account)}
                 className={cn('-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition', tab === id ? 'border-blue text-fg' : 'border-transparent text-muted hover:text-fg')}><Icon size={16}/>{label}</button>)}
         </div>
 
@@ -62,20 +66,15 @@ function AccountForm({ account }: { account: Account }) {
         {/* Entrenamiento: los cambios se guardan al momento. */}
         {tab === 'training' && <Card className="flex flex-col divide-y divide-line">
             <section className="pb-7">
-                <h2 className="text-lg">Mi nivel</h2>
-                <p className="mt-1 text-sm text-muted">Ordena tu plan. Cámbialo cuando quieras o <Link to={ROUTES.retakeQuiz} className="text-accent hover:underline">repite el cuestionario</Link>.</p>
+                <h2 className="text-lg">Intensidad del plan</h2>
+                <p className="mt-1 text-sm text-muted">Ordena tu plan. Cámbiala cuando quieras o <Link to={ROUTES.retakeQuiz} className="text-accent hover:underline">repite el cuestionario</Link>.</p>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{LEVELS.map(level => <button key={level} type="button" aria-pressed={account.level === level} onClick={() => setLevel(level)}
                     className={cn('min-h-11 rounded-lg border text-sm font-bold transition', account.level === level ? 'border-blue bg-blue/15 text-fg' : 'border-line text-fg-soft hover:border-line-strong')}>{levelLabel(level)}</button>)}</div>
             </section>
-            <section className="py-7">
-                <h2 className="text-lg">Mi ritmo</h2>
-                <p className="mt-1 mb-4 text-sm text-muted">Días por semana que quieres practicar. Puedes practicar cualquier día: es tu meta.</p>
-                <RhythmSelect value={account.weeklyGoal ?? DEFAULT_RHYTHM} onChange={setWeeklyGoal}/>
-            </section>
             <section className="pt-7">
-                <h2 className="text-lg">Duración de cada sesión</h2>
-                <p className="mt-1 mb-4 text-sm text-muted">Es el tiempo que quieres practicar al día. Si lo completas, ese día cuenta para tu ritmo.</p>
-                <SessionPicker value={account.sessionMinutes ?? DEFAULT_SESSION_MINUTES} onChange={setSessionMinutes}/>
+                <h2 className="text-lg">Mi meta semanal</h2>
+                <p className="mt-1 mb-4 text-sm text-muted">Horas por semana que quieres practicar, repartidas como quieras: todo lo que practiques suma.</p>
+                <WeeklyHoursPicker value={account.weeklyHours ?? DEFAULT_WEEKLY_HOURS} onChange={setWeeklyHours}/>
             </section>
         </Card>}
     </div>;

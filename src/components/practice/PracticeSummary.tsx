@@ -8,13 +8,14 @@ import { Button } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { Link } from '@/lib/router';
 import { useAccount } from '@/lib/account';
+import { timeLabel } from '@/lib/domain/weeklyGoal';
 import { WHATSAPP_GROUP_URL } from '@/lib/links';
 
 /** Guitarrista animado celebrando la práctica. Formato vertical, 800×1000. */
 const SUMMARY_IMAGE = '/images/practice-done.webp';
 
-/** Lo que suma la práctica al día de hoy (null sin sesión). */
-export type SummaryProgress = { beforeSeconds: number; addedSeconds: number; goalMinutes: number; completedBefore: boolean };
+/** Lo que suma la práctica a la semana (null sin sesión). */
+export type SummaryProgress = { beforeSeconds: number; addedSeconds: number; goalHours: number };
 
 const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
@@ -24,11 +25,11 @@ const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Ma
  */
 export function PracticeSummary({ rounds, bpm, seconds, progress, onClose }: { rounds: number; speed: Speed; bpm: number; seconds: number; progress: SummaryProgress | null; onClose: () => void }) {
     const signedIn = useAccount() !== null;
-    // Minutos que suma esta práctica a la de hoy (solo con sesión y si el día aún no estaba completo).
-    const goal = progress?.goalMinutes ?? 0;
+    // Minutos que suma esta práctica y cómo queda la meta de la semana (solo con sesión).
+    const goalSeconds = (progress?.goalHours ?? 0) * 3600;
     const added = Math.max(1, Math.round((progress?.addedSeconds ?? 0) / 60));
-    const after = Math.min(goal, Math.floor(((progress?.beforeSeconds ?? 0) + (progress?.addedSeconds ?? 0)) / 60));
-    const showMinutes = progress !== null && !progress.completedBefore;
+    const after = (progress?.beforeSeconds ?? 0) + (progress?.addedSeconds ?? 0);
+    const reached = after >= goalSeconds;
     const [imageOk, setImageOk] = useState(true);
     // La velocidad va solo en BPM, con la unidad chica: el nombre del nivel no entra en la ficha.
     const stats = [['Rondas', String(rounds)], ['Velocidad', String(bpm), 'BPM'], ['Tiempo', formatTime(seconds)]];
@@ -64,10 +65,10 @@ export function PracticeSummary({ rounds, bpm, seconds, progress, onClose }: { r
                             <dd className="mt-1 font-mono text-3xl font-bold whitespace-nowrap text-fg">{value}{unit && <span className="ml-1 text-sm font-bold text-muted">{unit}</span>}</dd>
                         </div>)}
                     </dl>
-                    {showMinutes && <div className="mt-6 flex w-full items-center gap-3 rounded-full border border-line bg-card py-2 pr-4 pl-2">
+                    {progress && <div className="mt-6 flex w-full items-center gap-3 rounded-full border border-line bg-card py-2 pr-4 pl-2">
                         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-blue/20 px-3 py-1 text-sm font-bold text-fg"><Clock3 size={15} className="text-accent"/>+{added} min</span>
-                        <span className="block h-2 flex-1 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full', after >= goal ? 'bg-success' : 'bg-blue')} style={{ width: `${after / goal * 100}%` }}/></span>
-                        <span className={cn('shrink-0 font-mono text-xs', after >= goal ? 'font-bold text-success' : 'text-fg-soft')}>{after >= goal ? '¡Hoy completo!' : `${after}/${goal} min hoy`}</span>
+                        <span className="block h-2 flex-1 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full', reached ? 'bg-success' : 'bg-blue')} style={{ width: `${Math.min(100, after / goalSeconds * 100)}%` }}/></span>
+                        <span className={cn('shrink-0 font-mono text-xs', reached ? 'font-bold text-success' : 'text-fg-soft')}>{reached ? '¡Meta de la semana!' : `${timeLabel(after)} / ${progress.goalHours} h esta semana`}</span>
                     </div>}
 
                     <p className="mt-4 text-xs text-muted">¿Te trabaste o quieres que te corrijan? <a href={WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Pide ayuda en el grupo de WhatsApp</a>.</p>

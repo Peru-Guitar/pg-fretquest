@@ -2,6 +2,17 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.12.0',
+        date: '2026-11-02',
+        notes: [
+            'Tu meta semanal ahora es en horas: 1, 3, 5 o 7.',
+            'Ves tu avance de la semana en horas y minutos.',
+            '«Mi nivel» ahora se llama «Intensidad».',
+            '«Mis datos» ahora se llama «Mi cuenta».',
+            'La semana de Comunidad se ve como una línea de tiempo.',
+        ],
+    },
+    {
         version: '0.11.0',
         date: '2026-11-02',
         notes: [
@@ -42,7 +53,6 @@ export const changelog: { version: string; date: string; notes: string[] }[] = [
         notes: [
             'Nuevos rangos y niveles: 50 niveles y 8 rangos, de Primer acorde a Fret Legend, que suben con las horas que entrenas. Mira la tabla completa en Rangos.',
             'Tu rango y tu nivel se ven arriba, junto a tu nombre, con la barra de avance al siguiente nivel.',
-            '«Tu semana» ahora muestra, de un vistazo, cuántos días de tu meta llevas cumplidos.',
             'Los perfiles muestran el rango de cada guitarrista, su ciudad, su guitarra y su meta.',
             'Comunidad: el ranking muestra el rango de cada uno, hay una nueva sección de rangos de la comunidad y se ve claro qué semana es y cuándo se reinicia. Además carga mucho más rápido.',
         ],

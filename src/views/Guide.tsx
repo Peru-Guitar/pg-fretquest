@@ -11,19 +11,18 @@ const SECTIONS = [
     {
         icon: ListChecks, title: 'Tu plan', to: ROUTES.plan, link: 'Ir a mi plan',
         points: [
-            'Es una guía según tu nivel, no una malla curricular: nada se bloquea ni se aprueba.',
+            'Es una guía según tu intensidad, no una malla curricular: nada se bloquea ni se aprueba.',
             'Empieza por Recomendaciones: son lecturas cortas sobre cómo practicar. Márcalas como leídas.',
             'Te recomendamos seguir los ejercicios en orden, pero puedes repetir los anteriores cuando necesites refuerzo.',
             'Cualquier ejercicio que practiques suma a tu progreso.',
         ],
     },
     {
-        icon: CalendarCheck, title: 'Tu ritmo y tu tiempo', to: ROUTES.account, link: 'Cambiar mi ritmo',
+        icon: CalendarCheck, title: 'Tu meta semanal', to: ROUTES.training, link: 'Cambiar mi meta',
         points: [
-            'Eliges cuántos días por semana quieres practicar (de 2 a 6) y cuánto tiempo cada día (15, 30 o 45 min).',
-            'Un día cuenta para tu ritmo cuando completas tu tiempo diario, sumando todos los ejercicios.',
-            'Puedes practicar cualquier día. Si un día no llegas, no pasa nada: la semana sigue.',
-            'Recomendado: al menos media hora cada día que practiques.',
+            'Eliges cuántas horas por semana quieres practicar: 1, 3, 5 o 7.',
+            'Todo el tiempo que practicas suma a tu meta, sumando todos los ejercicios.',
+            'Puedes repartirlas como quieras. La semana va de lunes a domingo y la meta vuelve a empezar cada lunes.',
         ],
     },
     {
@@ -95,8 +94,8 @@ export default function GuidePage() {
 
         {/* Resumen en tres pasos. */}
         <ol className="mb-6 grid gap-3 md:grid-cols-3">{[
-            { icon: Compass, title: 'Elige tu nivel', text: 'Un cuestionario corto te sugiere tu nivel y tu plan.' },
-            { icon: Gauge, title: 'Fija tu ritmo', text: 'Días por semana y minutos por día: tu meta semanal.' },
+            { icon: Compass, title: 'Elige tu intensidad', text: 'Un cuestionario corto te sugiere tu intensidad y tu plan.' },
+            { icon: Gauge, title: 'Fija tu meta', text: 'Las horas que quieres practicar cada semana.' },
             { icon: Play, title: 'Practica', text: 'Ejercicio a ejercicio, con metrónomo y tablatura.' },
         ].map(({ icon: Icon, title, text }, index) => <li key={title} className="relative overflow-hidden rounded-2xl border border-line bg-card p-5">
             <span className="absolute top-3 right-4 font-mono text-4xl font-black text-white/6">{index + 1}</span>

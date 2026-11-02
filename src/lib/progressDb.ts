@@ -11,7 +11,7 @@ import { addPracticeToProgress } from "@/lib/progressReport";
  * Modelo de progreso en Firestore. Se registra al terminar una práctica con sesión iniciada (al salir el resumen).
  *
  *   users/{uid}.totalSeconds          Segundos practicados en total: nivel y rango de compromiso.
- *   users/{uid}/days/{fecha}          Registro del día: tiempo total, si se completó la sesión y los intentos por lección.
+ *   users/{uid}/days/{fecha}          Registro del día: tiempo total y los intentos por lección.
  *   users/{uid}/lessons/{lessonId}    Resumen por lección de PRÁCTICA para Mi plan: días, intentos y última vez.
  *   users/{uid}/readings/{lessonId}   Lecciones de LECTURA marcadas como leídas: `readAt`.
  *   communityReports/{lunes}          Reporte de Comunidad de la semana (ver lib/communityReport).
@@ -38,8 +38,6 @@ export type DayDoc = {
   level: Difficulty | null;
   /** Segundos practicados ese día, todas las lecciones. */
   seconds: number;
-  /** Llegó a su duración de sesión (15/30/45 min): el día cuenta para su ritmo. */
-  completed: boolean;
   lessons: Record<string, { attempts: number; seconds: number; sessions: Attempt[] }>;
   updatedAt: Timestamp;
 };
@@ -59,7 +57,7 @@ export const localDateKey = (at = new Date()) => `${at.getFullYear()}-${String(a
 export async function recordAttempt(params: {
   uid: string; name: string; level: Difficulty | null; lessonId: string;
   startedAt: Date; endedAt: Date; rounds: number; speed: Speed; bpm: number;
-  sessionSeconds: number; daySecondsBefore: number; completedBefore: boolean; firstToday: boolean;
+  firstToday: boolean;
 }) {
   const seconds = Math.round((params.endedAt.getTime() - params.startedAt.getTime()) / 1000);
   const date = localDateKey(params.endedAt);
@@ -68,8 +66,6 @@ export async function recordAttempt(params: {
   batch.set(doc(db, "users", params.uid, "days", date), {
     date, name: params.name, level: params.level,
     seconds: increment(seconds),
-    // Una vez completado, el día no vuelve atrás.
-    completed: params.completedBefore || params.daySecondsBefore + seconds >= params.sessionSeconds,
     lessons: { [params.lessonId]: { attempts: increment(1), seconds: increment(seconds), sessions: arrayUnion(attempt) } },
     updatedAt: serverTimestamp(),
   }, { merge: true });
@@ -145,36 +141,36 @@ export function watchProgress(uid: string | null) {
 export const getProgress = () => progress;
 export const useProgress = () => useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, getProgress, () => empty);
 
-/** Lo de hoy: segundos practicados, si ya se completó la sesión y qué lecciones se tocaron. */
+/** Lo de hoy: segundos practicados y qué lecciones se tocaron. */
 export const todayOf = (current: Progress) => current.days[localDateKey()] ?? null;
-/** Días con la sesión completada esta semana (cuentan para el ritmo). */
-export const completedDaysThisWeek = (current: Progress) => Object.values(current.days).filter(day => day.completed).length;
+/** Segundos practicados esta semana (cuentan para la meta semanal). Filtra por si la pestaña sigue abierta desde la semana pasada. */
+export const weekSecondsOf = (current: Progress) => {
+  const monday = weekStartKey();
+  return Object.values(current.days).reduce((total, day) => day.date >= monday ? total + (day.seconds ?? 0) : total, 0);
+};
 
 /**
- * Registra la práctica que acaba de terminar (al mostrarse el resumen). Devuelve los minutos de hoy
- * antes y después, para el modal. Sin sesión no hace nada y devuelve null.
+ * Registra la práctica que acaba de terminar (al mostrarse el resumen). Devuelve los
+ * segundos sumados. Sin sesión no hace nada y devuelve null.
  */
-export async function recordFinishedPractice(params: { name: string; level: Difficulty | null; sessionMinutes: number; lessonId: string; startedAt: Date; endedAt: Date; rounds: number; speed: Speed; bpm: number }) {
+export async function recordFinishedPractice(params: { name: string; level: Difficulty | null; lessonId: string; startedAt: Date; endedAt: Date; rounds: number; speed: Speed; bpm: number }) {
   const { uid } = progress;
   if (!uid) return null;
   const today = todayOf(progress);
-  const daySecondsBefore = today?.seconds ?? 0;
   const seconds = Math.round((params.endedAt.getTime() - params.startedAt.getTime()) / 1000);
   await recordAttempt({
     uid, name: params.name, level: params.level, lessonId: params.lessonId,
     startedAt: params.startedAt, endedAt: params.endedAt, rounds: params.rounds, speed: params.speed, bpm: params.bpm,
-    sessionSeconds: params.sessionMinutes * 60, daySecondsBefore, completedBefore: today?.completed ?? false,
     firstToday: !today?.lessons?.[params.lessonId],
   });
   // Tu reporte de progreso suma esta práctica (en segundo plano: si falla, «Sincronizar progreso» lo arregla).
-  const completedNow = !(today?.completed ?? false) && daySecondsBefore + seconds >= params.sessionMinutes * 60;
-  void addPracticeToProgress(uid, { date: localDateKey(params.endedAt), lessonId: params.lessonId, seconds, endedAt: params.endedAt.getTime(), completedNow })
+  void addPracticeToProgress(uid, { date: localDateKey(params.endedAt), lessonId: params.lessonId, seconds, endedAt: params.endedAt.getTime() })
     .then(() => invalidateProfile(uid))
     .catch(error => console.warn("Progreso: no se pudo actualizar el reporte.", error));
   // Tu perfil se vuelve a leer la próxima vez que lo abras. Y si toca (más de 1 h), se regenera el reporte de Comunidad en segundo plano (y entonces se descarta su caché).
   invalidateProfile(uid);
   void refreshReportIfDue({ uid, name: params.name });
-  return { beforeSeconds: daySecondsBefore, addedSeconds: seconds };
+  return { addedSeconds: seconds };
 }
 
 /** Marca (o desmarca) una lección de lectura como leída. Sin sesión no hace nada. */

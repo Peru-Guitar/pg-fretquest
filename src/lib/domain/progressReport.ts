@@ -4,17 +4,16 @@
  * y se reescribe. No guarda cada práctica: por lección, solo cuántas veces y cuánto tiempo; por día, solo las
  * últimas 8 semanas. Así su tamaño tiene techo (el catálogo de lecciones) y no crece con el tiempo.
  */
-const PROGRESS_VERSION = 1;
+const PROGRESS_VERSION = 2;
 /** Semanas de días que se guardan (para «Esta semana» y «Últimas 8 semanas»). */
 const PROGRESS_WEEKS = 8;
 
 type ProgressLesson = { practices: number; seconds: number; /** Fin de la última práctica, en ms. */ lastAt: number };
 export type ProgressReport = {
   version: number;
-  /** Prácticas terminadas, días con práctica y días con la meta cumplida, desde siempre. */
+  /** Prácticas terminadas y días con práctica, desde siempre. */
   practices: number;
   practiceDays: number;
-  completedDays: number;
   /** Primer y último día con práctica (YYYY-MM-DD). */
   firstDate: string | null;
   lastDate: string | null;
@@ -25,9 +24,9 @@ export type ProgressReport = {
 };
 
 /** Una práctica terminada, con lo que ya sabe la app al guardarla. */
-export type FinishedPractice = { date: string; lessonId: string; seconds: number; endedAt: number; /** Con esta práctica el día llegó a la meta. */ completedNow: boolean };
+export type FinishedPractice = { date: string; lessonId: string; seconds: number; endedAt: number };
 
-export const emptyProgress = (): ProgressReport => ({ version: PROGRESS_VERSION, practices: 0, practiceDays: 0, completedDays: 0, firstDate: null, lastDate: null, days: {}, lessons: {} });
+export const emptyProgress = (): ProgressReport => ({ version: PROGRESS_VERSION, practices: 0, practiceDays: 0, firstDate: null, lastDate: null, days: {}, lessons: {} });
 
 export const addDays = (key: string, days: number) => {
   const [y, m, d] = key.split("-").map(Number);
@@ -50,7 +49,6 @@ export function applyPractice(report: ProgressReport, practice: FinishedPractice
     version: PROGRESS_VERSION,
     practices: report.practices + 1,
     practiceDays: report.practiceDays + (firstOfDay ? 1 : 0),
-    completedDays: report.completedDays + (practice.completedNow ? 1 : 0),
     firstDate: report.firstDate && report.firstDate < practice.date ? report.firstDate : practice.date,
     lastDate: report.lastDate && report.lastDate > practice.date ? report.lastDate : practice.date,
     days: trimDays({ ...report.days, [practice.date]: (report.days[practice.date] ?? 0) + practice.seconds }, monday),
@@ -63,7 +61,7 @@ export function applyPractice(report: ProgressReport, practice: FinishedPractice
 
 /** Un día guardado (`users/{uid}/days`), con lo justo para reconstruir el reporte. */
 export type SourceDay = {
-  date: string; seconds?: number; completed?: boolean;
+  date: string; seconds?: number;
   lessons?: Record<string, { attempts?: number; seconds?: number; sessions?: { endedAt: { toMillis(): number } }[] }>;
 };
 
@@ -72,7 +70,6 @@ export function buildProgress(days: SourceDay[], monday: string): ProgressReport
   const report = emptyProgress();
   for (const day of [...days].sort((a, b) => a.date.localeCompare(b.date))) {
     report.practiceDays += 1;
-    if (day.completed) report.completedDays += 1;
     report.firstDate ??= day.date;
     report.lastDate = day.date;
     report.days[day.date] = day.seconds ?? 0;

@@ -5,16 +5,17 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { saveName, sumAllDaySeconds, watchProgress } from "@/lib/progressDb";
 import { createLocalStore } from "@/lib/localStore";
+import { weeklyHoursOf } from "@/lib/domain/weeklyGoal";
 
 /**
  * Cuenta: login con Google (Firebase Auth) y datos en Firestore (`users/{uid}`): nombre, ciudad, país, guitarra,
- * nivel, ritmo, duración de la sesión y última práctica. El navegador guarda una copia para cargar rápido.
+ * nivel, meta semanal y última práctica. El navegador guarda una copia para cargar rápido.
  */
 export type Account = {
   /** De Firebase Auth / Google: solo lectura. */
   uid: string;
   email: string;
-  /** Datos propios del usuario, independientes de Google: los edita en Mis datos. */
+  /** Datos propios del usuario, independientes de Google: los edita en Mi cuenta. */
   name: string;
   city?: string;
   country?: string;
@@ -22,12 +23,10 @@ export type Account = {
   level: Difficulty | null;
   /** Rol dado desde la consola (`users/{uid}.role`): 'admin' ve Backstage. */
   role?: string;
-  /** Ya se leyó `users/{uid}` de Firestore en esta sesión: hasta entonces no se sabe si tiene nivel y ritmo. */
+  /** Ya se leyó `users/{uid}` de Firestore en esta sesión: hasta entonces no se sabe si tiene nivel y meta. */
   synced?: boolean;
-  /** Ritmo: días por semana que quiere practicar (se puede practicar cualquier día; es una meta). */
-  weeklyGoal?: number;
-  /** Duración de la sesión del plan: 15, 30 o 45 min. Un día cuenta para el ritmo si completas una sesión. */
-  sessionMinutes?: number;
+  /** Meta semanal: horas que quiere practicar (1, 3, 5 o 7). */
+  weeklyHours?: number;
   /** Segundos practicados en total (`users/{uid}.totalSeconds`): nivel y rango de compromiso. */
   totalSeconds?: number;
   /** Solo la lección: su módulo se busca en el temario, así una lección puede cambiar de módulo sin romper nada. */
@@ -42,7 +41,7 @@ export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOut = () => firebaseSignOut(auth);
 
 // Sesión de Firebase → cuenta. Si es otro usuario (o la primera vez), se crea con el nombre de Google;
-// a partir de ahí el nombre es del usuario (lo edita en Mis datos).
+// a partir de ahí el nombre es del usuario (lo edita en Mi cuenta).
 // Solo en el navegador: al generar el HTML estático no hay sesión que escuchar.
 if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
   // Progreso en vivo (días de la semana y resúmenes por lección) solo con sesión.
@@ -56,14 +55,13 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const account = store.get();
     if (account?.uid !== user.uid) return;
     const level = LEVELS.includes(data.level) ? data.level as Difficulty : account.level;
-    const weeklyGoal = RHYTHMS.some(rhythm => rhythm.days === data.weeklyGoal) ? data.weeklyGoal as number : account.weeklyGoal;
-    const sessionMinutes = SESSION_MINUTES.includes(data.sessionMinutes) ? data.sessionMinutes as number : account.sessionMinutes;
+    const weeklyHours = weeklyHoursOf(data) ?? account.weeklyHours;
     // Sin nombre guardado (recién llegado): se guarda el de Google, para que también lo vean Backstage y la Comunidad.
     if (typeof data.name !== 'string' && user.displayName) void saveName(user.uid, user.displayName.slice(0, 40)).catch(() => { /* se reintenta al volver a entrar */ });
     const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
     // Sin total guardado (practicó antes de los rangos, o nunca): se calcula una vez sumando sus días.
     if (typeof data.totalSeconds !== 'number') void backfillTotalSeconds(user.uid);
-    store.set({ ...account, level, weeklyGoal, sessionMinutes, lastPractice, totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : account.totalSeconds, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
+    store.set({ ...account, level, weeklyHours, lastPractice, totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : account.totalSeconds, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {
     // Sin conexión: se sigue con lo guardado en el navegador.
     const account = store.get();
@@ -98,31 +96,11 @@ export const setLevel = (level: Difficulty) => {
   void setDoc(doc(db, "users", account.uid), { level }, { merge: true }).catch(() => { /* se reintenta la próxima vez que cambie */ });
 };
 
-/** Ritmos de práctica (días por semana). 3 es el recomendado para empezar. */
-export const RHYTHMS = [
-  { days: 2, label: "Tranquilo", text: "Para mantener la mano activa." },
-  { days: 3, label: "Constante", text: "Recomendado: progreso real sin agobio." },
-  { days: 4, label: "Comprometido", text: "Avance visible semana a semana." },
-  { days: 5, label: "Intenso", text: "Casi a diario, con días de descanso." },
-  { days: 6, label: "Máximo", text: "Solo con un día libre a la semana." },
-];
-export const DEFAULT_RHYTHM = 3;
-
-/** Duración de la sesión del plan. Más de 45 min de técnica seguida trae fatiga: no se ofrece. */
-export const SESSION_MINUTES = [15, 30, 45];
-export const DEFAULT_SESSION_MINUTES = 30;
-export const setSessionMinutes = (minutes: number) => {
+export const setWeeklyHours = (hours: number) => {
   const account = store.get();
   if (!account) return;
-  store.set({ ...account, sessionMinutes: minutes });
-  void setDoc(doc(db, "users", account.uid), { sessionMinutes: minutes }, { merge: true }).catch(() => { /* queda local */ });
-};
-
-export const setWeeklyGoal = (days: number) => {
-  const account = store.get();
-  if (!account) return;
-  store.set({ ...account, weeklyGoal: days });
-  void setDoc(doc(db, "users", account.uid), { weeklyGoal: days }, { merge: true }).catch(() => { /* queda local */ });
+  store.set({ ...account, weeklyHours: hours });
+  void setDoc(doc(db, "users", account.uid), { weeklyHours: hours }, { merge: true }).catch(() => { /* queda local */ });
 };
 
 export const isAdmin = (account: Account | null) => account?.role === "admin";

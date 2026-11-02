@@ -158,10 +158,10 @@ function Buckets({ title, caption, rows, unit }: { title: string; caption: React
 
 function LevelCard({ data }: { data: AnalyticsData }) {
     return <Card>
-        <SectionTitle title="Por nivel" className="mb-1"/>
-        <p className="mb-4 text-xs text-muted">Qué practica cada nivel: si a uno le falta contenido, aquí se nota.</p>
+        <SectionTitle title="Por intensidad" className="mb-1"/>
+        <p className="mb-4 text-xs text-muted">Qué practica cada intensidad: si a una le falta contenido, aquí se nota.</p>
         <ul className="grid grid-cols-1 gap-3">{data.byLevel.map(row => <li key={row.level ?? 'none'} className="flex items-center gap-3 border-t border-line-soft pt-3 first:border-0 first:pt-0">
-            <span className="w-24 shrink-0 text-sm font-bold text-fg-soft">{row.level ? levelLabel(row.level) : 'Sin nivel'}</span>
+            <span className="w-24 shrink-0 text-sm font-bold text-fg-soft">{row.level ? levelLabel(row.level) : 'Sin intensidad'}</span>
             <span className="min-w-0 flex-1 text-2xs text-muted">{row.top ? <>Lo más practicado: <b className="text-fg-soft">{row.top.title}</b></> : '—'}</span>
             <span className="shrink-0 text-right text-2xs text-muted"><b className="block text-sm tabular-nums text-fg">{time(row.seconds)}</b>{row.people} {row.people === 1 ? 'persona' : 'personas'}</span>
         </li>)}</ul>
@@ -193,7 +193,7 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
                 <span className="min-w-0 flex-1">
                     <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{person.name}</b>
                     <RankLine totalSeconds={person.totalSeconds}/>
-                    <span className="text-2xs text-muted">{person.level ? levelLabel(person.level) : 'Sin nivel'} · {person.days} {person.days === 1 ? 'día' : 'días'} · {person.completed} con meta</span>
+                    <span className="text-2xs text-muted">{person.level ? levelLabel(person.level) : 'Sin intensidad'} · {person.days} {person.days === 1 ? 'día' : 'días'} · {person.weeklyHours ? `Meta ${person.weeklyHours} h` : 'Sin meta'}</span>
                 </span>
                 <b className="shrink-0 text-sm tabular-nums text-fg">{time(person.seconds)}</b>
                 <ChevronRight size={15} className="shrink-0 text-subtle group-hover:text-accent"/>
@@ -308,14 +308,19 @@ function MembersCard() {
             : !members ? <div className="grid place-items-center py-12 text-muted"><Loader2 className="animate-spin"/></div>
             : found.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nadie coincide con «{search}».</p>
             : <>
+                <div className="hidden grid-cols-[auto_minmax(0,1.3fr)_6rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_7rem_auto] gap-3 border-b border-line-soft px-1 pb-2 text-3xs font-bold tracking-wider text-muted uppercase md:grid">
+                    <span className="col-start-2">Usuario</span><span>Intensidad</span><span>Meta</span><span>Lugar</span><span>Guitarra</span><span className="text-right">Última práctica</span>
+                </div>
                 <ul className="divide-y divide-line-soft">{found.slice(0, shown).map(member => <li key={member.uid}>
-                    <Link to={userProfileUrl(member.uid)} className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-1 py-2.5 transition-colors hover:bg-white/4 md:grid-cols-[auto_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
+                    <Link to={userProfileUrl(member.uid)} className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-1 py-2.5 transition-colors hover:bg-white/4 md:grid-cols-[auto_minmax(0,1.3fr)_6rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
                         <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(member.uid))}>{initials(member.name)}</span>
                         <span className="min-w-0">
                             <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{member.name}</b>
                             <RankLine totalSeconds={member.totalSeconds}/>
-                            <span className="block truncate text-2xs text-muted">{member.level ? levelLabel(member.level) : 'Sin nivel'}<span className="md:hidden">{member.lastPractice ? ` · ${shortDate(member.lastPractice)}` : ''}</span></span>
+                            <span className="block truncate text-2xs text-muted md:hidden">{member.level ? levelLabel(member.level) : 'Sin intensidad'} · {member.weeklyHours ? `Meta ${member.weeklyHours} h` : 'Sin meta'}{member.lastPractice ? ` · ${shortDate(member.lastPractice)}` : ''}</span>
                         </span>
+                        <span className="hidden truncate text-xs text-fg-soft md:block">{member.level ? levelLabel(member.level) : <span className="text-muted">—</span>}</span>
+                        <span className="hidden text-xs tabular-nums text-fg-soft md:block">{member.weeklyHours ? `${member.weeklyHours} h/sem` : <span className="text-muted">—</span>}</span>
                         <span className="hidden truncate text-xs text-muted md:block">{[member.city, member.country].filter(Boolean).join(', ') || '—'}</span>
                         <span className="hidden truncate text-xs text-muted md:block">{member.guitar ?? '—'}</span>
                         <span className="hidden text-right text-xs tabular-nums text-fg-soft md:block">{member.lastPractice ? shortDate(member.lastPractice) : <span className="text-muted">Nunca</span>}</span>
@@ -365,8 +370,9 @@ export default function BackstagePage() {
                 <Stat icon={<Users size={20}/>} value={String(data.users)} label="Usuarios registrados"/>
                 <Stat icon={<Activity size={20}/>} value={String(data.active)} label="Practicaron esta semana" detail={`${share(data.active, data.users)}% del total`}/>
                 <Stat icon={<Clock size={20}/>} value={time(data.seconds)} label="Tiempo practicado" detail={`${data.sessions.avg} min por persona y día`}/>
-                <Stat icon={<Target size={20}/>} value={`${share(data.goal.completed, data.goal.days)}%`} label="Días con la meta cumplida" detail={`${data.goal.completed} de ${data.goal.days} días`}/>
+                <Stat icon={<Target size={20}/>} value={`${data.goals.average} h`} label="Meta semanal promedio" detail={`${data.goals.defined} de ${data.users} la definieron`}/>
             </div>
+            <Buckets title="Horas de entrenamiento definidas" caption="Meta semanal que eligió cada usuario registrado." rows={data.goals.rows} unit={['usuario', 'usuarios']}/>
             {data.people.length > 0 ? <>
                 <Heatmap heat={data.heat}/>
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
