@@ -1,11 +1,14 @@
 import { cn } from '@/lib/cn';
 
-const SEGMENTS = 10;
-
-/** Barra de progreso por bloques, estilo XP. El bloque en curso parpadea; al completarse (`progress` 1) están todos llenos y ninguno parpadea. */
-export function SegmentedBar({ progress, color, height = 'h-1.5', className }: { progress: number; color: string; height?: string; className?: string }) {
-    const current = Math.floor(progress * SEGMENTS);
+/**
+ * Barra por bloques, estilo XP. Con `meter` compara cantidades: solo llena bloques, sin parpadeo.
+ * Si no, muestra un avance: el bloque en curso parpadea; en 0 o al completarse (`progress` 1) ninguno parpadea.
+ */
+export function SegmentedBar({ progress, color, height = 'h-1.5', segments = 10, meter, className }: { progress: number; color: string; height?: string; segments?: number; meter?: boolean; className?: string }) {
+    const value = Math.min(1, Math.max(0, progress || 0));
+    const filled = meter ? Math.ceil(value * segments) : Math.floor(value * segments);
+    const pulsing = !meter && value > 0 && filled < segments;
     return <span className={cn('flex gap-0.5', className)}>
-        {Array.from({ length: SEGMENTS }, (_, i) => <span key={i} className={cn(height, 'flex-1 -skew-x-12', i <= current ? color : 'bg-white/15', i === current && 'animate-pulse')}/>)}
+        {Array.from({ length: segments }, (_, i) => <span key={i} style={{ transitionDelay: `${i * 60}ms` }} className={cn(height, 'flex-1 -skew-x-12 transition-colors duration-200', i < filled || (pulsing && i === filled) ? color : 'bg-white/15', pulsing && i === filled && 'animate-pulse')}/>)}
     </span>;
 }

@@ -2,6 +2,16 @@
 // `date` es el día del pase (AAAA-MM-DD): la página junta las versiones del mismo día.
 export const changelog: { version: string; date: string; notes: string[] }[] = [
     {
+        version: '0.13.0',
+        date: '2026-11-02',
+        notes: [
+            'Elige tu avatar en Mi cuenta o al registrarte.',
+            'Nuevo diseño más gamer en barras, gráficos, tarjetas y botones.',
+            'Comunidad muestra cuándo se actualizan los datos y se actualiza sola.',
+            'Ya funciona «repite el cuestionario».',
+        ],
+    },
+    {
         version: '0.12.1',
         date: '2026-11-02',
         notes: [

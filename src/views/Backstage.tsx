@@ -11,6 +11,7 @@ import { initials, toneOf } from '@/lib/avatar';
 import { weekStartKey } from '@/lib/progressDb';
 import { speedName } from '@/data/practiceStudies';
 import { ROUTES, userProfileUrl } from '@/lib/routes';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { cn } from '@/lib/cn';
 import { levelFromSeconds } from '@/lib/ranks';
 import { RankGlyph } from '@/components/RankIcon';
@@ -48,7 +49,7 @@ function Figure({ icon: Icon, tone, value, label }: { icon: typeof Users; tone: 
     </div>;
 }
 
-const FACE = 'group/face relative grid size-8 place-items-center rounded-full text-3xs font-black text-white ring-2 ring-surface transition-transform duration-150 hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:-translate-y-0.5 focus-visible:outline-none';
+const FACE = 'group/face relative grid size-8 place-items-center rounded-[22%] text-3xs font-black text-white ring-2 ring-surface transition-transform duration-150 hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:-translate-y-0.5 focus-visible:outline-none';
 
 /** Quiénes practicaron la lección: hasta 5 caras superpuestas (más tiempo primero) y «+N» con el resto. Cada cara abre su perfil. */
 function Faces({ people }: { people: Participant[] }) {
@@ -150,7 +151,7 @@ function Buckets({ title, caption, rows, unit }: { title: string; caption: React
         <p className="mb-4 text-xs text-muted">{caption}</p>
         <ul className="grid grid-cols-1 gap-2.5">{rows.map(row => <li key={row.label} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 text-xs">
             <span className="text-muted">{row.label}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-line-soft"><span className="block h-full rounded-full bg-blue" style={{ width: `${row.count / max * 100}%` }}/></span>
+            <SegmentedBar meter segments={20} progress={row.count / max} color="bg-blue" height="h-2.5"/>
             <span className="w-20 text-right"><b className="tabular-nums text-fg">{row.count}</b> <span className="text-muted">{row.count === 1 ? unit[0] : unit[1]}</span></span>
         </li>)}</ul>
     </Card>;
@@ -189,7 +190,7 @@ function PeopleCard({ data }: { data: AnalyticsData }) {
         <p className="mb-3 text-xs text-muted">Por tiempo esta semana. Toca a alguien para ver su perfil.</p>
         <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">{data.people.map(person => <li key={person.uid} className="min-w-0">
             <Link to={userProfileUrl(person.uid)} className="group flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/4">
-                <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>
+                <span className={cn('grid size-9 shrink-0 place-items-center rounded-[22%] text-2xs font-black text-white', toneOf(person.uid))}>{initials(person.name)}</span>
                 <span className="min-w-0 flex-1">
                     <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{person.name}</b>
                     <RankLine totalSeconds={person.totalSeconds}/>
@@ -241,7 +242,7 @@ function SyncProgress() {
                 : typeof status === 'object' && status.finished ? `Listo: ${status.total} perfiles sincronizados.`
                 : typeof status === 'object' ? (status.total ? <>Sincronizando {status.done} de {status.total} perfiles{status.left !== null && ` · quedan ~${status.left < 60 ? `${status.left} s` : `${Math.ceil(status.left / 60)} min`}`}</> : 'Buscando usuarios…')
                 : 'Rearma el progreso de cada usuario (lo que muestra su perfil) desde todos sus días. Se puede repetir sin problema.'}</p>
-            {busy && <span className="mt-2 block h-1.5 max-w-sm overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-blue transition-[width]" style={{ width: `${status.total ? status.done / status.total * 100 : 0}%` }}/></span>}
+            {busy && <SegmentedBar progress={status.total ? status.done / status.total : 0} color="bg-blue" className="mt-2 max-w-sm"/>}
         </div>
         <Button variant="secondary" onClick={sync} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}Sincronizar progreso</Button>
     </Card>;
@@ -270,7 +271,7 @@ function SyncReport() {
             <SectionTitle title="Reporte de Comunidad" className="mb-1"/>
             <p className="text-xs text-muted">{status === 'error' ? 'No se pudo regenerar. ¿Están desplegadas las reglas?'
                 : report === undefined ? 'Cargando…'
-                : report ? <>Semana del {report.week} · generado el {when} por <b className="text-fg-soft">{report.updatedBy.name}</b> ({report.updatedBy.source === 'admin' ? 'a mano' : 'al practicar'}) · {report.people} activos.</>
+                : report ? <>Semana del {report.week} · generado el {when} por <b className="text-fg-soft">{report.updatedBy.name}</b> ({report.updatedBy.source === 'admin' ? 'a mano' : report.updatedBy.source === 'visit' ? 'al ver Comunidad' : 'al practicar'}) · {report.people} activos.</>
                 : 'Esta semana todavía no hay reporte: se crea cuando alguien termina una lección.'}</p>
             <p className="mt-1 text-2xs text-subtle">Se regenera solo, como mucho una vez por hora, cuando alguien termina una lección.</p>
         </div>
@@ -313,7 +314,7 @@ function MembersCard() {
                 </div>
                 <ul className="divide-y divide-line-soft">{found.slice(0, shown).map(member => <li key={member.uid}>
                     <Link to={userProfileUrl(member.uid)} className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-1 py-2.5 transition-colors hover:bg-white/4 md:grid-cols-[auto_minmax(0,1.3fr)_6rem_4.5rem_minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
-                        <span className={cn('grid size-9 shrink-0 place-items-center rounded-full text-2xs font-black text-white', toneOf(member.uid))}>{initials(member.name)}</span>
+                        <span className={cn('grid size-9 shrink-0 place-items-center rounded-[22%] text-2xs font-black text-white', toneOf(member.uid))}>{initials(member.name)}</span>
                         <span className="min-w-0">
                             <b className="block truncate text-sm text-fg-soft group-hover:text-fg">{member.name}</b>
                             <RankLine totalSeconds={member.totalSeconds}/>

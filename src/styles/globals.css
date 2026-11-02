@@ -130,7 +130,8 @@
   background-color: #3198dc1f;
 }
 @utility bg-card {
-  background-image: linear-gradient(135deg, var(--color-raised), var(--color-surface));
+  background-image: radial-gradient(120% 90% at 0 0, #3198dc14, transparent 55%), linear-gradient(135deg, var(--color-raised), var(--color-surface));
+  box-shadow: inset 0 1px 0 #ffffff0f, 0 10px 28px #0000004d;
 }
 
 @layer base {

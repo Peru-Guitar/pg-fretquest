@@ -12,6 +12,7 @@ import { DEFAULT_WEEKLY_HOURS, timeLabel } from '@/lib/domain/weeklyGoal';
 import { levelLabel, nextLevel, planFor, suggestion, useAccount } from '@/lib/account';
 import { fullDateTime, timeAgo } from '@/lib/timeAgo';
 import { weekSecondsOf, useProgress } from '@/lib/progressDb';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { cn } from '@/lib/cn';
 
 const now = () => Date.now();
@@ -88,7 +89,7 @@ export default function PlanPage() {
                 ].map(item => <div key={item.label} className="px-5 py-5 md:px-7 md:py-6">
                     <dt className="text-3xs font-black tracking-[0.18em] text-muted uppercase">{item.label}</dt>
                     <dd className="mt-2 flex flex-wrap items-baseline gap-x-2"><b className={cn('font-mono text-3xl md:text-4xl', item.tone)}>{item.value}</b><span className="text-sm text-muted">{item.unit}</span></dd>
-                    {item.bar !== undefined && <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/8"><span className={cn('block h-full rounded-full', item.bar >= 1 ? 'bg-success' : 'bg-blue')} style={{ width: `${item.bar * 100}%` }}/></span>}
+                    {item.bar !== undefined && <SegmentedBar progress={item.bar} color={item.bar >= 1 ? 'bg-success' : 'bg-blue'} className="mt-3"/>}
                 </div>)}
             </dl>
             <p className="relative border-t border-line px-5 py-3 text-xs text-muted md:px-7">{practiced >= goalSeconds ? '¡Cumpliste tu meta esta semana! Lo que practiques de más, suma igual.' : `Te faltan ${timeLabel(Math.ceil((goalSeconds - practiced) / 60) * 60)} para cumplir tu meta.`} <Link to={ROUTES.training} className="text-accent hover:underline">Cambiar meta</Link></p>

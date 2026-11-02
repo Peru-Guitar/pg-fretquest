@@ -36,7 +36,10 @@ export function Navigate({ to, replace = false }: { to: string; replace?: boolea
     const hydrated = useHydrated();
     useEffect(() => {
         if (!hydrated) return;
-        if (replace) router.replace(to); else router.push(to);
+        // Se espera un instante: al llegar por un enlace, la URL aún es la anterior y `useSearchParams` no ve `?repetir`.
+        // Con la URL ya al día, la vista deja de pedir la redirección y esta se cancela.
+        const timer = setTimeout(() => { if (replace) router.replace(to); else router.push(to); });
+        return () => clearTimeout(timer);
     }, [hydrated, replace, router, to]);
     return null;
 }

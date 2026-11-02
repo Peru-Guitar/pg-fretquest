@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { courses, type Difficulty } from "@/data/questMock";
-import { readReport, type CommunityReport } from "@/lib/communityReport";
+import { readReport, refreshReportIfDue, REFRESH_MS, type CommunityReport, type ReportAuthor } from "@/lib/communityReport";
 import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
 
 /**
@@ -9,7 +9,7 @@ import { localDateKey, weekStartKey, type DayDoc } from "@/lib/progressDb";
  * Se guarda solo en memoria (ver `isFresh`).
  */
 /** `totalSeconds`: tiempo de toda la vida, para su nivel y rango (solo en el reporte nuevo). */
-export type RankEntry = { uid: string; name: string; total: number; seconds: number; active: number; totalSeconds?: number };
+export type RankEntry = { uid: string; name: string; total: number; seconds: number; active: number; totalSeconds?: number; avatar?: string };
 export type Community = {
   at: number;
   people: number;
@@ -138,7 +138,7 @@ function fromReport(report: CommunityReport | null): Community {
     byDay: report?.byDay ?? Array(7).fill(0),
     byLevel: report?.byPlan ?? empty,
     topLessons: (report?.topLessons ?? []).map(item => ({ lessonId: item.lessonId, attempts: item.practices })),
-    ranking: (report?.ranking ?? []).map(row => ({ uid: row.uid, name: row.name, total: row.practices, seconds: row.seconds, active: row.days, totalSeconds: row.totalSeconds })),
+    ranking: (report?.ranking ?? []).map(row => ({ uid: row.uid, name: row.name, total: row.practices, seconds: row.seconds, active: row.days, totalSeconds: row.totalSeconds, avatar: row.avatar })),
     byModule: report?.byModule ?? {},
     byLesson: report?.byLesson ?? {},
     sinceLaunch: 0,
@@ -155,8 +155,15 @@ async function readCommunity(): Promise<Community> {
   return community;
 }
 
-/** Datos de Comunidad (null mientras cargan o sin sesión). */
-export function useCommunity(signedIn: boolean) {
+/** Reintentos si otro navegador está regenerando el reporte: se vuelve a leer hasta ver el nuevo. */
+const RELOAD_TRIES = 3;
+const RELOAD_RETRY_MS = 45 * 1000;
+
+/**
+ * Datos de Comunidad (null mientras cargan o sin sesión). Con `refreshAs`, al vencer el reporte lo regenera si toca y
+ * muestra el nuevo. Solo con la pestaña visible: una pestaña olvidada no gasta lecturas cada hora.
+ */
+export function useCommunity(signedIn: boolean, refreshAs?: ReportAuthor) {
   const [state, setState] = useState<{ data: Community | null; error: boolean }>({ data: null, error: false });
   useEffect(() => {
     if (!signedIn) return;
@@ -164,6 +171,27 @@ export function useCommunity(signedIn: boolean) {
     loadCommunity().then(data => alive && setState({ data, error: false })).catch(() => alive && setState({ data: null, error: true }));
     return () => { alive = false; };
   }, [signedIn]);
+  const at = state.data?.at;
+  const uid = refreshAs?.uid;
+  const name = refreshAs?.name;
+  useEffect(() => {
+    if (!signedIn || at === undefined || !uid || !name) return;
+    let alive = true;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const reload = async () => {
+      if (document.hidden) { document.addEventListener("visibilitychange", reload, { once: true }); return; }
+      await refreshReportIfDue({ uid, name }, "visit");
+      invalidateCommunity();
+      const data = await loadCommunity().catch(() => null);
+      if (!alive) return;
+      if (data) setState({ data, error: false });
+      // Con un reporte nuevo, este efecto se vuelve a programar con su hora.
+      if ((!data || data.at === at) && ++tries < RELOAD_TRIES) timer = setTimeout(reload, RELOAD_RETRY_MS);
+    };
+    timer = setTimeout(reload, Math.max(0, at + REFRESH_MS - Date.now()));
+    return () => { alive = false; clearTimeout(timer); document.removeEventListener("visibilitychange", reload); };
+  }, [signedIn, at, uid, name]);
   return signedIn ? state : { data: null, error: false };
 }
 

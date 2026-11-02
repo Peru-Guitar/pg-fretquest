@@ -1,7 +1,7 @@
 import { courses, type Difficulty, type PracticeLesson } from "@/data/questMock";
 import { DIFFICULTY } from "@/lib/difficulty";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, deleteField, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { saveName, sumAllDaySeconds, watchProgress } from "@/lib/progressDb";
 import { createLocalStore } from "@/lib/localStore";
@@ -20,6 +20,8 @@ export type Account = {
   city?: string;
   country?: string;
   guitar?: string;
+  /** Id del avatar elegido (`src/data/avatars.ts`). */
+  avatar?: string;
   level: Difficulty | null;
   /** Rol dado desde la consola (`users/{uid}.role`): 'admin' ve Backstage. */
   role?: string;
@@ -61,7 +63,7 @@ if (typeof window !== 'undefined') onAuthStateChanged(auth, user => {
     const lastPractice = typeof data.lastPractice?.lessonId === 'string' && typeof data.lastPractice?.date === 'string' ? { lessonId: data.lastPractice.lessonId as string, date: data.lastPractice.date as string } : account.lastPractice;
     // Sin total guardado (practicó antes de los rangos, o nunca): se calcula una vez sumando sus días.
     if (typeof data.totalSeconds !== 'number') void backfillTotalSeconds(user.uid);
-    store.set({ ...account, level, weeklyHours, lastPractice, totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : account.totalSeconds, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
+    store.set({ ...account, level, weeklyHours, lastPractice, avatar: typeof data.avatar === 'string' ? data.avatar : undefined, totalSeconds: typeof data.totalSeconds === 'number' ? data.totalSeconds : account.totalSeconds, role: typeof data.role === 'string' ? data.role : undefined, name: data.name ?? account.name, city: data.city ?? account.city, country: data.country ?? account.country, guitar: data.guitar ?? account.guitar, synced: true });
   }).catch(() => {
     // Sin conexión: se sigue con lo guardado en el navegador.
     const account = store.get();
@@ -101,6 +103,13 @@ export const setWeeklyHours = (hours: number) => {
   if (!account) return;
   store.set({ ...account, weeklyHours: hours });
   void setDoc(doc(db, "users", account.uid), { weeklyHours: hours }, { merge: true }).catch(() => { /* queda local */ });
+};
+
+export const setAvatar = (avatar?: string) => {
+  const account = store.get();
+  if (!account) return;
+  store.set({ ...account, avatar });
+  void setDoc(doc(db, "users", account.uid), { avatar: avatar ?? deleteField() }, { merge: true }).catch(() => { /* queda local */ });
 };
 
 export const isAdmin = (account: Account | null) => account?.role === "admin";

@@ -272,7 +272,10 @@ function PracticeView({ mode }: { mode: Mode }) {
                 if (levelFromSeconds(after).level > levelFromSeconds(before).level) pendingLevelUp.current = after;
                 addTotalSeconds(saved.addedSeconds);
             })
-            .catch(() => setFinished(value => value && { ...value, progress: null }));
+            .catch(error => {
+                console.warn("Práctica: no se pudo guardar.", error);
+                setFinished(value => value && { ...value, progress: null });
+            });
     };
     const playback = usePlayback({
         // Mismo punto de entrada: Reproducir empieza desde la nota elegida, una pasada y sin cuenta.

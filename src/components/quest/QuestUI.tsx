@@ -9,9 +9,9 @@ import { initials, toneOf } from '@/lib/avatar';
 /** Caras superpuestas de quienes practicaron el módulo o la lección esta semana (hasta `max`; el resto, «+N»). */
 export function Practicing({ people, max = 5 }: { people: { uid: string; name: string }[]; max?: number }) {
     const rest = people.length - max;
-    return <div className="flex -space-x-1.5" aria-label={`${people.length} practicando esta semana`}>
-        {people.slice(0, max).map(person => <span key={person.uid} title={person.name} className={cn('grid size-6 place-items-center rounded-full text-[0.5rem] font-black text-white ring-2 ring-card', toneOf(person.uid))}>{initials(person.name)}</span>)}
-        {rest > 0 && <span className="grid h-6 min-w-6 place-items-center rounded-full bg-raised px-1.5 text-[0.5rem] font-black text-fg-soft ring-2 ring-card">+{rest}</span>}
+    return <div className="flex -space-x-2" aria-label={`${people.length} practicando esta semana`}>
+        {people.slice(0, max).map(person => <span key={person.uid} title={person.name} className={cn('grid size-8 place-items-center rounded-[22%] text-3xs font-black text-white ring-2 ring-raised', toneOf(person.uid))}>{initials(person.name)}</span>)}
+        {rest > 0 && <span className="grid h-8 min-w-8 place-items-center rounded-[22%] bg-raised px-1.5 text-3xs font-black text-fg-soft ring-2 ring-raised">+{rest}</span>}
     </div>;
 }
 

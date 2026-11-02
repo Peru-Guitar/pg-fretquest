@@ -7,17 +7,17 @@ import { buildReportBody, type ReportBody } from "@/lib/domain/communityReport";
 /**
  * Reporte de Comunidad en Firestore: `communityReports/{lunes}`, un documento por semana (ver `domain/communityReport`).
  *
- * Al terminar una lección se mira si toca regenerarlo (más de REFRESH_MS desde el último). Si toca, se pide el turno
+ * Al terminar una lección, o al vencer el contador con Comunidad abierta, se mira si toca regenerarlo (más de REFRESH_MS desde el último). Si toca, se pide el turno
  * con una transacción que marca `refreshing`: con 100 personas terminando a la vez, solo una lo consigue y las demás
  * siguen de largo. La marca vence a los LOCK_MS por si quien la tomó se cae a la mitad.
  *
  * TODO: limpiar semanas viejas. Hoy queda un documento por semana (~20 KB con 100 activos, ~1 MB al año): se puede borrar
  * el de la semana anterior al generar el primero de una semana nueva (y permitir `delete` en las reglas para semanas terminadas).
  */
-const REFRESH_MS = 60 * 60 * 1000;
+export const REFRESH_MS = 60 * 60 * 1000;
 const LOCK_MS = 2 * 60 * 1000;
 
-export type ReportSource = "practice" | "admin";
+export type ReportSource = "practice" | "visit" | "admin";
 export type ReportAuthor = { uid: string; name: string };
 export type CommunityReport = ReportBody & {
   generatedAt: Timestamp;
@@ -44,12 +44,17 @@ export async function generateReport(by: ReportAuthor, source: ReportSource) {
   const summary = computeCommunity(days, 0, readings);
   // Total de toda la vida de cada activo, para su rango: 1 lectura por persona activa. Nunca menos que lo de esta
   // semana: quien no volvió a entrar desde que existe `totalSeconds` (y no se sincronizó) no lo tiene todavía.
-  const totals = new Map(await Promise.all(summary.ranking.map(async row => {
+  // De esa misma lectura sale su avatar.
+  const totals = new Map<string, number>();
+  const avatars = new Map<string, string>();
+  await Promise.all(summary.ranking.map(async row => {
     const user = await getDoc(doc(db, "users", row.uid));
-    return [row.uid, Math.max((user.get("totalSeconds") as number | undefined) ?? 0, row.seconds)] as const;
-  })));
+    totals.set(row.uid, Math.max((user.get("totalSeconds") as number | undefined) ?? 0, row.seconds));
+    const avatar = user.get("avatar") as unknown;
+    if (typeof avatar === "string") avatars.set(row.uid, avatar);
+  }));
   await setDoc(reportRef(week), {
-    ...buildReportBody(week, summary, totals),
+    ...buildReportBody(week, summary, totals, avatars),
     generatedAt: serverTimestamp(),
     updatedBy: { uid: by.uid, name: by.name.slice(0, 40), source },
     refreshing: null,
@@ -70,10 +75,10 @@ async function claimRefresh(uid: string) {
   });
 }
 
-/** Al terminar una lección: si toca y se consigue el turno, regenera el reporte. En segundo plano; si falla, no pasa nada. */
-export async function refreshReportIfDue(by: ReportAuthor) {
+/** Al terminar una lección o al vencer el contador de Comunidad: si toca y se consigue el turno, regenera el reporte. En segundo plano; si falla, no pasa nada. */
+export async function refreshReportIfDue(by: ReportAuthor, source: ReportSource = "practice") {
   try {
-    if (await claimRefresh(by.uid)) await generateReport(by, "practice");
+    if (await claimRefresh(by.uid)) await generateReport(by, source);
   } catch (error) {
     console.warn("Comunidad: no se pudo actualizar el reporte.", error);
   }

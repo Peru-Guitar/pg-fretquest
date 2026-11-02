@@ -36,7 +36,7 @@ export function CommunityPulse({ embedded = false }: { embedded?: boolean }) {
     return <section aria-label="Comunidad esta semana" className={cn('flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 md:px-5', frame)}>
         <ul className="flex shrink-0 items-center -space-x-2">
             {shown.map(row => <li key={row.uid}>
-                <Link to={userProfileUrl(row.uid)} aria-label={`${row.name}: ${hoursLabel(row.seconds)}`} className={cn('group/face relative grid size-9 place-items-center rounded-full text-2xs font-black text-white ring-2 ring-raised transition-transform duration-150 hover:z-10 hover:-translate-y-0.5', row.uid === account.uid ? 'bg-raised !text-fg' : toneOf(row.uid))}>
+                <Link to={userProfileUrl(row.uid)} aria-label={`${row.name}: ${hoursLabel(row.seconds)}`} className={cn('group/face relative grid size-9 place-items-center rounded-[22%] text-2xs font-black text-white ring-2 ring-raised transition-transform duration-150 hover:z-10 hover:-translate-y-0.5', row.uid === account.uid ? 'bg-raised !text-fg' : toneOf(row.uid))}>
                     {initials(row.name)}
                     <Tip>{row.name} <span className="text-muted">· {hoursLabel(row.seconds)}</span></Tip>
                 </Link>

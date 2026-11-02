@@ -20,7 +20,7 @@ const primaryLinks = [{ to: '/', label: 'Hoy', icon: House }, { to: ROUTES.plan,
 const inviteUrl = `https://wa.me/?text=${encodeURIComponent('¡Estoy aprendiendo guitarra gratis con Fret Quest! Practica conmigo: https://fretquest.peruguitar.com/unirse')}`;
 
 const linkBase = 'relative flex items-center rounded-md border border-transparent font-bold text-muted transition-colors hover:bg-raised hover:text-white';
-const linkActive = 'bg-brand-soft text-fg [&>svg]:text-accent before:absolute before:rounded before:bg-accent';
+const linkActive = 'bg-brand-soft text-fg shadow-[inset_0_0_16px_#3198dc1f] [&>svg]:text-accent [&>svg]:drop-shadow-[0_0_6px_currentColor] before:absolute before:rounded before:bg-accent before:shadow-[0_0_8px_var(--color-accent)]';
 const sidebarLink = { base: 'mb-1 min-h-11.5 gap-3 px-3.5 text-md', active: 'before:inset-y-2.5 before:-left-px before:w-[3px]' };
 // Enlaces informativos: más compactos y discretos que la navegación principal, para que no compitan con ella.
 const infoLink = { base: 'min-h-9 gap-2.5 px-3.5 text-sm [&>svg]:size-4', active: 'before:inset-y-2 before:-left-px before:w-0.5' };

@@ -5,6 +5,7 @@ import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Clock3, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { SegmentedBar } from '@/components/quest/SegmentedBar';
 import { cn } from '@/lib/cn';
 import { Link } from '@/lib/router';
 import { useAccount } from '@/lib/account';
@@ -67,7 +68,7 @@ export function PracticeSummary({ rounds, bpm, seconds, progress, onClose }: { r
                     </dl>
                     {progress && <div className="mt-6 flex w-full items-center gap-3 rounded-full border border-line bg-card py-2 pr-4 pl-2">
                         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-blue/20 px-3 py-1 text-sm font-bold text-fg"><Clock3 size={15} className="text-accent"/>+{added} min</span>
-                        <span className="block h-2 flex-1 overflow-hidden rounded-full bg-white/10"><span className={cn('block h-full rounded-full', reached ? 'bg-success' : 'bg-blue')} style={{ width: `${Math.min(100, after / goalSeconds * 100)}%` }}/></span>
+                        <SegmentedBar progress={reached ? 1 : after / goalSeconds} color={reached ? 'bg-success' : 'bg-blue'} height="h-2.5" className="flex-1"/>
                         <span className={cn('shrink-0 font-mono text-xs', reached ? 'font-bold text-success' : 'text-fg-soft')}>{reached ? '¡Meta de la semana!' : `${timeLabel(after)} / ${progress.goalHours} h esta semana`}</span>
                     </div>}
 

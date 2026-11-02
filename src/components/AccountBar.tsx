@@ -4,6 +4,7 @@ import { Link, useHydrated } from '@/lib/router';
 import { ChevronDown, IdCard, ListChecks, LogIn, LogOut, UserRound } from 'lucide-react';
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { RankBadge } from '@/components/RankBadge';
+import { UserAvatar } from '@/components/UserAvatar';
 import { WeekStrip } from '@/components/WeekStrip';
 import { levelLabel, signOut, useAccount } from '@/lib/account';
 import { cn } from '@/lib/cn';
@@ -30,15 +31,14 @@ export function AccountBar() {
     }, [open]);
 
     // Hasta saber si hay sesión (HTML estático e hidratación), un hueco neutro: ni «Entrar» ni el nombre.
-    if (!hydrated) return <span aria-hidden className="size-9 rounded-full bg-white/8"/>;
+    if (!hydrated) return <span aria-hidden className="size-9 rounded-[22%] bg-white/8"/>;
     if (!account) return <Link to={ROUTES.login} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand hover:bg-brand-strong px-5 text-sm font-bold text-white transition hover:-translate-y-0.5"><LogIn size={17}/>Entrar</Link>;
 
-    const initials = account.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
     const close = () => setOpen(false);
 
     return <div ref={root} className="relative">
         <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className="flex items-center gap-2.5 rounded-xl py-1 pr-2 pl-1 transition hover:bg-white/5">
-            <span className="grid size-9 place-items-center rounded-full border border-line-strong bg-raised text-xs font-black text-fg">{initials}</span>
+            <UserAvatar uid={account.uid} name={account.name} avatar={account.avatar} tone="bg-raised" className="size-9 border border-line-strong text-xs !text-fg"/>
             <b className="hidden max-w-36 truncate text-sm text-fg md:block">{account.name}</b>
             <ChevronDown size={15} className={cn('text-muted transition', open && 'rotate-180')}/>
         </button>
