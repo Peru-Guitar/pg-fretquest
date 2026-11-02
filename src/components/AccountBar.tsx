@@ -55,7 +55,7 @@ export function AccountBar() {
                     : <span className="text-xs text-muted">Sin elegir</span>}
             </Link>
             <Link to={userProfileUrl(account.uid)} role="menuitem" onClick={close} className={item}><IdCard size={17}/>Mi perfil</Link>
-            <Link to={ROUTES.account} role="menuitem" onClick={close} className={item}><UserRound size={17}/>Mi cuenta</Link>
+            <Link to={ROUTES.account} role="menuitem" onClick={close} className={item}><UserRound size={17}/>Mis datos</Link>
             <button type="button" role="menuitem" onClick={() => { close(); void signOut(); }} className={cn(item, 'w-full')}><LogOut size={17}/>Cerrar sesión</button>
         </div>}
     </div>;

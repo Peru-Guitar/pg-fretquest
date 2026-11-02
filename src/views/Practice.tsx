@@ -6,12 +6,12 @@ import { ComingSoon } from '@/components/quest/ComingSoon';
 import { rhythmSummary } from '@/lib/rhythm';
 import { createLocalStore } from '@/lib/localStore';
 import { FIGURES, pickingOf, practiceStudies, speedName, speedPlan, type Speed, type Stroke } from '@/data/practiceStudies';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { createPortal } from 'react-dom';
 import { Link, useParams } from '@/lib/router';
 import { courses, type PracticeLesson } from '@/data/questMock';
-import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Loader2, Music, Play, Repeat, Save, Square, Target, Timer, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, CircleCheck, Gauge, Headphones, Info, Loader2, Music, Play, Repeat, Save, Square, Target, Timer, X } from 'lucide-react';
 import { Button, Caption, Card, Eyebrow } from '@/components/ui';
 import { ModuleHero } from '@/components/quest/ModuleHero';
 import { cn } from '@/lib/cn';
@@ -162,6 +162,14 @@ function Elapsed({ since }: { since: number }) {
     return <span className="font-mono text-lg font-bold text-fg tabular-nums" aria-label="Tiempo transcurrido">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span>;
 }
 
+/** Pantalla de celular (menos de 768 px). Al generar el HTML estático cuenta como escritorio. */
+const compactQuery = '(max-width: 767.98px)';
+const useCompactTab = () => useSyncExternalStore(listener => {
+    const media = window.matchMedia(compactQuery);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+}, () => window.matchMedia(compactQuery).matches, () => false);
+
 export default function PracticePage({ mode }: { mode: Mode }) {
     // URL: /practicar/{módulo}/{ejercicio}, con slugs en español.
     const { modulo, leccion } = useParams();
@@ -191,7 +199,11 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Velocidad: el nivel elegido decide la figura (en las lecciones en corcheas) y el BPM.
     const [speed, setSpeed] = useState<Speed>(suggestedSpeed);
     const { figure, bpm } = speedPlan(baseFigure, speed, study?.originalBpm);
-    const perRow = study?.perRow ?? 16;
+    const fullRow = study?.perRow ?? 16;
+    // En el celular las filas se parten a la mitad (hasta 8 notas): la tablatura se lee en vertical, sin scroll lateral.
+    const compact = useCompactTab();
+    let perRow = fullRow;
+    while (compact && perRow > 8) perRow = Math.ceil(perRow / 2);
     const rhythmLabel = rhythmSummary(pattern, FIGURES[figure].label.split(' · ')[0], FIGURES[figure].notesPerBeat);
     // Filas de la tablatura: cada parte empieza en una fila nueva (con su título) aunque la anterior no se haya llenado.
     const bars: { notes: PatternNote[]; start: number; columns: number; part?: { number: number; title: string } }[] = [];
@@ -208,7 +220,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         offset += section.pattern.length;
     }
     // Una fila incompleta con 6 notas o más las reparte en todo el ancho; con menos, quedan alineadas con las filas completas.
-    const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, 1fr)` });
+    const tabColumns = (count: number) => ({ gridTemplateColumns: `25px repeat(${count}, minmax(0, 1fr))` });
     const suggestedRounds = activeExercise.rounds ?? 1;
     const [rounds, setRounds] = useState(suggestedRounds);
     const [finished, setFinished] = useState<{ rounds: number; speed: Speed; bpm: number; seconds: number; progress: SummaryProgress | null } | null>(null);
@@ -221,7 +233,9 @@ function PracticeView({ mode }: { mode: Mode }) {
         pendingLevelUp.current = null;
     }, []);
     // Nota elegida en la tablatura: Reproducir empieza desde ahí (Practicar siempre toca el patrón completo).
-    const [from, setFrom] = useState<number | null>(null);
+    const [picked, setFrom] = useState<number | null>(null);
+    // En el celular no se elige nota: siempre se escucha desde el inicio.
+    const from = compact ? null : picked;
     // Al cambiar de ejercicio vuelve al valor por defecto de su tablatura.
     const [roundsFor, setRoundsFor] = useState(activeExercise.id);
     if (roundsFor !== activeExercise.id) {
@@ -366,7 +380,9 @@ function PracticeView({ mode }: { mode: Mode }) {
     // Escuchar va primero: así nadie empieza a practicar sin haber oído el ejercicio.
     const startChoices = <>
         <Button disabled={preparing} onClick={playDemo} className="flex-1 sm:min-w-40 sm:flex-none"><Headphones size={16}/>Reproducir <kbd className="hidden rounded border border-white/40 px-1.5 font-mono text-3xs font-normal sm:inline">Espacio</kbd></Button>
-        <Button variant="secondary" className="flex-1 sm:min-w-40 sm:flex-none" disabled={preparing} onClick={openIntro}>{preparing ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Practicar</Button>
+        {/* Practicar solo desde tablet o computadora; en el celular se explora y se escucha. */}
+        <Button variant="secondary" className="flex-1 max-md:hidden sm:min-w-40 sm:flex-none" disabled={preparing} onClick={openIntro}>{preparing ? <Loader2 size={16} className="animate-spin"/> : <Play size={16} fill="currentColor"/>}Practicar</Button>
+        <p className="flex basis-full items-center gap-2 text-xs text-muted md:hidden"><Info size={15} className="shrink-0 text-accent"/>Practica esta lección desde una tablet o computadora.</p>
     </>;
     const playingInfo = <span className="text-sm text-muted">{listening ? <span className="inline-flex items-center gap-1.5"><Headphones size={15}/>Escuchando</span> : <>Ronda <b className="text-fg-soft">{round} de {rounds}</b></>} · <b className="text-fg-soft">{speedName(speed)} · {bpm} BPM</b></span>;
     const stopButton = <Button variant="secondary" onClick={stopPlayback} className="min-w-40"><Square size={15}/>Detener <kbd className="rounded border border-line-strong px-1.5 font-mono text-3xs text-muted">Esc</kbd></Button>;
@@ -509,8 +525,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                 </PracticeIntro>}
                 {levelUp !== null && <LevelUpDialog seconds={levelUp} onClose={() => setLevelUp(null)}/>}
                 {!active && finished && <PracticeSummary {...finished} onClose={closeSummary}/>}
-                <div className="relative overflow-auto border-t border-line bg-sunken px-4 pt-9 pb-5 md:px-6">
-                    <div className="flex min-w-180 flex-col gap-8" aria-label={`Tablatura: ${activeExercise.title}. ${rhythmLabel}.`}>
+                <div className="relative overflow-x-clip border-t border-line bg-sunken px-3 pt-9 pb-5 md:overflow-auto md:px-6">
+                    <div className="flex flex-col gap-8 md:min-w-180" aria-label={`Tablatura: ${activeExercise.title}. ${rhythmLabel}.`}>
                         {bars.map((bar, barIndex) => <div key={barIndex} ref={element => { rowRefs.current[barIndex] = element; }}>
                             {/* Encabezado de parte al estilo de una partitura: marca de ensayo en recuadro y título en cursiva. */}
                             {bar.part && <h3 className={cn('mb-4 flex items-center gap-3', barIndex > 0 && 'mt-4')}>
@@ -520,7 +536,7 @@ function PracticeView({ mode }: { mode: Mode }) {
                             </h3>}
                             {/* Ataque de cada nota: ⊓ abajo · V arriba · h hammer-on · p pull-off · T tapping (según el estudio, `pickingOf`). */}
                             <div style={tabColumns(bar.columns)} className="mb-1 grid text-center text-sm text-accent-strong" aria-label="Dirección de púa"><span/>{bar.notes.map((_, index) => { const stroke = STROKES[picks[bar.start + index]]; return <span key={index} tabIndex={0} aria-label={stroke.title} className={cn('group relative cursor-help outline-none', stroke.legato && 'font-serif text-fg-soft italic')}>{stroke.mark}
-                                <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded-md border border-line-strong bg-card px-2 py-1 font-sans text-xs whitespace-nowrap text-fg not-italic opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">{stroke.title}</span>
+                                <span role="tooltip" className="pointer-events-none absolute max-md:hidden bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded-md border border-line-strong bg-card px-2 py-1 font-sans text-xs whitespace-nowrap text-fg not-italic opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">{stroke.title}</span>
                             </span>; })}</div>
                             {strings.map((name, row) => <div key={name} style={tabColumns(bar.columns)} className={cn('relative grid h-7 items-center font-mono before:absolute before:right-0 before:left-8 before:bg-[#58709a55]', row === 5 ? 'before:h-0.5' : 'before:h-px')}>
                                 <b className="text-sm text-muted">{name}</b>
@@ -536,8 +552,8 @@ function PracticeView({ mode }: { mode: Mode }) {
                                         {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
                                         {note.string === row + 1
-                                            ? <button type="button" data-tab-note disabled={active || preparing} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
-                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : showFrom && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && 'cursor-pointer hover:text-fg', from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
+                                            ? <button type="button" data-tab-note disabled={active || preparing || compact} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
+                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : showFrom && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && !compact && 'cursor-pointer hover:text-fg', from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
                                             : <span className="invisible z-10 px-1 text-base">{note.fret}</span>}
                                         {/* Bend: flecha y medida arriba a la derecha (con release, flecha de vuelta). Vibrato: onda a la derecha. */}
                                         {note.string === row + 1 && note.bend && <span title={`${note.prebend ? 'Pre-bend' : 'Bend'} ${bendLabel(note.bend)}${note.release ? ' y release' : ''}`} className="absolute -top-2.5 left-1/2 z-20 ml-2 font-sans text-2xs leading-none font-bold whitespace-nowrap text-accent-strong">{note.prebend ? 'PB ' : ''}{note.prebend ? '↘' : note.release ? '↗↘' : '↗'} {bendLabel(note.bend)}</span>}

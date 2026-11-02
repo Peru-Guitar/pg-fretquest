@@ -1,36 +1,36 @@
 ---
 name: whatsapp-release
-description: Mensaje de WhatsApp para anunciar una versión publicada de Fret Quest a los alumnos. Úsalo cuando el usuario pida "mensaje para WhatsApp", "anuncio de la versión", "qué hay de nuevo para el grupo" o similar. Usa la versión actual de package.json salvo que pida otra.
+description: WhatsApp message announcing a published Fret Quest version to students. Use when the user asks for "mensaje para WhatsApp", "anuncio de la versión", "qué hay de nuevo para el grupo" or similar. Uses the current package.json version unless another is requested.
 ---
 
-# Anuncio de versión para WhatsApp
+# WhatsApp version announcement
 
-Es para los **alumnos**, en el grupo de WhatsApp. Cuenta qué pueden practicar ahora y qué les mejora la experiencia; nada técnico.
+It's for **students**, in the WhatsApp group, and it's written in Spanish. It says what they can practice now and what improves their experience; nothing technical.
 
-## 1. Junta la información
+## 1. Gather the information
 
-1. Versión: `"version"` en `package.json` (o la que pida el usuario). Debe estar **publicada** (en `origin/main`); si no, avísalo.
-2. Novedades: la entrada de esa versión en `src/data/changelog.ts`.
-3. Lecciones nuevas: las que tienen la fecha de la versión en `ADDED` (`src/data/questMock.ts`). Agrúpalas por módulo y subcategoría (`category`), y cuenta cuántas hay en cada una. Revisa también `git log` y `git diff` entre la versión anterior y esta para no dejar nada fuera.
-4. Lo que está en el código pero **no publicado** no va.
+1. Version: `"version"` in `package.json` (or the one the user asks for). It must be **published** (on `origin/main`); if not, say so.
+2. Release notes: that version's entry in `src/data/changelog.ts`.
+3. New lessons: those with the version's date in `ADDED` (`src/data/questMock.ts`). Group them by module and subcategory (`category`) and count each one. Also check `git log` and `git diff` between the previous version and this one so nothing is left out.
+4. Anything in the code but **not published** doesn't go in.
 
-## 2. Qué entra y qué no
+## 2. What goes in and what doesn't
 
-- **Sí:** lecciones nuevas (lo principal) y mejoras que el alumno nota al practicar: nueva forma de navegar, orden, una función nueva.
-- **No:** arreglos de bugs, sonido o audio, ajustes de diseño o de mobile, cambios internos, rendimiento, seguridad. Aunque estén en las novedades, no suman en el anuncio.
-- Si no hay lecciones nuevas ni mejoras visibles, dilo y no armes el mensaje.
+- **Yes:** new lessons (the main thing) and improvements students notice when practicing: a new way to navigate, ordering, a new feature.
+- **No:** bug fixes, sound or audio, design or mobile tweaks, internal changes, performance, security. They don't go in even if they're in the release notes.
+- If there are no new lessons or visible improvements, say so and don't write the message.
 
-## 3. Formato
+## 3. Format
 
-Formato de WhatsApp, no Markdown: `*negrita*`, `_cursiva_`, listas con `- `. Sin `#` ni enlaces con corchetes. Entrégalo dentro de un bloque de código para copiarlo tal cual.
+WhatsApp format, not Markdown: `*bold*`, `_italics_`, lists with `- `. No `#` or bracket links. Deliver it in a code block so it can be copied as is.
 
-- Los enlaces siempre con `https://` (WhatsApp solo los vuelve clicables así).
-- Notas en notación americana (C, Eb, Am), nunca Do Re Mi.
-- Nunca la duración de las lecciones.
-- Frases cortas, en segunda persona, sobre cómo suena o para qué sirve cada grupo de lecciones.
-- Un emoji por sección como máximo; 🔹 para cada grupo de lecciones.
+- Links always with `https://` (WhatsApp only makes them clickable that way).
+- Notes in American notation (C, Eb, Am), never Do Re Mi.
+- Never the duration of lessons.
+- Short sentences, in the second person, about how each group of lessons sounds or what it's for.
+- One emoji per section at most; 🔹 for each group of lessons.
 
-## 4. Plantilla
+## 4. Template
 
 ```
 🎸 *Fret Quest <versión>* — ¡<N> lecciones nuevas de <tema>!
@@ -50,7 +50,7 @@ Formato de WhatsApp, no Markdown: `*negrita*`, `_cursiva_`, listas con `- `. Sin
 👉 https://fretquest.peruguitar.com
 ```
 
-Ejemplo real (0.7.0):
+Real example (0.7.0):
 
 ```
 🎸 *Fret Quest 0.7.0* — ¡20 lecciones nuevas de pentatónica!
@@ -79,4 +79,4 @@ La pentatónica por saltos y en zigzag, para que no suene a escalera:
 👉 https://fretquest.peruguitar.com
 ```
 
-Después del bloque, di en una línea qué dejaste fuera (arreglos, sonido, mobile…) para que el usuario lo confirme.
+After the block, say in one line what you left out (fixes, sound, mobile…) so the user can confirm.

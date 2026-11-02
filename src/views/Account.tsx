@@ -9,7 +9,7 @@ import { DEFAULT_RHYTHM, DEFAULT_SESSION_MINUTES, LEVELS, setSessionMinutes, lev
 import { cn } from '@/lib/cn';
 import { RhythmSelect, SessionPicker } from '@/components/quest/RhythmPicker';
 
-/** Mi cuenta: datos propios del usuario, separados de Google (de Google solo viene el correo). */
+/** Mis datos: datos propios del usuario, separados de Google (de Google solo viene el correo). */
 export default function AccountPage() {
     const account = useAccount();
     if (!account) return <Navigate to={ROUTES.login} replace/>;
@@ -34,8 +34,8 @@ function AccountForm({ account }: { account: Account }) {
     const tabs = [{ id: 'profile', label: 'Perfil', icon: UserRound }, { id: 'training', label: 'Entrenamiento', icon: Dumbbell }] as const;
 
     return <div className="mx-auto max-w-3xl">
-        <PageTitle eyebrow="MI CUENTA" title="Tus datos" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
-        <div role="tablist" aria-label="Secciones de Mi cuenta" className="mb-6 flex gap-1 border-b border-line">
+        <PageTitle eyebrow="TU CUENTA" title="Mis datos" text="Tu perfil y cómo quieres entrenar. Son tuyos: no dependen de tu cuenta de Google."/>
+        <div role="tablist" aria-label="Secciones de Mis datos" className="mb-6 flex gap-1 border-b border-line">
             {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
                 className={cn('-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition', tab === id ? 'border-blue text-fg' : 'border-transparent text-muted hover:text-fg')}><Icon size={16}/>{label}</button>)}
         </div>

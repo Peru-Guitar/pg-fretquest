@@ -25,7 +25,7 @@ export function RhythmPicker({ value, onChange }: { value: number | undefined; o
     </>;
 }
 
-/** Desplegable del ritmo con la descripción de cada opción (para columnas estrechas, como Mi cuenta). */
+/** Desplegable del ritmo con la descripción de cada opción (para columnas estrechas, como Mis datos). */
 export function RhythmSelect({ value, onChange }: { value: number; onChange: (days: number) => void }) {
     const [open, setOpen] = useState(false);
     const root = useRef<HTMLDivElement>(null);
