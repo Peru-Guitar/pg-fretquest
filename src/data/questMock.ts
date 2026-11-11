@@ -1096,6 +1096,11 @@ moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
 });
 // La más reciente va primera.
 moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
+ id: 'licks-phrasing-yngwie-03', title: 'Trilogy Suite Op. 5',
+ type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
+ description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
+});
+moduleFixtures.find(module => module.id === 'licks-phrasing')!.lessons.unshift({
  id: 'licks-phrasing-becker-02', title: 'Serrana: arpegios en sweep',
  type: 'practice', difficulty: 'experto', minutes: 8, xp: 90,
  description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1,
@@ -1153,6 +1158,7 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(MODAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(INTERVAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
+ 'licks-phrasing-yngwie-03': '2026-11-11',
  'licks-phrasing-gambale-01': '2026-10-30',
  'licks-phrasing-becker-02': '2026-10-30',
  'licks-phrasing-howe-01': '2026-10-26',

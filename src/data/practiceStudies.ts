@@ -75,7 +75,7 @@ export type PracticeStudy = {
     artist?: string;
     /** Quién transcribió el patrón (se muestra junto al crédito del artista). */
     transcribedBy?: string;
-    /** Velocidad sugerida (1–5, o 6 con `originalBpm`; ver `SPEEDS`); 2 por defecto. */
+    /** Velocidad sugerida (1–5; ver `SPEEDS`); 2 por defecto. Con `originalBpm` siempre es 6 «Original». */
     speed?: Speed;
     /** BPM de la grabación original, si supera Extremo: agrega el nivel 6 «Original». */
     originalBpm?: number;
@@ -1106,6 +1106,34 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         speed: 3,
         pattern: tabBars('licks-phrasing-yngwie-02', 'semicorcheas').flat(),
     },
+    'licks-phrasing-yngwie-03': {
+        description: 'Un fragmento de «Trilogy Suite Op. 5»: una melodía que cae en sextillos contra una G al aire, como un órgano barroco, y luego arpegios barridos con aire de violín.',
+        goal: 'Tocar los sextillos parejos en las dos partes: la melodía con púa alternada sobre la cuerda al aire y los arpegios barridos sin que suenen como un acorde.',
+        steps: [
+            'Tema I: la frase de la primera y segunda cuerda baja hasta la quinta; el ligado del inicio (15–16–15–13) va con hammer-on y pull-off.',
+            'Luego tres compases de pedal: la G al aire de la tercera cuerda se alterna con una melodía que sube en la misma cuerda. Cada vuelta de cuatro compases se repite cuatro veces.',
+            'Tema II: cada tresillo es una nota en la segunda cuerda y dos en la primera con hammer-on. La púa va ⊓ ⊓ V (abajo, abajo, arriba).',
+            'Practica primero cada tema por separado; el paso del pedal al sweep es el punto más difícil.',
+        ],
+        mistakes: ['Que la cuerda al aire suene más fuerte que la melodía.', 'Atacar con púa la nota del hammer-on en el sweep.', 'Acelerar en los compases de pedal y frenar en los cambios de cuerda.'],
+        criterion: 'Sube el BPM cuando las dos partes suenen parejas y sin cortes entre ellas.',
+        perRow: 12,
+        figure: 'sextillos',
+        artist: 'yngwie-malmsteen',
+        speed: 2,
+        originalBpm: 115,
+        // El Tema II va en sweep: púa solo al cambiar de cuerda, hammer-on en la primera.
+        legatoFrom: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(0, 22).flat().length,
+        ...withSections([
+            // Tema I: la melodía y el pedal en G se repiten cuatro veces; luego la melodía cierra sola.
+            ...[1, 2, 3, 4].map(round => ({ title: `Melodía y pedal en G · vuelta ${round} de 4`, pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice((round - 1) * 5, round * 5).flat() })),
+            { title: 'Melodía de cierre', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(20, 22).flat() },
+            // Tema II: dos frases de arpegios (la segunda baja más y cambia el final) y la subida al 20.
+            { title: 'Arpegios en sweep · primera frase', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(22, 26).flat() },
+            { title: 'Arpegios en sweep · segunda frase', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(26, 32).flat() },
+            { title: 'Remate hasta el traste 20', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(32).flat() },
+        ]),
+    },
     'licks-phrasing-becker-01': {
         description: 'Arpegios barridos que suenan como un arpa eléctrica y suben con una fluidez increíble. El estudio de Jason Becker es una gran puerta de entrada al sweep picking.',
         goal: 'Barrer las cuerdas con un solo movimiento de púa en cada dirección y ligar las notas de la primera cuerda sin perder el pulso al cambiar de posición, con todas las notas parejas.',
@@ -1290,6 +1318,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
     ...Object.fromEntries(MODAL_PENTATONICS.map(item => [item.id, modalPentatonicStudy(item)])),
     ...Object.fromEntries(INTERVAL_PENTATONICS.map(item => [item.id, intervalStudy(item)])),
 };
+// Con grabación original, la velocidad sugerida es siempre «Original» (nivel 6).
+for (const study of Object.values(practiceStudies)) if (study.originalBpm) study.speed = 6;
 
 /** Cómo se ataca cada nota: púa abajo (⊓), púa arriba (V), hammer-on (h), pull-off (p) o tapping (T). */
 export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide' | 'tap' | 'rest';

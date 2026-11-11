@@ -553,7 +553,6 @@ function PracticeView({ mode }: { mode: Mode }) {
                                     const newBeat = study?.picking === 'tapping' && noteIndex % FIGURES[figure].notesPerBeat === 0;
                                     const tie = note.string === row + 1 && previous?.string === note.string && !newBeat ? picks[noteIndex] : undefined;
                                     return <span key={index} className="relative grid justify-items-center">
-                                        {(tie === 'hammer' || tie === 'pull') && <span aria-hidden className="absolute -top-1.5 right-1/2 z-20 h-2.5 w-full rounded-t-full border-x-[1.5px] border-t-[1.5px] border-accent/70"/>}
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
                                         {note.string === row + 1
                                             ? <button type="button" data-tab-note disabled={active || preparing || compact} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
