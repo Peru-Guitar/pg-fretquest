@@ -1126,8 +1126,8 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         legatoFrom: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(0, 22).flat().length,
         ...withSections([
             // Tema I: la melodía y el pedal en G se repiten cuatro veces; luego la melodía cierra sola.
-            ...[1, 2, 3, 4].map(round => ({ title: `Melodía y pedal en G · vuelta ${round} de 4`, pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice((round - 1) * 5, round * 5).flat() })),
-            { title: 'Melodía de cierre', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(20, 22).flat() },
+            ...[1, 2, 3, 4].map(round => ({ title: `Vuelta ${round}`, pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice((round - 1) * 5, round * 5).flat() })),
+            { title: 'Cierre del intro', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(20, 22).flat() },
             // Tema II: dos frases de arpegios (la segunda baja más y cambia el final) y la subida al 20.
             { title: 'Arpegios en sweep · primera frase', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(22, 26).flat() },
             { title: 'Arpegios en sweep · segunda frase', pattern: tabBars('licks-phrasing-yngwie-03', 'sextillos').slice(26, 32).flat() },
