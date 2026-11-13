@@ -194,7 +194,10 @@ function PracticeView({ mode }: { mode: Mode }) {
     const practicing = community?.byLesson[activeExercise.id] ?? [];
     useEffect(() => { setLastExercise({ moduleId: activeModule.id, exerciseId: activeExercise.id }); }, [activeModule.id, activeExercise.id]);
     const pattern = study?.pattern ?? PATTERN;
-    const picks = pickingOf(pattern, study?.picking, study?.legatoFrom);
+    // En economy cada parte empieza de nuevo con el primer golpe: así el primer cambio de cuerda siempre es un barrido.
+    const picks = study?.picking === 'economy' && study.sections
+        ? study.sections.flatMap(section => pickingOf(section.pattern, 'economy', undefined, section.pickStart ?? study.pickStart, study.sweepSkips))
+        : pickingOf(pattern, study?.picking, study?.legatoFrom, study?.pickStart, study?.sweepSkips);
     const baseFigure = study?.figure ?? 'negras';
     const suggestedSpeed = study?.speed ?? 2;
     // Velocidad: el nivel elegido decide la figura (en las lecciones en corcheas) y el BPM.

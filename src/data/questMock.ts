@@ -1151,6 +1151,21 @@ Object.assign(moduleFixtures.find(module => module.id === 'scales')!, {
  ],
 });
 // Fechas de publicación: al agregar una lección, súmala aquí para que salga en «Últimas lecciones agregadas».
+// Economy picking: reemplaza el temario de ejemplo por las lecciones publicadas.
+moduleFixtures.find(module => module.id === 'economy-picking')!.lessons = [
+ { id: 'economy-picking-right-hand-01', title: 'Cuerdas al aire en economy picking', category: 'Mano derecha', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-right-hand-02', title: 'Salto de cuerda en economy picking', category: 'Mano derecha', type: 'practice', difficulty: 'base', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-01', title: 'C menor en economy picking: cuerdas 5 y 3', category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-02', title: 'C menor en economy picking: cuerdas 3 y 5', category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-03', title: 'A menor en economy picking: cuerdas 3 y 1', category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-04', title: 'A menor en economy picking: cuerdas 1 y 3', category: 'String skipping', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-05', title: 'C menor en economy picking: cuerdas 5, 3 y 1', category: 'String skipping', type: 'practice', difficulty: 'avanzado', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-skipping-06', title: 'C menor en economy picking: cuerdas 1, 3 y 5', category: 'String skipping', type: 'practice', difficulty: 'avanzado', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-01', title: 'D menor: subida en economy picking', category: 'Tres notas por cuerda', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-02', title: 'D menor: bajada en economy picking', category: 'Tres notas por cuerda', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-03', title: 'D menor: subida y bajada en economy picking', category: 'Tres notas por cuerda', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+ { id: 'economy-picking-04', title: 'D menor: bajada y subida en economy picking', category: 'Tres notas por cuerda', type: 'practice', difficulty: 'intermedio', minutes: 5, xp: 50, description: '', goal: '', tempo: { min: 40, max: 160 }, rounds: 1 },
+];
 const ADDED: Record<string, string> = {
  'alternate-picking-right-hand-01': '2026-10-26',
  'alternate-picking-right-hand-02': '2026-10-26',
@@ -1164,6 +1179,18 @@ const ADDED: Record<string, string> = {
  ...Object.fromEntries(MODAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(INTERVAL_PENTATONICS.map(({ id }) => [id, '2026-10-28'])),
  ...Object.fromEntries(moduleFixtures.find(module => module.id === 'scales')!.lessons.map(lesson => [lesson.id, lesson.id.startsWith('scales-0') ? '2026-10-24' : lesson.id.startsWith('scales-symmetric') || lesson.id.startsWith('scales-bebop') ? '2026-10-28' : '2026-10-27'])),
+ 'economy-picking-right-hand-01': '2026-11-13',
+ 'economy-picking-right-hand-02': '2026-11-13',
+ 'economy-picking-skipping-01': '2026-11-13',
+ 'economy-picking-skipping-02': '2026-11-13',
+ 'economy-picking-skipping-03': '2026-11-13',
+ 'economy-picking-skipping-04': '2026-11-13',
+ 'economy-picking-skipping-05': '2026-11-13',
+ 'economy-picking-skipping-06': '2026-11-13',
+ 'economy-picking-01': '2026-11-13',
+ 'economy-picking-02': '2026-11-13',
+ 'economy-picking-03': '2026-11-13',
+ 'economy-picking-04': '2026-11-13',
  'licks-phrasing-howe-02': '2026-11-13',
  'licks-phrasing-yngwie-03': '2026-11-11',
  'licks-phrasing-gambale-01': '2026-10-30',
@@ -1196,7 +1223,7 @@ for (const module of moduleFixtures) {
 }
 export const courses = moduleFixtures.map(module => ({
  ...module,
- available: ['recommendations', 'alternate-picking', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing', 'tapping'].includes(module.id),
+ available: ['recommendations', 'alternate-picking', 'fingering', 'arpeggios', 'pentatonic', 'scales', 'licks-phrasing', 'tapping', 'economy-picking'].includes(module.id),
  level: difficultyRange(module.lessons, module.level),
  difficulties: DIFFICULTY_ORDER.filter(level => module.lessons.some(lesson => lesson.type === 'practice' && lesson.difficulty === level)),
  image: `/images/modules/${module.id}.webp`,

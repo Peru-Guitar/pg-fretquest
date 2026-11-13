@@ -69,6 +69,10 @@ export type PracticeStudy = {
      * la púa (⊓ hacia la aguda, V hacia la grave): ahí repite el golpe y barre.
      */
     picking?: 'alternate' | 'legato' | 'tapping' | 'economy';
+    /** Con `economy`: golpe de la primera nota (V por defecto). */
+    pickStart?: 'down' | 'up';
+    /** Con `economy`: la púa también barre al saltar una cuerda (string skipping), atravesando la del medio. */
+    sweepSkips?: boolean;
     /** Desde esta nota (índice del patrón) se usa la técnica de arpegio (`legato`), p. ej. un sweep al final de un lick. */
     legatoFrom?: number;
     /** Autor del patrón cuando es de un guitarrista destacado (id de `data/artists`): se le da el crédito. */
@@ -81,7 +85,8 @@ export type PracticeStudy = {
     originalBpm?: number;
     pattern: PatternNote[];
     /** Partes con título (se numeran solas); cada una empieza en una fila nueva de la tablatura. Sin partes, el patrón se reparte de corrido. */
-    sections?: { title: string; pattern: PatternNote[] }[];
+    /** `pickStart`: con `economy`, golpe con que empieza esa parte (si no, el del estudio). */
+    sections?: { title: string; pattern: PatternNote[]; pickStart?: 'down' | 'up' }[];
 };
 // Cromático de sexta a primera cuerda y de vuelta, con el índice en el traste `position`.
 // `order` son los trastes relativos a la posición (1 = la posición) en el orden en que se tocan en cada cuerda: 1–2–3–4, 4–3–2–1, 1–3–5–3–5…
@@ -151,7 +156,7 @@ const modalArpeggioStudy = ({ mode, degree, chord, color, pattern, fromSeventh }
     ...withSections([{ title: `${chord} · ${mode} · grado ${degree}`, pattern }]),
 });
 
-const withSections = (sections: { title: string; pattern: PatternNote[] }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
+const withSections = (sections: { title: string; pattern: PatternNote[]; pickStart?: 'down' | 'up' }[]) => ({ sections, pattern: sections.flatMap(section => section.pattern) });
 
 const slideTo = (string: number, fret: number): PatternNote => ({ string, fret, slide: true });
 
@@ -330,6 +335,67 @@ const modeStudy = ({ scale: parentId, degree, mode, color }: ScaleMode): Practic
     };
 };
 
+// Economy picking: la forma de los modos (tres notas por cuerda, tónica en la quinta cuerda) en D menor, de la sexta a
+// la primera cuerda. Una lección solo sube y otra solo baja, para aislar el barrido en cada dirección.
+const D_MINOR = [0, 2, 3, 5, 7, 8, 10];
+const dMinor = (offset: number) => 50 + D_MINOR[((offset % 7) + 7) % 7] + Math.floor(offset / 7) * 12;
+const D_MINOR_UP = Array.from({ length: 18 }, (_, index) => note(6 - Math.floor(index / 3), dMinor(index - 3)));
+// El patrón completo de los modos en D menor (D en el traste 5 de la quinta cuerda): cuatro partes que suben una cuerda
+// más cada vez y regresan, igual que C jónico.
+const dMinorParts = (reverse = false) => {
+    const up = Array.from({ length: 15 }, (_, index) => note(5 - Math.floor(index / 3), dMinor(index)));
+    const below = [-1, -2, -3].map(offset => note(6, dMinor(offset)));
+    if (reverse) {
+        // Al revés: sale de D en el traste 10 de la primera cuerda, cada parte baja una cuerda más y regresa; la última
+        // baja hasta la sexta y vuelve a subir hasta D.
+        const down = [...up].reverse();
+        const part = (strings: number) => [...down.slice(0, strings * 3), ...down.slice(1, strings * 3 - 1).reverse()];
+        const full = [...[...below].reverse(), ...up];
+        return withSections([
+            { title: 'Hasta la segunda cuerda', pattern: part(2) },
+            { title: 'Hasta la tercera cuerda', pattern: part(3) },
+            { title: 'Hasta la cuarta cuerda', pattern: part(4) },
+            { title: 'Hasta la sexta cuerda y de vuelta', pattern: [...[...full].reverse(), ...full.slice(1)] },
+        ]);
+    }
+    const part = (strings: number) => [...up.slice(0, strings * 3), ...up.slice(1, strings * 3 - 1).reverse()];
+    return withSections([
+        { title: 'Hasta la cuarta cuerda', pattern: part(2) },
+        { title: 'Hasta la tercera cuerda', pattern: part(3) },
+        { title: 'Hasta la segunda cuerda', pattern: part(4) },
+        { title: 'Hasta la primera cuerda y de vuelta', pattern: [...up, ...up.slice(0, 14).reverse(), ...below, below[1], below[0], up[0]] },
+    ]);
+};
+const economyStudy = (direction: 'up' | 'down'): PracticeStudy => {
+    const up = direction === 'up';
+    return {
+        description: up
+            ? 'D menor de la sexta a la primera cuerda con economy picking: la púa sigue de largo al subir de cuerda. Menos movimiento y una escala que corre sola.'
+            : 'D menor de la primera a la sexta cuerda con economy picking: la púa cae a la cuerda de abajo sin volver a subir. El otro lado del barrido.',
+        goal: up
+            ? 'Subir de cuerda sin cambiar la dirección de la púa: la última ⊓ de cada cuerda sigue de largo y ataca la siguiente.'
+            : 'Bajar de cuerda sin cambiar la dirección de la púa: la última V de cada cuerda cae y ataca la de abajo.',
+        steps: [
+            up
+                ? 'Es la forma de C jónico en D menor: empiezas en A, traste 5 de la sexta cuerda, y subes tres notas por cuerda hasta D, traste 10 de la primera.'
+                : 'Es la forma de C jónico en D menor: empiezas en D, traste 10 de la primera cuerda, y bajas tres notas por cuerda hasta A, traste 5 de la sexta.',
+            up ? 'En cada cuerda: ⊓ V ⊓. Cada cuerda es un tresillo, un pulso.' : 'En cada cuerda: V ⊓ V. Cada cuerda es un tresillo, un pulso.',
+            up
+                ? 'Al cambiar de cuerda no subas la púa: la última ⊓ sigue de largo y toca la primera nota de la cuerda siguiente. Son dos ⊓ seguidas en un solo movimiento.'
+                : 'Al cambiar de cuerda no bajes la púa: la última V cae a la cuerda de abajo y toca su primera nota. Son dos V seguidas en un solo movimiento.',
+            'El barrido no es un rasgueo: cada nota suena sola y en su lugar del tresillo.',
+        ],
+        mistakes: ['Alternar en el cambio de cuerda por costumbre: pierdes el ahorro de movimiento.', 'Que la nota del barrido se adelante: los dos golpes seguidos deben sonar parejos.', 'Dejar sonar la cuerda que ya tocaste.'],
+        criterion: 'Toca el recorrido sin pausas y con los tresillos parejos. Sube el BPM cuando el barrido suene igual que las notas alternadas.',
+        figure: 'tresillos',
+        speed: 2,
+        perRow: 18,
+        picking: 'economy',
+        pickStart: up ? 'down' : 'up',
+        pattern: up ? D_MINOR_UP : [...D_MINOR_UP].reverse(),
+    };
+};
+
 /** Escalas simétricas: se repiten cada pocos semitonos, así que no tienen modos propios. Todas desde C. */
 export const SYMMETRIC_SCALES = [
     { id: 'scales-symmetric-01', title: 'C tonal', shift: 2, steps: [0, 2, 4, 6, 8, 10], names: ['C', 'D', 'E', 'F#', 'G#', 'A#'], color: 'Suena a sueño, a algo que flota. Todas sus notas están a la misma distancia, así que ninguna se siente como casa. Es el sonido de los flashbacks del cine y de Debussy.' },
@@ -365,6 +431,8 @@ const symmetricStudy = ({ title, shift, steps, color }: SymmetricScale): Practic
         ]),
     };
 };
+
+
 
 // Transcripciones (licks de artistas): se escriben en alphaTex en data/tabs y `npm run tabs` las convierte. Cada
 // sección del .alphatex (separada por «|») es un compás o una parte de la lección. La duración se deja solo en las notas
@@ -403,6 +471,51 @@ const rightHandSkip: PracticeStudy = {
     ...withSections([
         { title: 'Primer recorrido', pattern: openStrings([6, 4, 5, 3, 4, 2, 3, 1]) },
         { title: 'Segundo recorrido', pattern: openStrings([1, 3, 2, 4, 3, 5, 4, 6]) },
+    ]),
+};
+// Mano derecha en economy picking: las mismas cuerdas al aire con tres golpes por cuerda. Con un número impar de golpes la
+// púa termina hacia la cuerda siguiente y la atraviesa con el mismo movimiento (con cuatro nunca barrería).
+const openStrings3 = (strings: number[]): PatternNote[] => strings.flatMap(string => [0, 0, 0].map(fret => ({ string, fret })));
+const ECONOMY_RIGHT_HAND_STEPS = [
+    'Solo trabaja la mano derecha: todas las cuerdas van al aire, tres golpes por cuerda (un tresillo).',
+    'Al subir hacia la primera cuerda: ⊓ V ⊓, y la última ⊓ sigue de largo a la cuerda siguiente. Son dos ⊓ seguidas en un solo movimiento.',
+    'Al bajar hacia la sexta: V ⊓ V, y la última V cae a la cuerda de abajo con el mismo movimiento.',
+    'Silencia con la palma: solo debe sonar la cuerda que tocas.',
+];
+const ECONOMY_RIGHT_HAND_MISTAKES = ['Alternar en el cambio de cuerda por costumbre: pierdes el barrido.', 'Que el barrido suene como un rasgueo: cada golpe va en su lugar del tresillo.', 'Dejar sonando las cuerdas que ya tocaste.'];
+const economyRightHandOpen: PracticeStudy = {
+    description: 'La mano derecha del economy picking, sin notas que pensar: cuerdas al aire y la púa que atraviesa de una cuerda a otra en un solo movimiento.',
+    goal: 'Sentir el barrido en las dos direcciones: la púa sigue de largo al cambiar de cuerda, con los golpes parejos.',
+    steps: ECONOMY_RIGHT_HAND_STEPS,
+    mistakes: ECONOMY_RIGHT_HAND_MISTAKES,
+    criterion: 'Cuando la subida y la bajada suenen parejas y sin ruido de las demás cuerdas, sube el BPM.',
+    perRow: 18,
+    figure: 'tresillos',
+    speed: 1,
+    picking: 'economy',
+    ...withSections([
+        { title: 'Subida', pattern: openStrings3([6, 5, 4, 3, 2, 1]), pickStart: 'down' },
+        { title: 'Bajada', pattern: openStrings3([1, 2, 3, 4, 5, 6]), pickStart: 'up' },
+    ]),
+};
+const economyRightHandSkip: PracticeStudy = {
+    description: 'Saltos de cuerda con economy picking: la púa barre cuando la cuerda siguiente está al lado y alterna cuando salta. Control fino de la mano derecha.',
+    goal: 'Decidir en cada cambio de cuerda si la púa barre o alterna, sin perder el pulso ni rozar la cuerda que saltas.',
+    steps: [
+        'Solo trabaja la mano derecha: todas las cuerdas van al aire, tres golpes por cuerda (un tresillo).',
+        'Al saltar una cuerda la púa alterna: no hay barrido posible.',
+        'Cuando la cuerda siguiente está al lado y la púa ya va hacia ella, sigue de largo: dos golpes seguidos en la misma dirección.',
+        'Sigue las púas marcadas sobre la tablatura y silencia con la palma las cuerdas que no tocas.',
+    ],
+    mistakes: [...ECONOMY_RIGHT_HAND_MISTAKES, 'Rozar la cuerda que saltas.'],
+    criterion: 'Cuando los dos recorridos suenen parejos y sin que suene la cuerda que saltas, sube el BPM.',
+    perRow: 12,
+    figure: 'tresillos',
+    speed: 1,
+    picking: 'economy',
+    ...withSections([
+        { title: 'Primer recorrido', pattern: openStrings3([6, 4, 5, 3, 4, 2, 3, 1]), pickStart: 'down' },
+        { title: 'Segundo recorrido', pattern: openStrings3([1, 3, 2, 4, 3, 5, 4, 6]), pickStart: 'up' },
     ]),
 };
 // Modos por octavas: los modos de Bb mayor desde G menor, cada uno con sus seis primeras notas y la misma
@@ -529,6 +642,101 @@ const skipStudy = ({ low, high, from, key, scale, description }: typeof SKIP_PAT
         criterion: 'Cuando los ocho compases suenen parejos y la cuerda del medio no suene nunca, sube el BPM.',
         figure: 'semicorcheas',
         speed: 1,
+        ...withSections(bars),
+    };
+};
+// String skipping con economy picking: la misma escala que los ejercicios de púa alternada (C menor en las cuerdas 5 y 3,
+// A menor en las 3 y 1), con la púa que atraviesa la cuerda del medio cuando ya va en esa dirección.
+const ECONOMY_SKIP_DESCRIPTIONS: Record<string, string> = {
+    '5-5': 'C menor saltando de la quinta a la tercera con economy picking: la púa que baja atraviesa la cuarta cuerda de un solo golpe. Saltos amplios con poco movimiento.',
+    '5-3': 'C menor desde la tercera cuerda, con la quinta de apoyo y economy picking: la púa que sube cae a la quinta atravesando la cuarta. El salto en sentido contrario.',
+    '3-3': 'A menor en las cuerdas agudas con economy picking: de la tercera a la primera atravesando la segunda de un golpe. La escala brilla y el salto suena abierto.',
+    '3-1': 'A menor desde la primera cuerda, con la tercera de apoyo y economy picking: la púa que sube cae a la tercera cruzando la segunda. El salto agudo al revés.',
+};
+const ECONOMY_STRING_NAMES = ['', 'primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta'];
+const economySkipStudy = (low: 5 | 3, from: 5 | 3 | 1): PracticeStudy => {
+    const pattern = SKIP_PATTERNS.find(skip => skip.low === low && skip.from === from && skip.scale === 'natural')!;
+    const { high, key } = pattern;
+    const base = skipStudy(pattern);
+    const to = from === low ? high : low;
+    const skipped = (low + high) / 2;
+    const down = from === low;
+    const name = (string: number) => `${ECONOMY_STRING_NAMES[string]} cuerda`;
+    // Figura: tres notas en la cuerda de salida, las mismas tres a una octava en la otra cuerda y regreso por las dos
+    // primeras (5: 3 5 6 · 3: 5 7 8 7 5), y bajada por la cuerda de salida (5: 6 5 3). Cada posición se toca dos veces,
+    // sin repetir la nota que une las dos vueltas, y la siguiente empieza en la nota que sigue de la escala.
+    const { names, midi } = minorOnString(low, key, 'natural');
+    const bars = [0, 1, 2, 3, 4, 5, 6, 7].map(start => {
+        const grave = [0, 1, 2].map(step => note(low, midi(start + step)));
+        const aguda = [0, 1, 2].map(step => note(high, midi(start + step) + 12));
+        const [first, second] = down ? [grave, aguda] : [aguda, grave];
+        const figure = [...first, ...second, second[1], second[0], ...[...first].reverse()];
+        return { title: `Desde ${names[start % 7]}`, pattern: [...figure, ...figure.slice(1)] };
+    });
+    const [first, second] = [bars[0].pattern.slice(0, 3), bars[0].pattern.slice(3, 8)];
+    const frets = (notes: PatternNote[]) => notes.map(item => item.fret).join(' ');
+    return {
+        ...base,
+        description: ECONOMY_SKIP_DESCRIPTIONS[`${low}-${from}`],
+        goal: `Saltar la ${name(skipped)} sin cambiar la dirección de la púa cuando ya va hacia la otra cuerda, sin que suene la cuerda del medio.`,
+        steps: [
+            `Cada posición: tres notas en la ${name(from)} (${frets(first)}), las mismas a una octava en la ${name(to)} con regreso (${frets(second)}) y vuelves por la ${name(from)} (${frets([...first].reverse())}).`,
+            'Toca la figura dos veces antes de pasar a la siguiente posición: la segunda vuelta empieza en la segunda nota, sin repetir la que cierra la primera.',
+            `La posición siguiente empieza en la nota que sigue de la escala: de ${key} hasta ${key} una octava más arriba, deslizando la mano por el mástil.`,
+            down
+                ? `Empieza con ⊓. Cuando la púa ya va hacia abajo y la nota siguiente está en la ${name(to)}, sigue de largo: atraviesa la ${name(skipped)} y la ataca con el mismo golpe.`
+                : `Empieza con V. Cuando la púa ya va hacia arriba y la nota siguiente está en la ${name(to)}, sigue de largo: atraviesa la ${name(skipped)} y la ataca con el mismo golpe.`,
+            'El barrido sale en el salto de la primera vuelta. En la segunda la púa llega al salto en sentido contrario y alterna: sigue las púas marcadas sobre la tablatura.',
+            `Silencia la ${name(skipped)} con la mano izquierda: la púa pasa por encima de ella camino a la ${name(to)}.`,
+        ],
+        mistakes: ['Alternar en el salto de la primera vuelta por costumbre: pierdes el barrido.', `Que suene la ${name(skipped)} al atravesarla.`, 'Que el barrido adelante la nota: los dos golpes seguidos deben sonar parejos.'],
+        criterion: 'Cuando las ocho posiciones suenen parejas y la cuerda del medio no suene nunca, sube el BPM.',
+        picking: 'economy',
+        pickStart: down ? 'down' : 'up',
+        sweepSkips: true,
+        perRow: 11,
+        ...withSections(bars),
+    };
+};
+// String skipping en tres cuerdas (5, 3 y 1) con economy picking: C menor, las mismas tres notas en cada cuerda a una
+// octava de la anterior. Sube por las tres cuerdas, regresa dos notas en la última y vuelve por las otras dos
+// (5: 3 5 6 · 3: 5 7 8 · 1: 8 10 11 10 8 · 3: 8 7 5 · 5: 6 5 3). Dos vueltas por posición, sin repetir la nota que las
+// une; cinco posiciones (de C a G) para no pasar del traste 18.
+const economyTripleSkipStudy = (from: 5 | 1): PracticeStudy => {
+    const down = from === 5;
+    const { names, midi } = minorOnString(5, 'C', 'natural');
+    const strings = down ? [5, 3, 1] : [1, 3, 5];
+    const bars = [0, 1, 2, 3, 4].map(start => {
+        const groups = strings.map(string => [0, 1, 2].map(step => note(string, midi(start + step) + (5 - string) * 6)));
+        const [a, b, c] = groups;
+        const figure = [...a, ...b, ...c, c[1], c[0], ...[...b].reverse(), ...[...a].reverse()];
+        return { title: `Desde ${names[start % 7]}`, pattern: [...figure, ...figure.slice(1)] };
+    });
+    return {
+        description: down
+            ? 'C menor saltando por la quinta, la tercera y la primera con economy picking: tres octavas de un golpe y la púa que atraviesa dos cuerdas. Suena enorme.'
+            : 'Las tres octavas de C menor al revés: empiezas en la primera cuerda y caes a la tercera y la quinta, con la púa que atraviesa las cuerdas del medio hacia abajo.',
+        goal: 'Saltar dos cuerdas seguidas sin cambiar la dirección de la púa cuando ya va hacia la cuerda siguiente, sin que suenen la segunda ni la cuarta.',
+        steps: [
+            down
+                ? 'Cada posición: tres notas en la quinta cuerda (3 5 6), las mismas en la tercera (5 7 8) y en la primera (8 10 11), regresas dos (10 8) y vuelves por la tercera (8 7 5) y la quinta (6 5 3).'
+                : 'Cada posición: tres notas en la primera cuerda (8 10 11), las mismas en la tercera (5 7 8) y en la quinta (3 5 6), regresas dos (5 3) y vuelves por la tercera (8 7 5) y la primera (11 10 8).',
+            'Toca la figura dos veces antes de pasar a la siguiente posición: la segunda vuelta empieza en la segunda nota, sin repetir la que cierra la primera.',
+            'La posición siguiente empieza en la nota que sigue de la escala: cinco posiciones, de C a G, subiendo por el mástil.',
+            down
+                ? 'Empieza con ⊓. Cuando la púa ya va hacia la cuerda siguiente, sigue de largo: atraviesa la cuarta o la segunda cuerda y ataca con el mismo golpe.'
+                : 'Empieza con V. Cuando la púa ya va hacia la cuerda siguiente, sigue de largo: atraviesa la segunda o la cuarta cuerda y ataca con el mismo golpe.',
+            'No todos los saltos barren: cuando la púa llega en sentido contrario, alterna. Sigue las púas marcadas sobre la tablatura.',
+            'Silencia la segunda y la cuarta cuerda con la mano izquierda: la púa pasa por encima de ellas en cada salto.',
+        ],
+        mistakes: ['Alternar en un salto que barre, por costumbre: pierdes el ahorro de movimiento.', 'Que suenen la segunda o la cuarta cuerda al atravesarlas.', 'Que el barrido adelante la nota: los dos golpes seguidos deben sonar parejos.', 'Perder la posición de la mano izquierda al abrirse en tres octavas.'],
+        criterion: 'Cuando las cinco posiciones suenen parejas y las cuerdas del medio no suenen nunca, sube el BPM.',
+        figure: 'semicorcheas',
+        speed: 1,
+        picking: 'economy',
+        pickStart: down ? 'down' : 'up',
+        sweepSkips: true,
+        perRow: 17,
         ...withSections(bars),
     };
 };
@@ -1275,6 +1483,52 @@ export const practiceStudies: Record<string, PracticeStudy> = {
         originalBpm: 133,
         pattern: tabBars('licks-phrasing-howe-01', 'semicorcheas').flat(),
     },
+    'economy-picking-right-hand-01': economyRightHandOpen,
+    'economy-picking-right-hand-02': economyRightHandSkip,
+    'economy-picking-skipping-01': economySkipStudy(5, 5),
+    'economy-picking-skipping-02': economySkipStudy(5, 3),
+    'economy-picking-skipping-03': economySkipStudy(3, 3),
+    'economy-picking-skipping-04': economySkipStudy(3, 1),
+    'economy-picking-skipping-05': economyTripleSkipStudy(5),
+    'economy-picking-skipping-06': economyTripleSkipStudy(1),
+    'economy-picking-01': economyStudy('up'),
+    'economy-picking-02': economyStudy('down'),
+    'economy-picking-03': {
+        description: 'Subida y bajada juntas: el patrón de los modos en D menor con economy picking. Cada giro te obliga a cambiar de barrido sin perder el pulso.',
+        goal: 'Encadenar la subida y la bajada con economy picking: barrer en cada cambio de cuerda y alternar solo en los giros.',
+        steps: [
+            'Es el patrón de C jónico en D menor: D en el traste 5 de la quinta cuerda. Cada parte sube una cuerda más que la anterior y regresa.',
+            'Al subir, la púa que va hacia abajo (⊓) sigue de largo a la cuerda siguiente. Al bajar, la que va hacia arriba (V) cae a la cuerda de abajo.',
+            'En los giros cambias de dirección en la misma cuerda: ahí la púa alterna, y el barrido que sigue cambia de sentido.',
+            'En la cuarta parte llegas a la primera cuerda, bajas hasta la sexta, subes dos notas y terminas en D.',
+            'Sigue las púas marcadas sobre la tablatura: no siempre caen igual en cada parte.',
+        ],
+        mistakes: ['Volver a la púa alternada en los cambios de cuerda.', 'Perder el pulso en los giros, donde se cambia la dirección del barrido.', 'Que los barridos suenen como un rasgueo: cada nota va separada y pareja.'],
+        criterion: 'Toca las cuatro partes de corrido con las corcheas parejas. Sube el BPM cuando los giros suenen tan fluidos como los barridos.',
+        figure: 'corcheas',
+        speed: 2,
+        picking: 'economy',
+        pickStart: 'down',
+        ...dMinorParts(),
+    },
+    'economy-picking-04': {
+        description: 'El patrón de D menor al revés: empiezas arriba y cada parte baja una cuerda más. El barrido hacia abajo manda y la subida queda para el regreso.',
+        goal: 'Encadenar la bajada y la subida con economy picking empezando desde arriba: barrer en cada cambio de cuerda y alternar solo en los giros.',
+        steps: [
+            'Es el patrón de D menor al revés: empiezas en D, traste 10 de la primera cuerda. Cada parte baja una cuerda más que la anterior y regresa.',
+            'Al bajar, la púa que va hacia arriba (V) cae a la cuerda de abajo. Al subir, la que va hacia abajo (⊓) sigue de largo a la cuerda siguiente.',
+            'En los giros cambias de dirección en la misma cuerda: ahí la púa alterna, y el barrido que sigue cambia de sentido.',
+            'En la cuarta parte bajas hasta A en el traste 5 de la sexta cuerda y subes todo el patrón hasta D.',
+            'Cada parte empieza con V: sigue las púas marcadas sobre la tablatura.',
+        ],
+        mistakes: ['Empezar con ⊓ por costumbre: al bajar, el primer cambio de cuerda ya no sería un barrido.', 'Perder el pulso en los giros, donde se cambia la dirección del barrido.', 'Que los barridos suenen como un rasgueo: cada nota va separada y pareja.'],
+        criterion: 'Toca las cuatro partes de corrido con las corcheas parejas. Sube el BPM cuando los giros suenen tan fluidos como los barridos.',
+        figure: 'corcheas',
+        speed: 2,
+        picking: 'economy',
+        pickStart: 'up',
+        ...dMinorParts(true),
+    },
     'licks-phrasing-howe-02': {
         description: 'El intro de «Jump Start»: una línea funky en semicorcheas que responde con golpes de acordes secos. Greg Howe en modo fusión, con mucho groove.',
         goal: 'Tocar la línea en semicorcheas con púa alternada y que los golpes de acordes caigan justo en su lugar, con los silencios bien cortados.',
@@ -1348,8 +1602,8 @@ export type Stroke = 'down' | 'up' | 'hammer' | 'pull' | 'slide' | 'tap' | 'rest
  * Ataque de cada nota del patrón según la técnica del estudio. Lo marcado en la nota manda sobre la técnica:
  * un silencio no lleva golpe y una nota con `legato` sale con hammer-on o pull-off desde la anterior.
  */
-export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate', legatoFrom = Infinity): Stroke[] {
-    return techniqueOf(pattern, picking, legatoFrom).map((stroke, index): Stroke => {
+export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['picking'] = 'alternate', legatoFrom = Infinity, pickStart: 'down' | 'up' = 'up', sweepSkips = false): Stroke[] {
+    return techniqueOf(pattern, picking, legatoFrom, pickStart, sweepSkips).map((stroke, index): Stroke => {
         const note = pattern[index];
         if (note.rest) return 'rest';
         if (note.legato) return note.fret > pattern[index - 1].fret ? 'hammer' : 'pull';
@@ -1357,7 +1611,7 @@ export function pickingOf(pattern: PatternNote[], picking: PracticeStudy['pickin
     });
 }
 
-function techniqueOf(pattern: PatternNote[], picking: PracticeStudy['picking'], legatoFrom: number): Stroke[] {
+function techniqueOf(pattern: PatternNote[], picking: PracticeStudy['picking'], legatoFrom: number, pickStart: 'down' | 'up', sweepSkips: boolean): Stroke[] {
     if (picking === 'tapping') return pattern.map((note, index) => {
         const previous = pattern[index - 1];
         if (note.tap) return 'tap';
@@ -1367,8 +1621,10 @@ function techniqueOf(pattern: PatternNote[], picking: PracticeStudy['picking'], 
         const strokes: Stroke[] = [];
         pattern.forEach((note, index) => {
             const previous = pattern[index - 1], last = strokes[index - 1];
-            const sweep = previous && (last === 'down' ? note.string === previous.string - 1 : note.string === previous.string + 1);
-            strokes.push(!previous ? 'up' : sweep ? last : last === 'down' ? 'up' : 'down');
+            const gap = previous ? note.string - previous.string : 0;
+            const reach = sweepSkips ? 2 : 1;
+            const sweep = previous && (last === 'down' ? gap < 0 && -gap <= reach : gap > 0 && gap <= reach);
+            strokes.push(!previous ? pickStart : sweep ? last : last === 'down' ? 'up' : 'down');
         });
         return strokes;
     }
