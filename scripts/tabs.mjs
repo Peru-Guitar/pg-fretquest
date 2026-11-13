@@ -12,7 +12,7 @@ const TICKS_PER_BEAT = 960;
 /**
  * Un .alphatex → compases de notas: cuerda (1 = la más aguda), traste, duración en pulsos, tap, slide desde la nota anterior,
  * hammer-on/pull-off desde la anterior (`legato`), bend (semitonos que sube, con `release` si vuelve y `prebend` si ya
- * empieza estirada), vibrato y silencios
+ * empieza estirada), vibrato, acordes (`chord`), ligaduras (suman su duración a la nota anterior) y silencios
  * (`rest`, cuerda 0).
  */
 export function parseTab(text) {
@@ -20,11 +20,17 @@ export function parseTab(text) {
     const staff = score.tracks[0].staves[0];
     const strings = staff.tuning.length;
     let slideIn = false;
+    let last = null;
     return staff.bars.map(bar => bar.voices[0].beats.flatMap(beat => {
         const beats = beat.playbackDuration / TICKS_PER_BEAT;
-        if (beat.isRest) { slideIn = false; return [{ string: 0, fret: 0, beats, rest: true }]; }
-        return beat.notes.map(note => {
+        if (beat.isRest) { slideIn = false; last = null; return [{ string: 0, fret: 0, beats, rest: true }]; }
+        // Acorde: una sola entrada con la nota más aguda; las demás van en `chord`.
+        const [note, ...others] = [...beat.notes].sort((a, b) => b.string - a.string);
+        // Ligadura (aunque cruce el compás): no se vuelve a atacar, la nota anterior suena más tiempo.
+        if (note.isTieDestination && last) { last.beats += beats; return []; }
+        return [(() => {
             const parsed = { string: strings + 1 - note.string, fret: note.fret, beats };
+            if (others.length) parsed.chord = others.map(other => ({ string: strings + 1 - other.string, fret: other.fret }));
             if (beat.tap) parsed.tap = true;
             if (slideIn) parsed.slide = true;
             if (note.isHammerPullDestination) parsed.legato = true;
@@ -38,8 +44,9 @@ export function parseTab(text) {
             }
             if (note.vibrato) parsed.vibrato = true;
             slideIn = note.slideOutType !== 0;
+            last = parsed;
             return parsed;
-        });
+        })()];
     }));
 }
 

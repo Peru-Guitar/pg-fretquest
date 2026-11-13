@@ -551,12 +551,13 @@ function PracticeView({ mode }: { mode: Mode }) {
                                     // Con tapping el arco no cruza de un pulso al siguiente: cada grupo se lee solo y la p o h de arriba basta.
                                     const previous = bar.notes[index - 1];
                                     const newBeat = study?.picking === 'tapping' && noteIndex % FIGURES[figure].notesPerBeat === 0;
+                                    const fret = note.string === row + 1 ? note.fret : note.chord?.find(other => other.string === row + 1)?.fret;
                                     const tie = note.string === row + 1 && previous?.string === note.string && !newBeat ? picks[noteIndex] : undefined;
                                     return <span key={index} className="relative grid justify-items-center">
                                         {tie === 'slide' && <svg aria-hidden className="absolute top-1/2 right-1/2 z-20 h-3 w-full -translate-y-1/2 text-accent/80" preserveAspectRatio="none" viewBox="0 0 10 10"><line x1="3" x2="7" y1={note.fret > previous.fret ? 9 : 1} y2={note.fret > previous.fret ? 1 : 9} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/></svg>}
-                                        {note.string === row + 1
-                                            ? <button type="button" data-tab-note disabled={active || preparing || compact} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${note.fret}/${note.string}`}
-                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : showFrom && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && !compact && 'cursor-pointer hover:text-fg', from !== null && noteIndex < from && 'opacity-40')}>{note.fret}</button>
+                                        {fret !== undefined
+                                            ? <button type="button" data-tab-note disabled={active || preparing || compact} onClick={() => setFrom(from === noteIndex ? null : noteIndex)} aria-pressed={from === noteIndex} aria-label={`Reproducir desde ${fret}/${row + 1}`}
+                                                className={cn('z-10 rounded-[5px] px-1 text-base', playing ? 'bg-blue text-white' : showFrom && from === noteIndex ? 'bg-accent text-canvas' : 'bg-sunken text-fg-soft', !active && !compact && 'cursor-pointer hover:text-fg', from !== null && noteIndex < from && 'opacity-40')}>{fret}</button>
                                             : <span className="invisible z-10 px-1 text-base">{note.fret}</span>}
                                         {/* Bend: flecha y medida arriba a la derecha (con release, flecha de vuelta). Vibrato: onda a la derecha. */}
                                         {note.string === row + 1 && note.bend && <span title={`${note.prebend ? 'Pre-bend' : 'Bend'} ${bendLabel(note.bend)}${note.release ? ' y release' : ''}`} className="absolute -top-2.5 left-1/2 z-20 ml-2 font-sans text-2xs leading-none font-bold whitespace-nowrap text-accent-strong">{note.prebend ? 'PB ' : ''}{note.prebend ? '↘' : note.release ? '↗↘' : '↗'} {bendLabel(note.bend)}</span>}

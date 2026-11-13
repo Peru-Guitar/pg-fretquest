@@ -15,6 +15,8 @@ export type PatternNote = {
   vibrato?: boolean;
   /** Silencio de `beats` pulsos (cuerda y traste 0). */
   rest?: boolean;
+  /** Acorde: otras notas que suenan a la vez que esta (misma columna de la tablatura). */
+  chord?: { string: number; fret: number }[];
 };
 
 export type PlayOptions = {
@@ -103,6 +105,7 @@ export function playPattern({ bpm, pattern, notesPerBeat = 1, startAt = 0, round
         if (guideVelocity > 0 && !note.rest) {
           if (note.bend || note.vibrato) expressiveAt(note.string, note.fret, length * step * 0.95, time, note, guideVelocity);
           else playAt(note.string, note.fret, length * step * 0.95, time, guideVelocity);
+          note.chord?.forEach((other) => playAt(other.string, other.fret, length * step * 0.95, time, guideVelocity));
         }
         notify(time, () => onStep?.(index + startAt));
       } });
