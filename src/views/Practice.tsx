@@ -30,6 +30,7 @@ import { getProgress, recordFinishedPractice, weekSecondsOf } from '@/lib/progre
 import { DifficultySignal } from '@/components/quest/DifficultySignal';
 import { useCommunity } from '@/lib/community';
 import { PeopleThisWeek } from '@/components/quest/QuestUI';
+import { track } from '@/lib/track';
 
 const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
 const now = () => Date.now();
@@ -262,6 +263,7 @@ function PracticeView({ mode }: { mode: Mode }) {
         const startedAtDate = new Date(startedAt);
         const seconds = (endedAt.getTime() - startedAtDate.getTime()) / 1000;
         setFinished({ rounds, speed, bpm, seconds, progress: null });
+        track('practice_complete', { lesson: activeExercise.id, bpm, rounds, logged_in: !!account });
         if (!account) return;
         recordPractice(activeExercise.id);
         const goalHours = account.weeklyHours ?? DEFAULT_WEEKLY_HOURS;
@@ -308,7 +310,7 @@ function PracticeView({ mode }: { mode: Mode }) {
     }, [messageShown, message]);
     // Practicar parte siempre de cero (menos la configuración: velocidad, rondas y guía): ninguna nota marcada.
     const openIntro = () => { setFrom(null); setFinished(null); void playback.openIntro(); };
-    const startPractice = () => { setMessages(nextMessages()); void playback.begin(); };
+    const startPractice = () => { setMessages(nextMessages()); track('practice_start', { lesson: activeExercise.id, bpm }); void playback.begin(); };
     const playDemo = () => { setFinished(null); void playback.playDemo(); };
 
     const playDemoRef = useRef(playDemo);

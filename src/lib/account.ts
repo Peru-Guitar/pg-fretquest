@@ -1,5 +1,6 @@
 import { courses, type Difficulty, type PracticeLesson } from "@/data/questMock";
 import { DIFFICULTY } from "@/lib/difficulty";
+import { track } from "./track";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, deleteField, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -39,7 +40,7 @@ const store = createLocalStore<Account | null>("fretquest.account", null);
 export const useAccount = store.use;
 
 /** Login con Google en una ventana emergente. La cuenta se crea o se retoma en `onAuthStateChanged`. */
-export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider());
+export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider()).then(result => { track("login", { method: "Google" }); return result; });
 export const signOut = () => firebaseSignOut(auth);
 
 // Sesión de Firebase → cuenta. Si es otro usuario (o la primera vez), se crea con el nombre de Google;
