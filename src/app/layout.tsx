@@ -8,6 +8,8 @@ import { AppShell } from "@/components/AppShell";
 import { CopyGuard } from "@/components/CopyGuard";
 import { pageMetadata, SITE_URL } from "@/lib/seo";
 
+const GA_MEASUREMENT_ID = "G-WFJZZFCV16";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   ...pageMetadata({ path: "/" }),
@@ -24,7 +26,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <body className="font-sans antialiased">
       <AppShell>{children}</AppShell>
       <CopyGuard/>
-      <Script src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c60f911bc3ed4851b2d781561ea970f9"}' strategy="afterInteractive"/>
+      {process.env.NODE_ENV === "production" && (
+        <>
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+          <Script id="ga4" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`}
+          </Script>
+        </>
+      )}
     </body>
   </html>;
 }
